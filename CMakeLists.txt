@@ -15,7 +15,7 @@ if (SCCACHE_PROGRAM AND NOT CCACHE_PROGRAM)
 	set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_PROGRAM})
 endif()
 
-project(TestGame)
+project(TicTacToe)
 
 include(FetchContent)
 FetchContent_Declare(
