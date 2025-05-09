@@ -1,10 +1,9 @@
 #include <array>
 #include <format>
-#include <iostream>
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
-#include <vcruntime.h>
+#include <string>
 
 
 /*
@@ -120,6 +119,10 @@ bool startGame() {
 	
 	initSquares();
 
+	auto font = LoadFont("../font.ttf");
+
+	bool shouldContinue = false;
+
 	Texture2D endText;
 	
 	bool mouseHeld = false;
@@ -137,18 +140,35 @@ bool startGame() {
 		BeginDrawing();
 		ClearBackground(SKYBLUE);
 
+		auto rect = Rectangle{SQUARE_SIZE * .5f, SQUARE_SIZE * .5f, SQUARE_SIZE * .5f, SQUARE_SIZE * .5f, };
+
+		DrawRectangleRec(rect, MAGENTA);
+		if (!IsMouseButtonDown(0) && mouseHeld && CheckCollisionPointRec(GetMousePosition(), rect)) {
+			shouldContinue = true;
+			break;
+		}
+
+		auto rect2 = Rectangle{SQUARE_SIZE * .5f, SQUARE_SIZE * 2.f, SQUARE_SIZE * .5f, SQUARE_SIZE * .5f, };
+
+		DrawRectangleRec(rect2, PURPLE);
+		if (!IsMouseButtonDown(0) && mouseHeld && CheckCollisionPointRec(GetMousePosition(), rect2)) 
+			break;
+
+		// checking if the board has been filled
 		if (turnCount == 9 && !hasEnded) {
 			hasEnded = true;
 			endTime = GetTime();
-			auto endTextImage = ImageText(
+			auto endTextImage = ImageTextEx(
+				font,
 				"The game ended in a draw.",
-				50, RED
+				50.f, 1.f, RED
 			);
 			endText = LoadTextureFromImage(endTextImage);
 		}
 
 		draw();
 
+		// drawing the end text and the line that shows where the win happened if at all
 		if (hasEnded) {
 			bool drawText = true;
 			if (isWin) {
@@ -166,8 +186,10 @@ bool startGame() {
 			DrawTextureV(endText, {SCREEN_WIDTH / 2.f - endText.width / 2.f, 15.f + SQUARE_SIZE * 3 + Y_FREE_SPACE}, WHITE);
 		}
 
+		// performing a turn
 		if (IsMouseButtonDown(0)) mouseHeld = true;
-		else if (!hasEnded) {
+		else {
+			if (!hasEnded) {
 			bool checkForWin = false;
 			if (mouseHeld) for (auto& line : squares) for (auto& [rect, item] : line)
 				if (CheckCollisionPointRec({GetMousePosition()}, rect) && item == None) {
@@ -181,48 +203,49 @@ bool startGame() {
 			std::array<std::array<int, 2>, 3> winCombination = {};
 			Player whoWon = None;
 			if (checkForWin) whoWon = checkWin(winCombination);
-			if (whoWon != None) {
-				if (winCombination[0][0] == winCombination[2][0]) { // x's equal, its vertical
-					winAxis = Vertical;
-					lineStartPos = {SQUARE_SIZE * (winCombination[0][0] + .5f), 0.f};
-					lineEndPos   = {SQUARE_SIZE * (winCombination[0][0] + .5f), SQUARE_SIZE * 3};
-				} else if (winCombination[0][1] == winCombination[2][1]) { // y's equal, its horizontal
-					winAxis = Horizontal;
-					lineStartPos = {0.f,             SQUARE_SIZE * (winCombination[0][1] + .5f)};
-					lineEndPos   = {SQUARE_SIZE * 3, SQUARE_SIZE * (winCombination[0][1] + .5f)};
-				} else if (winCombination[0] == std::array<int, 2>{0, 0}) { // not horizontal nor vertical, it must be diagonal
-					winAxis = Diagonal;
-					lineStartPos = {0.f, 0.f};
-					lineEndPos   = {SQUARE_SIZE * 3, SQUARE_SIZE * 3};
-				} else {
-					winAxis = Diagonal;
-					lineStartPos = {0.f, SQUARE_SIZE * 3};
-					lineEndPos   = {SQUARE_SIZE * 3, 0.f};
+				if (whoWon != None) {
+					if (winCombination[0][0] == winCombination[2][0]) { // x's equal, its vertical
+						winAxis = Vertical;
+						lineStartPos = {SQUARE_SIZE * (winCombination[0][0] + .5f), 0.f};
+						lineEndPos   = {SQUARE_SIZE * (winCombination[0][0] + .5f), SQUARE_SIZE * 3};
+					} else if (winCombination[0][1] == winCombination[2][1]) { // y's equal, its horizontal
+						winAxis = Horizontal;
+						lineStartPos = {0.f,             SQUARE_SIZE * (winCombination[0][1] + .5f)};
+						lineEndPos   = {SQUARE_SIZE * 3, SQUARE_SIZE * (winCombination[0][1] + .5f)};
+					} else if (winCombination[0] == std::array<int, 2>{0, 0}) { // not horizontal nor vertical, it must be diagonal
+						winAxis = Diagonal;
+						lineStartPos = {0.f, 0.f};
+						lineEndPos   = {SQUARE_SIZE * 3, SQUARE_SIZE * 3};
+					} else {
+						winAxis = Diagonal;
+						lineStartPos = {0.f, SQUARE_SIZE * 3};
+						lineEndPos   = {SQUARE_SIZE * 3, 0.f};
+					}
+					
+					hasEnded = true;
+					isWin = true;
+					endTime = GetTime();
+					auto endTextImage = ImageTextEx(font,
+						std::format("{} has won!", whoWon == X ? "X" : "O").c_str(),
+						50, 1, RED
+					);
+					endText = LoadTextureFromImage(endTextImage);
 				}
-
-				std::cout << "Line start pos: (" << lineStartPos.x << ", " << lineStartPos.y << ")\n"
-						  << "Line end pos:   (" << lineEndPos.x   << ", " << lineEndPos.y   << ")\n";
-
-				hasEnded = true;
-				isWin = true;
-				endTime = GetTime();
-				auto endTextImage = ImageTextEx(GetFontDefault(),
-					std::format("{} has won!", whoWon == X ? "X" : "O").c_str(),
-					50, 1, RED
-				);
-				endText = LoadTextureFromImage(endTextImage);
 			}
-			
 			mouseHeld = false;
 		}
 
 		EndDrawing();
 	}
 
-	return false;
+	UnloadFont(font);
+
+	return shouldContinue;
 }
 
 int main() {
+
+	SetTraceLogCallback(nullptr);
 
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hello!");
 	SetTargetFPS(60);
@@ -231,7 +254,7 @@ int main() {
 
 	while (startGame()) continue;
 
-	// CloseWindow();
+	CloseWindow();
 
 	return 0;
 }
