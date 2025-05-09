@@ -73,6 +73,17 @@ void draw() {
 	}
 }
 
+void initSquares() {
+	for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) {
+		squares[i][j] = std::make_pair(Rectangle{
+			BOARD_START.x + SQUARE_SIZE * j,
+			BOARD_START.y + SQUARE_SIZE * i,
+			SQUARE_SIZE, SQUARE_SIZE
+		}, None);
+	}
+
+}
+
 Player checkWin(std::array<std::array<int, 2>, 3>& winCombination) {
 	// 3 for 3 required squares per win combination, 2 for indices of square in the 2D square array at line 18.
 	// double braces because std::array oh well
@@ -102,17 +113,6 @@ Player checkWin(std::array<std::array<int, 2>, 3>& winCombination) {
 	}
 
 	return ret;
-}
-
-void initSquares() {
-	for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) {
-		squares[i][j] = std::make_pair(Rectangle{
-			BOARD_START.x + SQUARE_SIZE * j,
-			BOARD_START.y + SQUARE_SIZE * i,
-			SQUARE_SIZE, SQUARE_SIZE
-		}, None);
-	}
-
 }
 
 bool startGame() {
@@ -147,13 +147,7 @@ bool startGame() {
 			shouldContinue = true;
 			break;
 		}
-
-		auto rect2 = Rectangle{SQUARE_SIZE * .5f, SQUARE_SIZE * 2.f, SQUARE_SIZE * .5f, SQUARE_SIZE * .5f, };
-
-		DrawRectangleRec(rect2, PURPLE);
-		if (!IsMouseButtonDown(0) && mouseHeld && CheckCollisionPointRec(GetMousePosition(), rect2)) 
-			break;
-
+		
 		// checking if the board has been filled
 		if (turnCount == 9 && !hasEnded) {
 			hasEnded = true;
