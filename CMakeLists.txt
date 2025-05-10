@@ -4,7 +4,6 @@ set(CMAKE_CXX_STANDARD 23)
 project(Template)
 
 message(STATUS "Looking for ccache/sccache")
-
 find_program(CCACHE_PROGRAM ccache)
 if (CCACHE_PROGRAM)
 	message(NOTICE "Using ccache: ${CCACHE_PROGRAM}")
@@ -18,7 +17,6 @@ if (SCCACHE_PROGRAM AND NOT CCACHE_PROGRAM)
 	set(CMAKE_C_COMPILER_LAUNCHER ${SCCACHE_PROGRAM})
 	set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_PROGRAM})
 endif()
-
 
 include(FetchContent)
 FetchContent_Declare(
