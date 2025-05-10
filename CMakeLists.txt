@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
 
 project(TicTacToe)
+
 message(STATUS "Looking for ccache/sccache")
 find_program(CCACHE_PROGRAM ccache)
 if (CCACHE_PROGRAM)
@@ -31,10 +32,11 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+# (COMMAND "mkdir ${CMAKE_BINARY_DIRECTORY}/bin")
+set(BUILD_OUTPUT_DIR ${CMAKE_BINARY_DIR}/bin)
+message(STATUS "Output directory: ${BUILD_OUTPUT_DIR}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_OUTPUT_DIR})
 
-if (WIN32)
-    target_sources(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/icon.rc")
-endif()
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} raylib)
