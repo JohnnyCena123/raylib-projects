@@ -15,7 +15,7 @@ if (SCCACHE_PROGRAM AND NOT CCACHE_PROGRAM)
 	set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_PROGRAM})
 endif()
 
-project(TestGame)
+project(Template)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -27,7 +27,7 @@ FetchContent_MakeAvailable(CPM)
 
 CPMAddPackage("gh:raysan5/raylib#5.5") 
 
-file(GLOB SOURCES CONFIGURE_DEPENDS
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
 
