@@ -41,14 +41,20 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    - name: d
-      run: echo Finding the executable... && find ${{github.workspace}}/build
+      # thanks chatgpt
+    - name: Find built executable
+      id: find-executable
+      run: |
+        # Look for the most recently modified executable in the build folder
+        EXECUTABLE=$(find build -type f -perm +111 -exec file {} \; | grep 'Mach-O 64-bit executable' | cut -d: -f1 | head -n 1)
+        echo "Executable found at: $EXECUTABLE"
+        echo "executable-path=$EXECUTABLE" >> "$GITHUB_OUTPUT"
 
-    # - name: Upload
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: Build Macos
-    #     path: ${{github.workspace}}/build/*.app
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Build Macos
+        path: ${{steps.find-executable.outputs.executable-path}}
 
   build-linux:
     runs-on: ubuntu-latest
