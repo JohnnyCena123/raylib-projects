@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
 
+project(Template)
+
+message(STATUS "Looking for ccache/sccache")
 
 find_program(CCACHE_PROGRAM ccache)
 if (CCACHE_PROGRAM)
@@ -16,7 +19,6 @@ if (SCCACHE_PROGRAM AND NOT CCACHE_PROGRAM)
 	set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_PROGRAM})
 endif()
 
-project(Template)
 
 include(FetchContent)
 FetchContent_Declare(
