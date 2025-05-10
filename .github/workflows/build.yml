@@ -29,7 +29,7 @@ jobs:
       with:
         name: Build Windows
         path: ${{github.workspace}}/build/*.exe
-        
+
   build-macos:
     runs-on: macos-latest
 
@@ -45,7 +45,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: Build Windows
+        name: Build Macos
         path: ${{github.workspace}}/build/*.app
 
   build-linux:
@@ -63,6 +63,6 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: Build Windows
+        name: Build Linux
         path: ${{github.workspace}}/build/*.out
 
