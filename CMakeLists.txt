@@ -27,19 +27,14 @@ FetchContent_MakeAvailable(CPM)
 
 CPMAddPackage("gh:raysan5/raylib#5.5") 
 
-file(GLOB SOURCES CONFIGURE_DEPENDS
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
 
-add_executable(${PROJECT_NAME}
-	${SOURCES}
-)
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 if (WIN32)
     target_sources(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/icon.rc")
 endif()
 
-
-target_link_libraries(${PROJECT_NAME}
-	raylib
-)
+target_link_libraries(${PROJECT_NAME} raylib)
