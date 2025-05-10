@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
 
+
 find_program(CCACHE_PROGRAM ccache)
 if (CCACHE_PROGRAM)
 	message(NOTICE "Using ccache: ${CCACHE_PROGRAM}")
@@ -30,6 +31,11 @@ CPMAddPackage("gh:raysan5/raylib#5.5")
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
+
+# (COMMAND "mkdir ${CMAKE_BINARY_DIRECTORY}/bin")
+set(BUILD_OUTPUT_DIR ${CMAKE_BINARY_DIR}/bin)
+message(STATUS "Output directory: ${BUILD_OUTPUT_DIR}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_OUTPUT_DIR})
 
 add_executable(${PROJECT_NAME}
 	${SOURCES}
