@@ -5,17 +5,17 @@ project(Template)
 
 message(STATUS "Looking for ccache/sccache")
 find_program(CCACHE_PROGRAM ccache)
-if (CCACHE_PROGRAM)
+find_program(SCCACHE_PROGRAM sccache)
+if(CCACHE_PROGRAM)
 	message(NOTICE "Using ccache: ${CCACHE_PROGRAM}")
 	set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
 	set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-endif()
-
-find_program(SCCACHE_PROGRAM sccache)
-if (SCCACHE_PROGRAM AND NOT CCACHE_PROGRAM)
+elseif(SCCACHE_PROGRAM)
 	message(NOTICE "Using sccache: ${SCCACHE_PROGRAM}")
 	set(CMAKE_C_COMPILER_LAUNCHER ${SCCACHE_PROGRAM})
 	set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_PROGRAM})
+else()
+	message(STATUS "Not using ccache/sccache.")
 endif()
 
 include(FetchContent)
@@ -32,15 +32,12 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
 
-# (COMMAND "mkdir ${CMAKE_BINARY_DIRECTORY}/bin")
-set(BUILD_OUTPUT_DIR ${CMAKE_BINARY_DIR}/bin)
-message(STATUS "Output directory: ${BUILD_OUTPUT_DIR}")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_OUTPUT_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(${PROJECT_NAME}
 	${SOURCES}
 )
 
-target_link_libraries(${PROJECT_NAME}
-	raylib
-)
+target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
+
+target_link_libraries(${PROJECT_NAME} raylib)
