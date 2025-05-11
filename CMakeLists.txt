@@ -32,7 +32,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/bin)
 
 add_executable(${PROJECT_NAME}
 	${SOURCES}
@@ -41,3 +41,16 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
 
 target_link_libraries(${PROJECT_NAME} raylib)
+
+set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
+if(EXISTS ${ICON_FILE} AND WIN32)
+    set(APP_ICON_RESOURCE_WINDOWS ${ICON_FILE})
+endif()
+
+set(RESOURCE_DIR ${CMAKE_SOURCE_DIR}/resources)
+if(EXISTS ${RESOURCE_DIR})
+	file(
+		COPY ${RESOURCE_DIR}
+		DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources
+	)
+endif()
