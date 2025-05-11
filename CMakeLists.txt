@@ -37,7 +37,14 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+if(WIN32)
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/icon.rc")
+endif()
+
+add_executable(${PROJECT_NAME} 
+	${SOURCES} 
+	${APP_ICON_RESOURCE_WINDOWS}
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
 
