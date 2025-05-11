@@ -32,20 +32,25 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/bin)
-
-add_executable(${PROJECT_NAME}
-	${SOURCES}
-)
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
-
-target_link_libraries(${PROJECT_NAME} raylib)
+if(DEFINED CMAKE_LOCAL_BUILD_DO_NOT_DEFINE_PLEASE AND CMAKE_LOCAL_BUILD_DO_NOT_DEFINE_PLEASE)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME}) # to separate different local branches
+else()
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+endif()
 
 set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
 if(EXISTS ${ICON_FILE} AND WIN32)
     set(APP_ICON_RESOURCE_WINDOWS ${ICON_FILE})
 endif()
+
+add_executable(${PROJECT_NAME}
+	${SOURCES}
+	${APP_ICON_RESOURCE_WINDOWS}
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
+
+target_link_libraries(${PROJECT_NAME} raylib)
 
 set(RESOURCE_DIR ${CMAKE_SOURCE_DIR}/resources)
 if(EXISTS ${RESOURCE_DIR})
