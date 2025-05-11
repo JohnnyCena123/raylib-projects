@@ -120,12 +120,12 @@ bool startGame() {
 	
 	initSquares();
 
-	auto font = LoadFont("../resources/font.ttf");
+	auto font = LoadFont("resources/font.ttf");
 
 	auto currentTurnTextImage = ImageTextEx(font, "Current turn is:", 40.f, 1.f, RED);
 	auto currentTurnTextTexture = LoadTextureFromImage(currentTurnTextImage);
 
-	auto restartBtnImage = LoadImage("../resources/restart_btn.png");
+	auto restartBtnImage = LoadImage("resources/restart_btn.png");
 	auto restartBtnTexture = LoadTextureFromImage(restartBtnImage);
 
 	Texture2D endText;
