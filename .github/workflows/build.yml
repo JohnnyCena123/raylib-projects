@@ -16,10 +16,10 @@ jobs:
         build-type: [Release, RelWithDebInfo]
         include:
           - os: windows-latest
-            platform: Windows
+            name: Windows
 
           - os: macos-latest
-            platform: MacOS
+            name: MacOS
 
           - os: ubuntu-latest
             name: Linux
