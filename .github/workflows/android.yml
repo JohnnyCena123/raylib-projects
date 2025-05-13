@@ -1,0 +1,82 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches: [ "main" ]
+
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        target: [32-bit, 64-bit]
+        include:
+          - target: 32-bit
+            abi: armeabi-v7a
+          - target: 64-bit
+            abi: arm64-v8a
+
+
+    name: Build Android-${{ matrix.target }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+
+      - name: Setup Android SDK & NDK
+        run: |
+          mkdir -p $HOME/Android/Sdk
+          curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o sdk.zip
+          unzip sdk.zip -d $HOME/Android/Sdk/cmdline-tools
+          mv $HOME/Android/Sdk/cmdline-tools $HOME/Android/Sdk/cmdline-tools/latest
+
+          export PATH=$HOME/Android/Sdk/cmdline-tools/latest/bin:$PATH
+
+          yes | sdkmanager --sdk_root=$HOME/Android/Sdk "platforms;android-24" "build-tools;34.0.0" "ndk;26.1.10909125"
+
+          echo "ANDROID_SDK_ROOT=$HOME/Android/Sdk" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$HOME/Android/Sdk/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y unzip cmake ninja-build openjdk-17-jdk
+
+      - name: Build
+        run: |
+          cmake -B ${{ github.workspace }}/build -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-24 -DPLATFORM=PLATFORM_ANDROID -G Ninja
+          cmake --build ${{ github.workspace }}/build
+
+      - name: Package APK
+        run: |
+          mkdir -p apk/{lib/$ABI,res/values}
+          cp bin/libmain.so apk/lib/$ABI/libmain.so
+          cp android/AndroidManifest.xml apk/AndroidManifest.xml
+          cp android/res/values/strings.xml apk/res/values/strings.xml
+          
+
+          echo "class Dummy {}" > Dummy.java
+          javac Dummy.java
+          d8 Dummy.class
+          mv classes.dex apk/
+
+          aapt2 compile -o compiled.zip --dir apk/res
+          aapt2 link -o unsigned.apk -I $ANDROID_SDK_ROOT/platforms/android-$SDK_LEVEL/android.jar --manifest apk/AndroidManifest.xml -R compiled.zip --rename-manifest-package org.raylib.minapp --java build-gen --proto-format
+
+          zip -uj unsigned.apk apk/classes.dex apk/lib/$ABI/libmain.so
+
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias debugkey -keypass android -dname "CN=raylib,O=raylib,C=US" -keyalg RSA -keysize 2048 -validity 10000
+
+          apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --out test.apk unsigned.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build Android ${{ matrix.target }}
+          path: ${{ github.workspace }}/test.apk

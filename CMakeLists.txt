@@ -43,10 +43,11 @@ if(EXISTS ${ICON_FILE} AND WIN32)
     set(APP_ICON_RESOURCE_WINDOWS ${ICON_FILE})
 endif()
 
-add_executable(${PROJECT_NAME}
-	${SOURCES}
-	${APP_ICON_RESOURCE_WINDOWS}
-)
+if (ANDROID) 
+	add_library(${PROJECT_NAME} SHARED ${SOURCES})
+else()
+	add_executable(${PROJECT_NAME} ${SOURCES} ${APP_ICON_RESOURCE_WINDOWS})
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
 
