@@ -61,25 +61,31 @@ jobs:
 
       - name: Package APK
         run: |
-          mkdir -p apk/{lib/$ABI,res/values}
-          cp bin/* apk/lib/$ABI/libmain.so
-          cp android/AndroidManifest.xml apk/AndroidManifest.xml
-          cp android/res/values/strings.xml apk/res/values/strings.xml
+          mkdir -p ${{ github.workspace }}/apk/{lib/$ABI,res/values}
+          cp ${{ github.workspace }}/bin/*.so ${{ github.workspace }}/apk/lib/$ABI/libmain.so
+          cp ${{ github.workspace }}/android/AndroidManifest.xml ${{ github.workspace }}/apk/AndroidManifest.xml
+          cp ${{ github.workspace }}/android/res/values/strings.xml ${{ github.workspace }}/apk/res/values/strings.xml
 
 
           echo "class Dummy {}" > Dummy.java
           javac Dummy.java
           d8 Dummy.class
-          mv classes.dex apk/
+          mv classes.dex ${{ github.workspace }}/apk/
 
-          aapt2 compile -o compiled.zip --dir apk/res
-          aapt2 link -o unsigned.apk -I $ANDROID_SDK_ROOT/platforms/android-$SDK_LEVEL/android.jar --manifest apk/AndroidManifest.xml -R compiled.zip --rename-manifest-package org.raylib.minapp --java build-gen --proto-format
+          aapt2 compile -o compiled.zip --dir ${{ github.workspace }}/apk/res
+          aapt2 link -o ${{ github.workspace }}/unsigned.apk \
+            -I $ANDROID_SDK_ROOT/platforms/android-$SDK_LEVEL/android.jar \
+            --manifest ${{ github.workspace }}/apk/AndroidManifest.xml \
+            -R ${{ github.workspace }}/compiled.zip \
+            --rename-manifest-package org.raylib.minapp \
+            --java build-gen \
+            --proto-format
 
-          zip -uj unsigned.apk apk/classes.dex apk/lib/$ABI/libmain.so
+          zip -uj ${{ github.workspace }}/unsigned.apk ${{ github.workspace }}/apk/classes.dex ${{ github.workspace }}/apk/lib/$ABI/libmain.so
 
           keytool -genkey -v -keystore debug.keystore -storepass android -alias debugkey -keypass android -dname "CN=raylib,O=raylib,C=US" -keyalg RSA -keysize 2048 -validity 10000
 
-          apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --out test.apk unsigned.apk
+          apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --out ${{ github.workspace }}/test.apk ${{ github.workspace }}/unsigned.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
