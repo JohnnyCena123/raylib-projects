@@ -75,7 +75,7 @@ jobs:
 
           aapt2 compile -o compiled.zip --dir ${{ github.workspace }}/apk/res
           aapt2 link -o ${{ github.workspace }}/unsigned.apk \
-            -I $ANDROID_SDK_ROOT/platforms/android-$SDK_LEVEL/android.jar \
+            -I $ANDROID_SDK_ROOT/platforms/android-24/android.jar \
             --manifest ${{ github.workspace }}/apk/AndroidManifest.xml \
             -R ${{ github.workspace }}/compiled.zip \
             --rename-manifest-package org.raylib.minapp \
