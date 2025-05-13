@@ -21,11 +21,11 @@ jobs:
             abi: arm64-v8a
 
 
-    name: Build Android-${{ matrix.target }}
+    name: Build Android ${{ matrix.target }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: true
@@ -36,8 +36,9 @@ jobs:
           mkdir -p $HOME/Android/Sdk
           curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o sdk.zip
           unzip sdk.zip -d $HOME/Android/Sdk/cmdline-tools
-          mkdir $HOME/Android/Sdk/cmdline-tools/latest
-          mv $HOME/Android/Sdk/cmdline-tools/* $HOME/Android/Sdk/cmdline-tools/latest
+          mv $HOME/Android/Sdk/cmdline-tools $HOME/Android/Sdk/latest
+          mkdir $HOME/Android/Sdk/cmdline-tools
+          mv $HOME/Android/Sdk/latest $HOME/Android/Sdk/cmdline-tools/
 
           export PATH=$HOME/Android/Sdk/cmdline-tools/latest/bin:$PATH
 
