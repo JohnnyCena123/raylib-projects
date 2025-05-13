@@ -86,8 +86,13 @@ jobs:
 
           keytool -genkey -v -keystore debug.keystore -storepass android -alias debugkey -keypass android -dname "CN=raylib,O=raylib,C=US" -keyalg RSA -keysize 2048 -validity 10000
 
-          apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --out ${{ github.workspace }}/test.apk ${{ github.workspace }}/unsigned.apk
-
+          apksigner sign --min-sdk-version 24 \
+            --ks debug.keystore \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --out ${{ github.workspace }}/test.apk \
+            ${{ github.workspace }}/unsigned.apk
+            
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
