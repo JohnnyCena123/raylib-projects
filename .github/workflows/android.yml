@@ -51,7 +51,12 @@ jobs:
 
       - name: Build
         run: |
-          cmake -B ${{ github.workspace }}/build -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-24 -DPLATFORM=PLATFORM_ANDROID -G Ninja
+          cmake -B ${{ github.workspace }}/build \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=${{ matrix.abi }} \
+            -DANDROID_PLATFORM=android-24 \
+            -DPLATFORM=Android \ 
+            -G Ninja
           cmake --build ${{ github.workspace }}/build
 
       - name: Package APK
