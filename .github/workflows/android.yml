@@ -64,7 +64,6 @@ jobs:
         run: |
           mkdir -p ${{ github.workspace }}/apk/{lib/$ABI,res/values}
           cp ${{ github.workspace }}/bin/*.so ${{ github.workspace }}/apk/lib/$ABI/libmain.so
-          cp ${{ github.workspace }}/android/AndroidManifest.xml ${{ github.workspace }}/apk/AndroidManifest.xml
           cp ${{ github.workspace }}/android/res/values/strings.xml ${{ github.workspace }}/apk/res/values/strings.xml
 
 
@@ -73,16 +72,18 @@ jobs:
           d8 Dummy.class
           mv classes.dex ${{ github.workspace }}/apk/
 
-          aapt2 compile -o compiled.zip --dir ${{ github.workspace }}/apk/res
-          aapt2 link --auto-add-overlay -o ${{ github.workspace }}/unsigned.apk \
+          aapt2 compile -o ${{ github.workspace }}/compiled.zip --dir ${{ github.workspace }}/apk/res
+          aapt2 link --auto-add-overlay \
+            -o ${{ github.workspace }}/apk/unsigned.apk \
             -I $ANDROID_SDK_ROOT/platforms/android-24/android.jar \
-            --manifest ${{ github.workspace }}/apk/AndroidManifest.xml \
+            --manifest ${{ github.workspace }}/android/AndroidManifest.xml \
             -R ${{ github.workspace }}/compiled.zip \
-            --rename-manifest-package org.raylib.minapp \
+            --rename-manifest-package com.test \
             --java build-gen \
-            --proto-format
+            --proto-format \
+            --min-sdk-version 24
 
-          zip -uj ${{ github.workspace }}/unsigned.apk ${{ github.workspace }}/apk/classes.dex ${{ github.workspace }}/apk/lib/$ABI/libmain.so
+          zip -uj ${{ github.workspace }}/apk/unsigned.apk ${{ github.workspace }}/apk/classes.dex ${{ github.workspace }}/apk/lib/$ABI/libmain.so
 
           keytool -genkey -v -keystore debug.keystore -storepass android -alias debugkey -keypass android -dname "CN=raylib,O=raylib,C=US" -keyalg RSA -keysize 2048 -validity 10000
 
@@ -91,7 +92,7 @@ jobs:
             --ks-pass pass:android \
             --key-pass pass:android \
             --out ${{ github.workspace }}/test.apk \
-            ${{ github.workspace }}/unsigned.apk
+            ${{ github.workspace }}/apk/unsigned.apk
             
       - name: Upload APK
         uses: actions/upload-artifact@v4
