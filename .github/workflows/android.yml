@@ -62,7 +62,7 @@ jobs:
       - name: Package APK
         run: |
           mkdir -p apk/{lib/$ABI,res/values}
-          cp bin/libmain.so apk/lib/$ABI/libmain.so
+          cp bin/*.so apk/lib/$ABI/libmain.so
           cp android/AndroidManifest.xml apk/AndroidManifest.xml
           cp android/res/values/strings.xml apk/res/values/strings.xml
 
