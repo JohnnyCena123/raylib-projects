@@ -36,7 +36,8 @@ jobs:
           mkdir -p $HOME/Android/Sdk
           curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o sdk.zip
           unzip sdk.zip -d $HOME/Android/Sdk/cmdline-tools
-          mv $HOME/Android/Sdk/cmdline-tools $HOME/Android/Sdk/cmdline-tools/latest
+          mkdir $HOME/Android/Sdk/cmdline-tools/latest
+          mv $HOME/Android/Sdk/cmdline-tools/** $HOME/Android/Sdk/cmdline-tools/latest
 
           export PATH=$HOME/Android/Sdk/cmdline-tools/latest/bin:$PATH
 
@@ -59,7 +60,7 @@ jobs:
           cp bin/libmain.so apk/lib/$ABI/libmain.so
           cp android/AndroidManifest.xml apk/AndroidManifest.xml
           cp android/res/values/strings.xml apk/res/values/strings.xml
-          
+
 
           echo "class Dummy {}" > Dummy.java
           javac Dummy.java
