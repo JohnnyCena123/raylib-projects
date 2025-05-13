@@ -37,7 +37,7 @@ jobs:
           curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o sdk.zip
           unzip sdk.zip -d $HOME/Android/Sdk/cmdline-tools
           mkdir $HOME/Android/Sdk/cmdline-tools/latest
-          mv $HOME/Android/Sdk/cmdline-tools/** $HOME/Android/Sdk/cmdline-tools/latest
+          mv $HOME/Android/Sdk/cmdline-tools/* $HOME/Android/Sdk/cmdline-tools/latest
 
           export PATH=$HOME/Android/Sdk/cmdline-tools/latest/bin:$PATH
 
