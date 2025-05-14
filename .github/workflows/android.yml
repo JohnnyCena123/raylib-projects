@@ -83,7 +83,9 @@ jobs:
             --proto-format \
             --min-sdk-version 24
 
-          zip -uj ${{ github.workspace }}/apk/unsigned.apk ${{ github.workspace }}/apk/classes.dex ${{ github.workspace }}/apk/lib/$ABI/libmain.so
+          zip -uj ${{ github.workspace }}/apk/unsigned.apk \
+            ${{ github.workspace }}/apk/classes.dex \
+            ${{ github.workspace }}/apk/lib/${{ matrix.abi }}/libmain.so
 
           keytool -genkey -v -keystore debug.keystore -storepass android -alias debugkey -keypass android -dname "CN=raylib,O=raylib,C=US" -keyalg RSA -keysize 2048 -validity 10000
 
