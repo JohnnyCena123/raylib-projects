@@ -82,9 +82,8 @@ jobs:
             --proto-format \
             --min-sdk-version 24
 
-          zip -uj ${{ github.workspace }}/apk/unsigned.apk \
-            ${{ github.workspace }}/apk/classes.dex \
-            ${{ github.workspace }}/apk/lib/${{ matrix.abi }}/libmain.so
+          zip -u ${{ github.workspace }}/apk/unsigned.apk ${{ github.workspace }}/apk/classes.dex
+          zip -ur ${{ github.workspace }}/apk/unsigned.apk lib
 
           keytool -genkey -v -keystore debug.keystore \
             -storepass android -alias debugkey -keypass android \
@@ -97,6 +96,13 @@ jobs:
             --key-pass pass:android \
             --out ${{ github.workspace }}/apk/test.apk \
             ${{ github.workspace }}/apk/unsigned.apk
+
+      - name: Debug post build contents of the repository
+        run: |
+          unzip ${{ github.workspace }}/apk/unsigned.apk -d ${{ github.workspace }}/debug/unsigned/
+          unzip ${{ github.workspace }}/apk/test.apk -d ${{ github.workspace }}/debug/signed/
+          ls -R ${{ github.workspace }}
+            
             
       - name: Upload APK
         uses: actions/upload-artifact@v4
