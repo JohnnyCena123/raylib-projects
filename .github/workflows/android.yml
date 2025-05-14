@@ -84,7 +84,7 @@ jobs:
 
           cd ${{ github.workspace }}/apk
           zip -u unsigned.apk classes.dex
-          zip -ur unsigned.apk apk/lib
+          zip -ur unsigned.apk lib
 
           keytool -genkey -v -keystore debug.keystore \
             -storepass android -alias debugkey -keypass android \
