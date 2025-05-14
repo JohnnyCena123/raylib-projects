@@ -28,10 +28,10 @@ inline std::string constexpr directionToString(Direction direction) {
 	return "";
 }
 struct Snake { 
-	using Tiles = std::queue<std::array<size_t, 2>>;
+	using Tiles = std::queue<std::array<int, 2>>;
 	Tiles tiles; 
 
-	std::array<size_t, 2> step(Grid& grid, bool expand);
+	std::array<int, 2> step(Grid& grid, bool expand);
 
 	Direction direction; 
 };
@@ -63,6 +63,9 @@ int main(void) {
 
 	SetTargetFPS(60);
 
+	int stepCount = 0;
+
+	bool paused = false;
 	while (!WindowShouldClose()) {
 		BeginDrawing();
 		rlImGuiBegin();
@@ -71,7 +74,19 @@ int main(void) {
 
 		draw(grid);
 
+		if (GetTime() * 2 > stepCount && !paused) {
+			stepCount++;
+			gameStep(grid, snake, false);
+		}
+
+		if (IsKeyPressed(KEY_UP))    snake.direction = Up;
+		if (IsKeyPressed(KEY_DOWN))  snake.direction = Down;
+		if (IsKeyPressed(KEY_LEFT))  snake.direction = Left;
+		if (IsKeyPressed(KEY_RIGHT)) snake.direction = Right;
+
 		ImGui::Begin("debug");
+
+		ImGui::Checkbox("Pause game", &paused);
 
 		auto currentDirection = directionToString(snake.direction);
 		ImGui::Text("Current direction: %s", currentDirection.c_str());
@@ -103,7 +118,6 @@ int main(void) {
 			ImGui::NewLine();
 		}
 		
-
 		ImGui::End();
 
 		rlImGuiEnd();
@@ -145,17 +159,21 @@ void draw(Grid const& grid) {
 	}
 }
 
-std::array<size_t, 2> Snake::step(Grid& grid, bool expand) {
+std::array<int, 2> Snake::step(Grid& grid, bool expand) {
 	auto back = tiles.front();
 
 	if (!expand) tiles.pop();
-	std::array<size_t, 2> head = tiles.back();
+	std::array<int, 2> head = tiles.back();
 	switch (direction) {
 		case Up:    head[1]--; break;
 		case Down:  head[1]++; break;
 		case Left:  head[0]--; break;
 		case Right: head[0]++; break;
 	}
+	if (head[0] < 0)         head[0] = head[0] + GRID_SIZE;
+	if (head[0] >= GRID_SIZE) head[0] = head[0] - GRID_SIZE;
+	if (head[1] < 0)         head[1] = head[1] + GRID_SIZE;
+	if (head[1] >= GRID_SIZE) head[1] = head[1] - GRID_SIZE;
 	tiles.push(head);
 
 	grid[head[1]][head[0]].filled = true;
