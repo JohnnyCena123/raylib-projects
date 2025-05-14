@@ -83,7 +83,7 @@ jobs:
             --min-sdk-version 24
 
           zip -u ${{ github.workspace }}/apk/unsigned.apk ${{ github.workspace }}/apk/classes.dex
-          zip -ur ${{ github.workspace }}/apk/unsigned.apk lib
+          zip -ur ${{ github.workspace }}/apk/unsigned.apk ${{ github.workspace }}/apk/lib
 
           keytool -genkey -v -keystore debug.keystore \
             -storepass android -alias debugkey -keypass android \
@@ -102,7 +102,6 @@ jobs:
           unzip ${{ github.workspace }}/apk/unsigned.apk -d ${{ github.workspace }}/debug/unsigned/
           unzip ${{ github.workspace }}/apk/test.apk -d ${{ github.workspace }}/debug/signed/
           ls -R ${{ github.workspace }}
-            
             
       - name: Upload APK
         uses: actions/upload-artifact@v4
