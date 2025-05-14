@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
 
-project(Template)
+project(Snake)
 
 message(STATUS "Looking for ccache/sccache")
 find_program(CCACHE_PROGRAM ccache)
@@ -27,6 +27,27 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(CPM)
 
 CPMAddPackage("gh:raysan5/raylib#5.5") 
+CPMAddPackage("gh:ocornut/imgui#docking") 
+CPMAddPackage("gh:raylib-extras/rlImGui#aba659e") 
+
+set(IMGUI_TARGET "imgui")
+add_library(${IMGUI_TARGET} STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
+	
+    ${rlImGui_SOURCE_DIR}/rlImGui.cpp
+)
+target_include_directories(${IMGUI_TARGET} PRIVATE 
+	${raylib_SOURCE_DIR}/src
+	${imgui_SOURCE_DIR}
+	${rlImGui_SOURCE_DIR}
+)
+
+target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
@@ -48,9 +69,16 @@ add_executable(${PROJECT_NAME}
 	${APP_ICON_RESOURCE_WINDOWS}
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
+target_include_directories(${PROJECT_NAME} PRIVATE 
+	${raylib_SOURCE_DIR}/src
+	${imgui_SOURCE_DIR}
+	${rlImGui_SOURCE_DIR}
+)
 
-target_link_libraries(${PROJECT_NAME} raylib)
+target_link_libraries(${PROJECT_NAME} 
+	raylib
+	${IMGUI_TARGET}
+)
 
 set(RESOURCE_DIR ${CMAKE_SOURCE_DIR}/resources)
 if(EXISTS ${RESOURCE_DIR})
