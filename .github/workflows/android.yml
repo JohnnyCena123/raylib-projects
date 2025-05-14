@@ -82,8 +82,9 @@ jobs:
             --proto-format \
             --min-sdk-version 24
 
-          zip -u ${{ github.workspace }}/apk/unsigned.apk ${{ github.workspace }}/apk/classes.dex
-          zip -ur ${{ github.workspace }}/apk/unsigned.apk ${{ github.workspace }}/apk/lib
+          cd ${{ github.workspace }}/apk
+          zip -u unsigned.apk classes.dex
+          zip -ur unsigned.apk apk/lib
 
           keytool -genkey -v -keystore debug.keystore \
             -storepass android -alias debugkey -keypass android \
