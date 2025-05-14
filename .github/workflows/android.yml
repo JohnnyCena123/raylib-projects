@@ -95,7 +95,7 @@ jobs:
             --ks debug.keystore \
             --ks-pass pass:android \
             --key-pass pass:android \
-            --out ${{ github.workspace }}/test.apk \
+            --out ${{ github.workspace }}/apk/test.apk \
             ${{ github.workspace }}/apk/unsigned.apk
             
       - name: Upload APK
