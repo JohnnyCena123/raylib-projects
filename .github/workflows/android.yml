@@ -63,7 +63,7 @@ jobs:
       - name: Package APK
         run: |
           mkdir -p ${{ github.workspace }}/apk/{lib/$ABI,res/values}
-          cp ${{ github.workspace }}/bin/*.so ${{ github.workspace }}/apk/lib/$ABI/libmain.so
+          cp ${{ github.workspace }}/bin/*.so ${{ github.workspace }}/apk/lib/${{ matrix.abi }}/libmain.so
           cp ${{ github.workspace }}/android/res/values/strings.xml ${{ github.workspace }}/apk/res/values/strings.xml
 
 
