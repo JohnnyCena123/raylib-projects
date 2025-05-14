@@ -99,7 +99,8 @@ jobs:
 
       - name: Debug post build contents of the repository
         run: |
-          unzip ${{ github.workspace }}/apk/test.apk -d ${{ github.workspace }}/debug/signed/
+          unzip ${{ github.workspace }}/apk/unsigned.apk -d ${{ github.workspace }}/unsigned
+          unzip ${{ github.workspace }}/apk/test.apk -d ${{ github.workspace }}/test
           ls -R ${{ github.workspace }}
             
       - name: Upload APK
