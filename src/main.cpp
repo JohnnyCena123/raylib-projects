@@ -1,5 +1,6 @@
 #include <array>
 #include <cstdlib>
+#include <iostream>
 #include <optional>
 #include <queue>
 #include <random>
@@ -225,16 +226,16 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasL
 
 	auto head = snake.tiles.back();
 	auto copy = snake.tiles;
-	std::optional<std::array<int, 2>> lastDrawn;
 
+	std::optional<std::array<int, 2>> lastDrawn;
+	std::array<int, 2> thirdToLast;
 	while (!copy.empty()) {
 		auto tile = copy.front();
 		auto const& [rect, _] = tileFromIndices(tile, grid); 
 		Rectangle drawRect;
-		auto diff = std::array<int, 2>{ tile[0] - (*lastDrawn)[0], tile[1] - (*lastDrawn)[1], };
+		auto diff = std::array{ tile[0] - (*lastDrawn)[0], tile[1] - (*lastDrawn)[1], };
 		if (
 			!lastDrawn ||                               // first tile, doesnt connect to anything
-			tile == head ||                             // head, the purple square shouldnt connect - see the `if (copy.size() == 2)` block
 			abs(diff[0]) > 1 || abs(diff[1]) > 1   // if the snake teleported to the other side of the grid it shouldnt try to connect
 		) drawRect = { 
 			rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
@@ -264,31 +265,6 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasL
 		}
 		DrawRectangleRec(drawRect, RED);
 
-		if (copy.size() == 2) { // if its the last tile before the head it should also connect to the head 
-			diff = std::array<int, 2>{ tile[0] - head[0], tile[1] - head[1], };
-			switch (diff[0]) {
-				case -1: drawRect = { 
-					rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
-					rect.width, rect.height - EMPTY_SQUARE_SPACE * 2, 
-				}; break;
-				case 1: drawRect = { 
-					rect.x - EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
-					rect.width, rect.height - EMPTY_SQUARE_SPACE * 2, 
-				}; break;
-				case 0: switch (diff[1]) {
-					case -1: drawRect = { 
-						rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
-						rect.width - EMPTY_SQUARE_SPACE * 2, rect.height,
-					}; break;
-					case 1: drawRect = { 
-						rect.x + EMPTY_SQUARE_SPACE, rect.y - EMPTY_SQUARE_SPACE, 
-						rect.width - EMPTY_SQUARE_SPACE * 2, rect.height, 
-					}; break;
-				} break;
-			}
-			DrawRectangleRec(drawRect, RED);
-		} 
-
 		if (tile == head) {
 			switch (snake.direction) {
 				case Up:
@@ -312,9 +288,37 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasL
 					);
 				break;
 			}
+
+			enum {
+				TopLeft,
+				BottomLeft,
+				TopRight,
+				BottomRight,
+			} gradientCorner;
+			auto thirdToLastDiff = std::array{ head[0] - thirdToLast[0], head[1] - thirdToLast[1], };
+			if (abs(thirdToLastDiff[0]) == 1 && abs(thirdToLastDiff[1]) == 1) {
+				switch (snake.direction) {
+					case Up:    gradientCorner = thirdToLastDiff[0] == 0 ? TopRight : TopLeft; break;
+					case Down:  gradientCorner = thirdToLastDiff[0] == 1 ? TopRight : TopLeft; break;
+					case Left:  gradientCorner = thirdToLastDiff[1] == 0 ? BottomLeft : TopLeft; break;
+					case Right: gradientCorner = thirdToLastDiff[1] == 1 ? BottomLeft : TopLeft; break;
+				}
+				switch (gradientCorner) {
+					case TopLeft:     DrawRectangleGradientEx(drawRect, PURPLE, BLANK, BLANK, BLANK); break;
+					case BottomLeft:  DrawRectangleGradientEx(drawRect, BLANK, PURPLE, BLANK, BLANK); break;
+					case TopRight:    DrawRectangleGradientEx(drawRect, BLANK, BLANK, PURPLE, BLANK); break;
+					case BottomRight: DrawRectangleGradientEx(drawRect, BLANK, BLANK, BLANK, PURPLE); break;
+				}
+				std::cout 
+					<< "diff: " << thirdToLastDiff[0] << ", " << thirdToLast[1] << ", " 
+					<< "head: " << head[0] << ", " << head[1] << ", " 
+					<< "third to last: " << thirdToLast[0] << ", " << thirdToLast[1] << "; "
+				<< "gradient corner: " << gradientCorner << std::endl;
+			}
 		}
 
 		copy.pop();
+		if (copy.size() == 2) thirdToLast = tile;
 		lastDrawn = tile;
 	}
 }
