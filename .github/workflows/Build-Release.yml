@@ -1,4 +1,4 @@
-name: Build
+name: Build Release
 
 on:
   workflow_dispatch:
@@ -12,9 +12,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-        build-type: [Release, RelWithDebInfo]
-        include:
+        config:
           - os: windows-latest
             name: Windows
 
@@ -24,24 +22,24 @@ jobs:
           - os: ubuntu-latest
             name: Linux
 
-    name: Build ${{ matrix.name }} - ${{ matrix.build-type }}
-    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Install Linux dependencies
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.config.os == 'ubuntu-latest'
       run: |
         sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
 
     - name: Configure CMake
-      run: cmake -B ${{ github.workspace }}/build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -G "Ninja"
+      run: cmake -B ${{ github.workspace }}/build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -G "Ninja"
     - name: Build
-      run: cmake --build ${{ github.workspace }}/build --config ${{ matrix.build-type }}
+      run: cmake --build ${{ github.workspace }}/build --config Release
 
     - name: Upload
       uses: actions/upload-artifact@v4 
       with:
-        name: ${{ matrix.name }} build - ${{ matrix.build-type }}
+        name: ${{ matrix.config.name }} build - Release
         path: ${{ github.workspace }}/bin/*
