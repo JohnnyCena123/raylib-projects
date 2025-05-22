@@ -51,7 +51,7 @@ int main() {
 
 	static std::array<int, 2> constexpr START_POS = { 12, 10, };
 
-	static int constexpr STEPS_PER_SECOND = 2;
+	static int constexpr STEPS_PER_SECOND = 10;
 	
 	Grid grid{};
 	for (int i = 0; i < GRID_SIZE; i++) {
