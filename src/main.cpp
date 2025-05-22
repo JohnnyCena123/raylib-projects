@@ -1,6 +1,4 @@
 #include <array>
-#include <cstdlib>
-#include <iostream>
 #include <optional>
 #include <queue>
 #include <random>
@@ -53,7 +51,7 @@ int main() {
 
 	static std::array<int, 2> constexpr START_POS = { 12, 10, };
 
-	static int constexpr STEPS_PER_SECOND = 10;
+	static int constexpr STEPS_PER_SECOND = 2;
 	
 	Grid grid{};
 	for (int i = 0; i < GRID_SIZE; i++) {
@@ -295,25 +293,60 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasL
 				TopRight,
 				BottomRight,
 			} gradientCorner;
+
 			auto thirdToLastDiff = std::array{ head[0] - thirdToLast[0], head[1] - thirdToLast[1], };
 			if (abs(thirdToLastDiff[0]) == 1 && abs(thirdToLastDiff[1]) == 1) {
+				auto cornerRect = tileFromIndices(thirdToLast, grid).rect;
+				cornerRect.x += EMPTY_SQUARE_SPACE;
+				cornerRect.y += EMPTY_SQUARE_SPACE;
+				cornerRect.width -= EMPTY_SQUARE_SPACE * 2;
+				cornerRect.height -= EMPTY_SQUARE_SPACE * 2;
 				switch (snake.direction) {
-					case Up:    gradientCorner = thirdToLastDiff[0] == 0 ? TopRight : TopLeft; break;
-					case Down:  gradientCorner = thirdToLastDiff[0] == 1 ? TopRight : TopLeft; break;
-					case Left:  gradientCorner = thirdToLastDiff[1] == 0 ? BottomLeft : TopLeft; break;
-					case Right: gradientCorner = thirdToLastDiff[1] == 1 ? BottomLeft : TopLeft; break;
+					case Up: {
+						if (thirdToLastDiff[0] == 1) {
+							gradientCorner = TopRight;
+							cornerRect.x += EMPTY_SQUARE_SPACE * 2;
+						} else {
+							gradientCorner = TopLeft;
+							cornerRect.x -= EMPTY_SQUARE_SPACE * 2;
+						}
+					} break;
+					case Down: {
+						if (thirdToLastDiff[0] == 1) {
+							gradientCorner = BottomRight;
+							cornerRect.x += EMPTY_SQUARE_SPACE * 2;
+						} else {
+							gradientCorner = BottomLeft;
+							cornerRect.x -= EMPTY_SQUARE_SPACE * 2;
+						}
+					} break;
+					case Left: {
+						if (thirdToLastDiff[1] == 1)  {
+							gradientCorner = BottomLeft;
+							cornerRect.y += EMPTY_SQUARE_SPACE * 2;
+						} else {
+							gradientCorner = TopLeft;
+							cornerRect.y -= EMPTY_SQUARE_SPACE * 2;
+						}
+					} break;
+					case Right: {
+						if (thirdToLastDiff[1] == 1) {
+							gradientCorner = BottomRight;
+							cornerRect.y += EMPTY_SQUARE_SPACE * 2;
+						} else {
+							gradientCorner = TopRight;
+							cornerRect.y -= EMPTY_SQUARE_SPACE * 2;
+						}
+					} break;
 				}
+				
+				auto myPurple = Fade(PURPLE, .5f);
 				switch (gradientCorner) {
-					case TopLeft:     DrawRectangleGradientEx(drawRect, PURPLE, BLANK, BLANK, BLANK); break;
-					case BottomLeft:  DrawRectangleGradientEx(drawRect, BLANK, PURPLE, BLANK, BLANK); break;
-					case TopRight:    DrawRectangleGradientEx(drawRect, BLANK, BLANK, PURPLE, BLANK); break;
-					case BottomRight: DrawRectangleGradientEx(drawRect, BLANK, BLANK, BLANK, PURPLE); break;
-				}
-				std::cout 
-					<< "diff: " << thirdToLastDiff[0] << ", " << thirdToLast[1] << ", " 
-					<< "head: " << head[0] << ", " << head[1] << ", " 
-					<< "third to last: " << thirdToLast[0] << ", " << thirdToLast[1] << "; "
-				<< "gradient corner: " << gradientCorner << std::endl;
+					case TopLeft:     DrawRectangleGradientEx(cornerRect, myPurple, BLANK, BLANK, BLANK); break;
+					case BottomLeft:  DrawRectangleGradientEx(cornerRect, BLANK, myPurple, BLANK, BLANK); break;
+					case TopRight:    DrawRectangleGradientEx(cornerRect, BLANK, BLANK, BLANK, myPurple); break;
+					case BottomRight: DrawRectangleGradientEx(cornerRect, BLANK, BLANK, myPurple, BLANK); break;
+				} 
 			}
 		}
 
