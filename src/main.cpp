@@ -1,4 +1,6 @@
 #include <array>
+#include <cstdlib>
+#include <optional>
 #include <queue>
 #include <random>
 #include <string>
@@ -8,9 +10,9 @@
 #include <rlImGui.h>
 
 int constexpr GRID_SIZE = 21;
-float constexpr BLOCK_SIZE = 40.f;
+float constexpr TILE_SIZE = 40.f;
 float constexpr FREE_SPACE = 50.f;
-float constexpr SCREEN_SIZE = GRID_SIZE * BLOCK_SIZE + FREE_SPACE * 2;
+float constexpr SCREEN_SIZE = GRID_SIZE * TILE_SIZE + FREE_SPACE * 2;
 
 struct Tile { Rectangle rect; bool filled; };
 
@@ -39,26 +41,26 @@ struct Snake {
 };
 
 
-void draw(Grid const& grid, Snake const& snake, Apple const& applePos);
+void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasLost);
 bool checkDeath(Grid const& grid, Snake const& snake);
 void gameStep(Grid& grid, Snake& snake, Apple& applePos);
-void lose();
 
-static inline constexpr Tile& tileFromIndices(std::array<int, 2>& indices, Grid& grid) { return grid[indices[1]][indices[0]]; }
-
-static inline Tile constexpr tileFromIndices(std::array<int, 2> const& indices, Grid const& grid) { return grid[indices[1]][indices[0]]; }
+static inline Tile constexpr& tileFromIndices(std::array<int, 2>&       indices, Grid&       grid) { return grid[indices[1]][indices[0]]; }
+static inline Tile constexpr  tileFromIndices(std::array<int, 2> const& indices, Grid const& grid) { return grid[indices[1]][indices[0]]; }
 
 int main() {
 
 	static std::array<int, 2> constexpr START_POS = { 12, 10, };
+
+	static int constexpr STEPS_PER_SECOND = 10;
 	
 	Grid grid{};
 	for (int i = 0; i < GRID_SIZE; i++) {
 		for (int j = 0; j < GRID_SIZE; j++) {
 			grid[i][j] = { Rectangle{
-				FREE_SPACE + j * BLOCK_SIZE,
-				FREE_SPACE + i * BLOCK_SIZE,
-				BLOCK_SIZE, BLOCK_SIZE,
+				FREE_SPACE + j * TILE_SIZE,
+				FREE_SPACE + i * TILE_SIZE,
+				TILE_SIZE, TILE_SIZE,
 			}, false, };
 		}		
 	}
@@ -79,15 +81,30 @@ int main() {
 
 	int stepCount = 0;
 
-	bool paused;
+	bool paused = false;
+	bool hasLost = false;
 
-	auto checkDeathWrapper = [&](bool step) {
-		if (step) gameStep(grid, snake, apple);
-		if (checkDeath(grid, snake)) {
-			lose();
-			paused = true;
+	auto checkDeathWrapper = [&]() { if (checkDeath(grid, snake)) hasLost = true; };
+	auto stepWrapper = [&]() {
+		gameStep(grid, snake, apple);
+		checkDeathWrapper();
+	};
+
+	auto processInput = [&](Direction direction) {
+		bool changed = false;
+		switch (direction) {
+			case Up:    if (snake.direction != Down  && snake.direction != Up   ) changed = true; break;
+			case Down:  if (snake.direction != Up    && snake.direction != Down ) changed = true; break;
+			case Left:  if (snake.direction != Right && snake.direction != Left ) changed = true; break;
+			case Right: if (snake.direction != Left  && snake.direction != Right) changed = true; break;
+		}
+		if (changed) {
+			snake.direction = direction;
+			checkDeathWrapper();
 		}
 	};
+
+	std::queue<Direction> inputQueue{};
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();
@@ -95,10 +112,10 @@ int main() {
 
 		ClearBackground( { 160, 255, 96, 255, } );
 
-		if (IsKeyPressed(KEY_UP))    { snake.direction = Up;    checkDeathWrapper(false); }
-		if (IsKeyPressed(KEY_DOWN))  { snake.direction = Down;  checkDeathWrapper(false); }
-		if (IsKeyPressed(KEY_LEFT))  { snake.direction = Left;  checkDeathWrapper(false); }
-		if (IsKeyPressed(KEY_RIGHT)) { snake.direction = Right; checkDeathWrapper(false); }
+		if (IsKeyPressed(KEY_UP))    { inputQueue.push(Up);    }
+		if (IsKeyPressed(KEY_DOWN))  { inputQueue.push(Down);  }
+		if (IsKeyPressed(KEY_LEFT))  { inputQueue.push(Left);  }
+		if (IsKeyPressed(KEY_RIGHT)) { inputQueue.push(Right); }
 
 		ImGui::Begin("debug");
 
@@ -107,17 +124,23 @@ int main() {
 		auto currentDirection = directionToString(snake.direction);
 		ImGui::Text("Current direction: %s", currentDirection.c_str());
 
-		if (ImGui::Button("Step"))   checkDeathWrapper(true);
+		if (ImGui::Button("Step")) stepWrapper();
 		ImGui::SameLine();
 		if (ImGui::Button("Expand")) {
-			apple = snake.tiles.back();
-			checkDeathWrapper(true);
+			switch (snake.direction) {
+				case Up:    apple = { snake.tiles.back()[0]    , snake.tiles.back()[1] - 1, }; break;
+				case Down:  apple = { snake.tiles.back()[0]    , snake.tiles.back()[1] + 1, }; break;
+				case Left:  apple = { snake.tiles.back()[0] - 1, snake.tiles.back()[1],     }; break;
+				case Right: apple = { snake.tiles.back()[0] + 1, snake.tiles.back()[1],     }; break;
+			}
+			
+			stepWrapper();
 		}
 
-		#define DIRECTION_BUTTON(direction_)                                                      \
+	#define DIRECTION_BUTTON(direction_)                                                          \
 		if (ImGui::ArrowButton(directionToString(direction_).c_str(), ImGuiDir_##direction_)) {   \
-			snake.direction = direction_;                                                         \
-			checkDeathWrapper(true);                                                                          \
+			processInput(direction_);                                                             \
+			stepWrapper();                                                                        \
 		}                                                                                         \
 		ImGui::SameLine()
 		
@@ -140,13 +163,18 @@ int main() {
 		
 		ImGui::End();
 
-		if (GetTime() * 3 > stepCount) {
+		if (GetTime() * STEPS_PER_SECOND > stepCount) {
 			stepCount++;
-
-			if (!paused) checkDeathWrapper(true);
+			if (!paused && !hasLost) {
+				if (!inputQueue.empty()) {
+					processInput(inputQueue.front());
+					inputQueue.pop();
+				}
+				stepWrapper();
+			}
 		}
 
-		draw(grid, snake, apple);
+		draw(grid, snake, apple, hasLost);
 
 		rlImGuiEnd();
 		EndDrawing();
@@ -159,19 +187,23 @@ int main() {
 }
 
 
-
-void draw(Grid const& grid, Snake const& snake, Apple const& applePos) {
+void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasLost) {
+	static float constexpr EMPTY_SQUARE_SPACE = 5.f; // on each side
 	
 	static auto apple = [] {
 		auto image = LoadImage("resources/apple.png");
 
-		ImageResize(&image, BLOCK_SIZE - 10.f, BLOCK_SIZE - 10.f);
+		ImageResize(&image, TILE_SIZE - EMPTY_SQUARE_SPACE * 2, TILE_SIZE - EMPTY_SQUARE_SPACE * 2);
 
 		return LoadTextureFromImage(image);
 	}();
 
+	for (auto const& line : grid) 
+		for (auto const& [rect, _] : line)
+			DrawRectangleLinesEx(rect, 1.f, SKYBLUE);
+
 	auto appleRect = tileFromIndices(applePos, grid).rect;
-	DrawTextureV(apple, { appleRect.x + 5.f, appleRect.y + 5.f, }, WHITE);
+	DrawTextureV(apple, { appleRect.x + EMPTY_SQUARE_SPACE, appleRect.y + EMPTY_SQUARE_SPACE, }, WHITE);
 
 	DrawRectangleRec({
 		0.f, 0.f,
@@ -184,32 +216,114 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos) {
 
 	DrawRectangleRec({
 		0.f, FREE_SPACE,
-		FREE_SPACE, GRID_SIZE * BLOCK_SIZE,
+		FREE_SPACE, GRID_SIZE * TILE_SIZE,
 	}, BLUE);
 	DrawRectangleRec({
 		SCREEN_SIZE - FREE_SPACE, FREE_SPACE,
-		FREE_SPACE, GRID_SIZE * BLOCK_SIZE,
+		FREE_SPACE, GRID_SIZE * TILE_SIZE,
 	}, BLUE);
 
+	auto head = snake.tiles.back();
 	auto copy = snake.tiles;
+	std::optional<std::array<int, 2>> lastDrawn;
+
 	while (!copy.empty()) {
 		auto tile = copy.front();
-		copy.pop();
 		auto const& [rect, _] = tileFromIndices(tile, grid); 
-		DrawRectangleRec(rect, tile == snake.tiles.back() ? PURPLE : RED);
+		Rectangle drawRect;
+		auto diff = std::array<int, 2>{ tile[0] - (*lastDrawn)[0], tile[1] - (*lastDrawn)[1], };
+		if (
+			!lastDrawn ||                               // first tile, doesnt connect to anything
+			tile == head ||                             // head, the purple square shouldnt connect - see the `if (copy.size() == 2)` block
+			abs(diff[0]) > 1 || abs(diff[1]) > 1   // if the snake teleported to the other side of the grid it shouldnt try to connect
+		) drawRect = { 
+			rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
+			rect.width - EMPTY_SQUARE_SPACE * 2, rect.height - EMPTY_SQUARE_SPACE * 2, 
+		}; //  just a square in the middle of the tile
+		else { // it should try to connect to the previous tile
+			switch (diff[0]) {
+				case -1: drawRect = { 
+					rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
+					rect.width, rect.height - EMPTY_SQUARE_SPACE * 2, 
+				}; break;
+				case 1: drawRect = { 
+					rect.x - EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
+					rect.width, rect.height - EMPTY_SQUARE_SPACE * 2, 
+				}; break;
+				case 0: switch (diff[1]) {
+					case -1: drawRect = { 
+						rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
+						rect.width - EMPTY_SQUARE_SPACE * 2, rect.height, 
+					}; break;
+					case 1: drawRect = { 
+						rect.x + EMPTY_SQUARE_SPACE, rect.y - EMPTY_SQUARE_SPACE, 
+						rect.width - EMPTY_SQUARE_SPACE * 2, rect.height, 
+					}; break;
+				} break;
+			}
+		}
+		DrawRectangleRec(drawRect, RED);
+
+		if (copy.size() == 2) { // if its the last tile before the head it should also connect to the head 
+			diff = std::array<int, 2>{ tile[0] - head[0], tile[1] - head[1], };
+			switch (diff[0]) {
+				case -1: drawRect = { 
+					rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
+					rect.width, rect.height - EMPTY_SQUARE_SPACE * 2, 
+				}; break;
+				case 1: drawRect = { 
+					rect.x - EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
+					rect.width, rect.height - EMPTY_SQUARE_SPACE * 2, 
+				}; break;
+				case 0: switch (diff[1]) {
+					case -1: drawRect = { 
+						rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
+						rect.width - EMPTY_SQUARE_SPACE * 2, rect.height,
+					}; break;
+					case 1: drawRect = { 
+						rect.x + EMPTY_SQUARE_SPACE, rect.y - EMPTY_SQUARE_SPACE, 
+						rect.width - EMPTY_SQUARE_SPACE * 2, rect.height, 
+					}; break;
+				} break;
+			}
+			DrawRectangleRec(drawRect, RED);
+		} 
+
+		if (tile == head) {
+			switch (snake.direction) {
+				case Up:
+					DrawRectangleGradientEx({ drawRect.x, drawRect.y, drawRect.width, drawRect.height + TILE_SIZE,  }, 
+						PURPLE, BLANK, BLANK, PURPLE
+					);
+				break;
+				case Down: 
+					DrawRectangleGradientEx({ drawRect.x, drawRect.y - TILE_SIZE, drawRect.width, drawRect.height + TILE_SIZE, }, 
+						BLANK, PURPLE, PURPLE, BLANK
+					);
+				break;
+				case Left:
+					DrawRectangleGradientEx({ drawRect.x, drawRect.y, drawRect.width + TILE_SIZE, drawRect.height,  }, 
+						PURPLE, PURPLE, BLANK, BLANK
+					);
+				break;
+				case Right:
+					DrawRectangleGradientEx({ drawRect.x - TILE_SIZE, drawRect.y, drawRect.width + TILE_SIZE, drawRect.height,  }, 
+						BLANK, BLANK, PURPLE, PURPLE
+					);
+				break;
+			}
+		}
+
+		copy.pop();
+		lastDrawn = tile;
 	}
-
-	for (auto const& line : grid) 
-		for (auto const& [rect, _] : line)
-			DrawRectangleLinesEx(rect, 1.f, SKYBLUE);
-
 }
 
 std::array<int, 2> Snake::step(Grid& grid, Apple& applePos) {
 
-	std::random_device rd;
-	std::mt19937 e{rd()};
-	std::uniform_int_distribution<int> dist{0, GRID_SIZE - 1};
+	static std::random_device rd;
+	static std::mt19937 e{rd()};
+	static std::uniform_int_distribution<int> dist{0, GRID_SIZE - 1};
 	
 	std::array<int, 2> head = tiles.back();
 	switch (direction) {
@@ -254,23 +368,18 @@ bool checkDeath(Grid const& grid, Snake const& snake) {
 
 		auto tile = copy.front();
 		copy.pop();
-		auto [rect, _] = tileFromIndices(tile, grid); 
 
-		// to make it return true for the collision when its not on the same tile but the head is gonna touch the rect on thenext step
-		// 1e-4 is used as the epsilon because FLT_EPSILON doesnt work lmao
+		// to make it return true for the collision when its not on the same tile but the head is gonna touch the rect on the next step
+		// so if its the tile the head is gonna be in the next step its gonna treat it as a loss already
 		switch (snake.direction) {
-			case Up:    rect.height += 1e-4; break;
-			case Down:  rect.y      -= 1e-4; break;
-			case Left:  rect.width  += 1e-4; break;
-			case Right: rect.x      -= 1e-4; break;
+			case Up:    tile[1] += 1; break;
+			case Down:  tile[1] -= 1; break;
+			case Left:  tile[0] += 1; break;
+			case Right: tile[0] -= 1; break;
 		}
 
-		if (tilesChecked < snake.tiles.size() && CheckCollisionRecs(tileFromIndices(head, grid).rect, rect)) lose = true;
+		if (tile == head) return true;
 	}
 
 	return lose;
-}
-
-void lose() {
-
 }
