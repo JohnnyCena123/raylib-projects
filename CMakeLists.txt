@@ -18,15 +18,10 @@ else()
 	message(STATUS "Not using ccache/sccache.")
 endif()
 
-include(FetchContent)
-FetchContent_Declare(
-  CPM
-  GIT_REPOSITORY https://github.com/cpm-cmake/CPM.cmake
-  GIT_TAG origin/master
-)
-FetchContent_MakeAvailable(CPM)
+include(cmake/CPM.cmake)
+CPMAddPackage("gh:raysan5/raylib#master") 
+target_compile_options(raylib PRIVATE "-Wno-tautological-compare")
 
-CPMAddPackage("gh:raysan5/raylib#5.5") 
 CPMAddPackage("gh:ocornut/imgui#docking") 
 CPMAddPackage("gh:raylib-extras/rlImGui#aba659e") 
 
@@ -54,11 +49,14 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 )
 
 if(DEFINED CMAKE_LOCAL_BUILD_DO_NOT_DEFINE_PLEASE AND CMAKE_LOCAL_BUILD_DO_NOT_DEFINE_PLEASE)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME}/${CMAKE_BUILD_TYPE}) # to separate different local branches
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME}/${CMAKE_BUILD_TYPE}) # to separate different local branches and build types
 else()
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 endif()
 
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+	src/*.cpp
+)
 set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
 if(EXISTS ${ICON_FILE} AND WIN32)
     set(APP_ICON_RESOURCE_WINDOWS ${ICON_FILE})
