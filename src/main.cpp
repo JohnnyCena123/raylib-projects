@@ -55,6 +55,8 @@ static inline Tile constexpr  tileFromIndices(std::array<int, 2> const& indices,
 bool startGame() {
 	bool restart = false;
 
+	auto roundStartTime = GetTime();
+
 	static std::array<int, 2> constexpr START_POS = { 12, 10, };
 
 	static int constexpr STEPS_PER_SECOND = 10;
@@ -166,7 +168,7 @@ bool startGame() {
 		
 		ImGui::End();
 
-		if (GetTime() * STEPS_PER_SECOND > stepCount) {
+		if ((GetTime() - roundStartTime) * STEPS_PER_SECOND > stepCount) {
 			stepCount++;
 			if (!paused && !hasLost) {
 				if (!inputQueue.empty()) {
@@ -182,17 +184,61 @@ bool startGame() {
 
 		draw(grid, snake, apple, hasLost);
 
+		static float constexpr RBTN_RADIUS = 50.f;
 		static auto restartBtn = []() {
-			auto image = GenImageColor(200, 200, BLANK);
-			ImageDrawCircleV(&image, { 100.f, 100.f, }, 100.f, GREEN);
-			ImageDrawCircleV(&image, { 100.f, 100.f, }, 80.f, GRAY);
-			ImageDrawCircleV(&image, { 100.f, 100.f, }, 65.f, GREEN);
-			ImageDrawTriangle(&image, { 15.f, 50.f, }, { 15.f, 150.f, }, { 100.f, 100.f, }, GREEN);
-			ImageDrawTriangle(&image, { 25.f, 50.f, }, { 27.f, 80.f, }, { 57.f, 78.f, }, GRAY);
+			static Color constexpr OUTER_COLOR = GREEN;
+			static Color constexpr INNER_COLOR = { 200, 200, 200, 255, };
+
+			auto image = GenImageColor(2 * RBTN_RADIUS, 2 * RBTN_RADIUS, BLANK);
+			ImageDrawCircleV(&image, { RBTN_RADIUS, RBTN_RADIUS, }, RBTN_RADIUS, OUTER_COLOR);
+			ImageDrawCircleV(&image, { RBTN_RADIUS, RBTN_RADIUS, }, RBTN_RADIUS * .8f, INNER_COLOR);
+			ImageDrawCircleV(&image, { RBTN_RADIUS, RBTN_RADIUS, }, RBTN_RADIUS * .65f, OUTER_COLOR);
+			ImageDrawTriangle(&image, 
+				{ RBTN_RADIUS * .15f, RBTN_RADIUS / 2, }, 
+				{ RBTN_RADIUS * .15f, RBTN_RADIUS * 1.5f, }, 
+				{ RBTN_RADIUS, RBTN_RADIUS, }, 
+			OUTER_COLOR);
+			ImageDrawTriangle(&image, 
+				{ RBTN_RADIUS / 4, RBTN_RADIUS / 2, }, 
+				{ RBTN_RADIUS * .27f, RBTN_RADIUS * .8f, }, 
+				{ RBTN_RADIUS * .57f, RBTN_RADIUS * .78f, }, 
+			INNER_COLOR);
 
 			return LoadTextureFromImage(image);
 		}();
-		DrawTextureV(restartBtn, { SCREEN_SIZE / 2, SCREEN_SIZE / 2, }, WHITE);
+		struct {
+			Vector2 origin;
+			Vector2 center;
+			float radius;
+		} restartBtnCircle = { {
+				SCREEN_SIZE / 2 - RBTN_RADIUS, 
+				SCREEN_SIZE / 2 - RBTN_RADIUS + 50.f, 
+			}, {
+				SCREEN_SIZE / 2, 
+				SCREEN_SIZE / 2 + 50.f, 
+			}, RBTN_RADIUS,
+		};
+		if (hasLost) {
+			DrawTextureV(
+				restartBtn, restartBtnCircle.origin, 
+				Fade(WHITE, .9f)
+			);
+			if (CheckCollisionPointCircle(
+				GetMousePosition(), restartBtnCircle.center,
+				restartBtnCircle.radius
+			)) {
+				DrawCircleLinesV(restartBtnCircle.center, restartBtnCircle.radius, RAYWHITE);
+				if (IsMouseButtonDown(0)) DrawCircleV(
+					restartBtnCircle.center, restartBtnCircle.radius, {.a = 70}
+				);
+				else if (IsMouseButtonReleased(0)) {
+					restart = true;
+					rlImGuiEnd();
+					EndDrawing();
+					break;
+				}
+			}
+		}
 
 		rlImGuiEnd();
 		EndDrawing();
