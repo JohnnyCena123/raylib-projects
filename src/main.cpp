@@ -9,7 +9,7 @@
 #include <rlImGui.h>
 
 int constexpr GRID_SIZE = 21;
-float constexpr TILE_SIZE = 40.f;
+float constexpr TILE_SIZE = 25.f;
 float constexpr FREE_SPACE = 50.f;
 float constexpr SCREEN_SIZE = GRID_SIZE * TILE_SIZE + FREE_SPACE * 2;
 
@@ -34,9 +34,11 @@ struct Snake {
 	using Tiles = std::queue<std::array<int, 2>>;
 	Tiles tiles; 
 
-	std::array<int, 2> step(Grid& grid, Apple& applePos);
+	void step(Grid& grid, Apple& applePos);
 
 	Direction direction; 
+
+	int score = -2;
 };
 
 
@@ -51,7 +53,7 @@ int main() {
 
 	static std::array<int, 2> constexpr START_POS = { 12, 10, };
 
-	static int constexpr STEPS_PER_SECOND = 2;
+	static int constexpr STEPS_PER_SECOND = 10;
 	
 	Grid grid{};
 	for (int i = 0; i < GRID_SIZE; i++) {
@@ -263,6 +265,10 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasL
 		}
 		DrawRectangleRec(drawRect, RED);
 
+		drawRect = { 
+			rect.x + EMPTY_SQUARE_SPACE, rect.y + EMPTY_SQUARE_SPACE, 
+			rect.width - EMPTY_SQUARE_SPACE * 2, rect.height - EMPTY_SQUARE_SPACE * 2, 
+		};
 		if (tile == head) {
 			switch (snake.direction) {
 				case Up:
@@ -287,76 +293,20 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasL
 				break;
 			}
 
-			enum {
-				TopLeft,
-				BottomLeft,
-				TopRight,
-				BottomRight,
-			} gradientCorner;
-
-			auto thirdToLastDiff = std::array{ head[0] - thirdToLast[0], head[1] - thirdToLast[1], };
-			if (abs(thirdToLastDiff[0]) == 1 && abs(thirdToLastDiff[1]) == 1) {
-				auto cornerRect = tileFromIndices(thirdToLast, grid).rect;
-				cornerRect.x += EMPTY_SQUARE_SPACE;
-				cornerRect.y += EMPTY_SQUARE_SPACE;
-				cornerRect.width -= EMPTY_SQUARE_SPACE * 2;
-				cornerRect.height -= EMPTY_SQUARE_SPACE * 2;
-				switch (snake.direction) {
-					case Up: {
-						if (thirdToLastDiff[0] == 1) {
-							gradientCorner = TopRight;
-							cornerRect.x += EMPTY_SQUARE_SPACE * 2;
-						} else {
-							gradientCorner = TopLeft;
-							cornerRect.x -= EMPTY_SQUARE_SPACE * 2;
-						}
-					} break;
-					case Down: {
-						if (thirdToLastDiff[0] == 1) {
-							gradientCorner = BottomRight;
-							cornerRect.x += EMPTY_SQUARE_SPACE * 2;
-						} else {
-							gradientCorner = BottomLeft;
-							cornerRect.x -= EMPTY_SQUARE_SPACE * 2;
-						}
-					} break;
-					case Left: {
-						if (thirdToLastDiff[1] == 1)  {
-							gradientCorner = BottomLeft;
-							cornerRect.y += EMPTY_SQUARE_SPACE * 2;
-						} else {
-							gradientCorner = TopLeft;
-							cornerRect.y -= EMPTY_SQUARE_SPACE * 2;
-						}
-					} break;
-					case Right: {
-						if (thirdToLastDiff[1] == 1) {
-							gradientCorner = BottomRight;
-							cornerRect.y += EMPTY_SQUARE_SPACE * 2;
-						} else {
-							gradientCorner = TopRight;
-							cornerRect.y -= EMPTY_SQUARE_SPACE * 2;
-						}
-					} break;
-				}
-				
-				auto myPurple = Fade(PURPLE, .5f);
-				switch (gradientCorner) {
-					case TopLeft:     DrawRectangleGradientEx(cornerRect, myPurple, BLANK, BLANK, BLANK); break;
-					case BottomLeft:  DrawRectangleGradientEx(cornerRect, BLANK, myPurple, BLANK, BLANK); break;
-					case TopRight:    DrawRectangleGradientEx(cornerRect, BLANK, BLANK, BLANK, myPurple); break;
-					case BottomRight: DrawRectangleGradientEx(cornerRect, BLANK, BLANK, myPurple, BLANK); break;
-				} 
-			}
 		}
 
 		copy.pop();
 		if (copy.size() == 2) thirdToLast = tile;
 		lastDrawn = tile;
 	}
+
+	DrawTextEx(GetFontDefault(),
+		(std::string("Score: ") + std::to_string(snake.score)).c_str(),
+		{ 25.f, 15.f, }, 25.f, 2.5f, BLACK
+	);
 }
 
-std::array<int, 2> Snake::step(Grid& grid, Apple& applePos) {
+void Snake::step(Grid& grid, Apple& applePos) {
 
 	static std::random_device rd;
 	static std::mt19937 e{rd()};
@@ -382,16 +332,18 @@ std::array<int, 2> Snake::step(Grid& grid, Apple& applePos) {
 	if (CheckCollisionRecs(
 		tileFromIndices(tiles.back(), grid).rect, 
 		tileFromIndices(applePos, grid).rect)
-	) applePos = { dist(e), dist(e), };
+	) {
+		applePos = { dist(e), dist(e), };
+		score++;
+	}
 	else {
 		tiles.pop();
 		tileFromIndices(back, grid).filled = false;
 	}
-
-	return back;
 }
+
 void gameStep(Grid& grid, Snake& snake, Apple& applePos) {
-	auto back = snake.step(grid, applePos);
+	snake.step(grid, applePos);
 }
 
 bool checkDeath(Grid const& grid, Snake const& snake) {
