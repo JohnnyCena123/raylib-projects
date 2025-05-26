@@ -9,7 +9,8 @@
 #include <rlImGui.h>
 
 int constexpr GRID_SIZE = 21;
-float constexpr TILE_SIZE = 25.f;
+int constexpr START_LENGTH = 3;
+float constexpr TILE_SIZE = 40.f;
 float constexpr FREE_SPACE = 50.f;
 float constexpr SCREEN_SIZE = GRID_SIZE * TILE_SIZE + FREE_SPACE * 2;
 
@@ -38,9 +39,11 @@ struct Snake {
 
 	Direction direction; 
 
-	int score = -2;
+	int score = -START_LENGTH + 1;
+	static int s_maxScore;
 };
 
+int Snake::s_maxScore = 0;
 
 void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasLost);
 bool checkDeath(Grid const& grid, Snake const& snake);
@@ -49,7 +52,8 @@ void gameStep(Grid& grid, Snake& snake, Apple& applePos);
 static inline Tile constexpr& tileFromIndices(std::array<int, 2>&       indices, Grid&       grid) { return grid[indices[1]][indices[0]]; }
 static inline Tile constexpr  tileFromIndices(std::array<int, 2> const& indices, Grid const& grid) { return grid[indices[1]][indices[0]]; }
 
-int main() {
+bool startGame() {
+	bool restart = false;
 
 	static std::array<int, 2> constexpr START_POS = { 12, 10, };
 
@@ -66,32 +70,30 @@ int main() {
 		}		
 	}
 
-	Apple apple = START_POS;
+	Apple apple{};
 
 	Snake snake = { { }, Left, };
 	snake.tiles.push(START_POS);
 
-	gameStep(grid, snake, apple); apple = { snake.tiles.back()[0] - 1, snake.tiles.back()[1], };
-	gameStep(grid, snake, apple); apple = { snake.tiles.back()[0] - 1, snake.tiles.back()[1], };
+	for (int i = 1; i < START_LENGTH; i++) {
+		apple = { snake.tiles.back()[0] - 1, snake.tiles.back()[1], };
+		gameStep(grid, snake, apple); 
+	}
 	
-	InitWindow(SCREEN_SIZE, SCREEN_SIZE, "Snake");
-
-	rlImGuiSetup(true);
-
-	SetTargetFPS(60);
-
 	int stepCount = 0;
 
 	bool paused = false;
 	bool hasLost = false;
 
-	auto checkDeathWrapper = [&]() { if (checkDeath(grid, snake)) hasLost = true; };
-	auto stepWrapper = [&]() {
+	static auto checkDeathWrapper = [&]() { 
+		if (checkDeath(grid, snake)) hasLost = true; 
+	};
+	static auto stepWrapper = [&]() {
 		gameStep(grid, snake, apple);
 		checkDeathWrapper();
 	};
 
-	auto processInput = [&](Direction direction) {
+	static auto processInput = [&](Direction direction) {
 		bool changed = false;
 		switch (direction) {
 			case Up:    if (snake.direction != Down  && snake.direction != Up   ) changed = true; break;
@@ -170,6 +172,9 @@ int main() {
 				if (!inputQueue.empty()) {
 					processInput(inputQueue.front());
 					inputQueue.pop();
+					auto queueLength = inputQueue.size();
+					//                   float cast to avoid clang-tidy warning
+					if (queueLength > 5) while ((float)inputQueue.size() / queueLength > 0.8) inputQueue.pop();
 				}
 				stepWrapper();
 			}
@@ -177,9 +182,32 @@ int main() {
 
 		draw(grid, snake, apple, hasLost);
 
+		static auto restartBtn = []() {
+			auto image = GenImageColor(200, 200, BLANK);
+			ImageDrawCircleV(&image, { 100.f, 100.f, }, 100.f, GREEN);
+			ImageDrawCircleV(&image, { 100.f, 100.f, }, 80.f, GRAY);
+			ImageDrawCircleV(&image, { 100.f, 100.f, }, 65.f, GREEN);
+			ImageDrawTriangle(&image, { 15.f, 50.f, }, { 15.f, 150.f, }, { 100.f, 100.f, }, GREEN);
+			ImageDrawTriangle(&image, { 25.f, 50.f, }, { 27.f, 80.f, }, { 57.f, 78.f, }, GRAY);
+
+			return LoadTextureFromImage(image);
+		}();
+		DrawTextureV(restartBtn, { SCREEN_SIZE / 2, SCREEN_SIZE / 2, }, WHITE);
+
 		rlImGuiEnd();
 		EndDrawing();
 	}
+
+	return restart;
+}
+
+int main() {
+
+	InitWindow(SCREEN_SIZE, SCREEN_SIZE, "Snake");
+	rlImGuiSetup(true);
+	SetTargetFPS(60);
+
+	while (startGame()) continue;
 
 	rlImGuiShutdown();
 	CloseWindow();
@@ -198,7 +226,6 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasL
 
 		return LoadTextureFromImage(image);
 	}();
-
 	for (auto const& line : grid) 
 		for (auto const& [rect, _] : line)
 			DrawRectangleLinesEx(rect, 1.f, SKYBLUE);
@@ -302,8 +329,29 @@ void draw(Grid const& grid, Snake const& snake, Apple const& applePos, bool hasL
 
 	DrawTextEx(GetFontDefault(),
 		(std::string("Score: ") + std::to_string(snake.score)).c_str(),
-		{ 25.f, 15.f, }, 25.f, 2.5f, BLACK
+		{ FREE_SPACE + 50.f, 15.f, }, 25.f, 2.5f, BLACK
 	);
+
+	auto text = std::string("Max Score: ") + std::to_string(Snake::s_maxScore);
+	DrawTextEx(GetFontDefault(),
+		text.c_str(), 
+		{ SCREEN_SIZE - FREE_SPACE - MeasureTextEx(GetFontDefault(), 
+			text.c_str(), 25.f, 2.5f).x - 50.f, 
+			15.f, 
+		}, 
+		25.f, 2.5f, BLACK
+	);
+
+	static auto loseText = []() {
+		auto image = ImageTextEx(GetFontDefault(),
+			"You lost!", 100.f, 1.f, BLACK
+		);
+		return LoadTextureFromImage(image);
+	}();
+	if (hasLost) DrawTextureV(loseText, { 
+		(SCREEN_SIZE - loseText.width) / 2, 
+		(SCREEN_SIZE - loseText.height) / 2 - 50.f, 
+	}, WHITE);
 }
 
 void Snake::step(Grid& grid, Apple& applePos) {
@@ -335,6 +383,7 @@ void Snake::step(Grid& grid, Apple& applePos) {
 	) {
 		applePos = { dist(e), dist(e), };
 		score++;
+		if (score > s_maxScore) s_maxScore++;
 	}
 	else {
 		tiles.pop();
