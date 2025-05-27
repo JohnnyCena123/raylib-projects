@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
 
-project(Snake)
+execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+project(${GIT_BRANCH}) # i might decide to change this in specific branches but overall itll be the default
 
 message(STATUS "Looking for ccache/sccache")
 find_program(CCACHE_PROGRAM ccache)
@@ -94,10 +100,22 @@ target_link_libraries(${PROJECT_NAME}
 	${IMGUI_TARGET}
 )
 
-set(RESOURCE_DIR ${CMAKE_SOURCE_DIR}/resources)
+set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
+set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
 if(EXISTS ${RESOURCE_DIR})
-	file(
-		COPY ${RESOURCE_DIR}
-		DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+	file(GLOB_RECURSE RESOURCE_FILES ${CMAKE_SOURCE_DIR}/resources/*.*)
+
+	add_custom_command(
+		OUTPUT ${CMAKE_BINARY_DIR}/resources_copied.stamp
+		BYPRODUCTS 
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_RESOURCE_DIR}
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${RESOURCE_DIR} ${OUTPUT_RESOURCE_DIR}
+		COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/resources_copied.stamp"
+		DEPENDS ${RESOURCE_FILES}
+		COMMENT "Copying resources to output directory..."
+		VERBATIM
+	)
+	add_custom_target(CopyResources ALL
+		DEPENDS "${CMAKE_BINARY_DIR}/resources_copied.stamp"
 	)
 endif()
