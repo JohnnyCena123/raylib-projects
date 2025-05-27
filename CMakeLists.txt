@@ -48,9 +48,11 @@ if(WIN32)
 else()
     add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
-
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE -DCMAKE_RELEASE_BUILD)
+endif()
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
 target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
-
 target_link_libraries(${PROJECT_NAME} raylib)
 
 set(RESOURCE_DIR ${CMAKE_SOURCE_DIR}/resources)

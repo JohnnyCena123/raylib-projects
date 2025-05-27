@@ -1,4 +1,4 @@
-#ifdef _WIN32
+#if defined(_WIN32) && defined(CMAKE_RELEASE_BUILD)
 // holy shit i hate raylib + windows
 // it compiles so shut up
 #define _WINGDI_
@@ -11,7 +11,6 @@
 #define _PLAYSOUNDAPI_H_
 #include <windows.h>
 int main();
-
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
 #endif
 #include <raylib.h>
