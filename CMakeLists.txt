@@ -57,15 +57,22 @@ endif()
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
-set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
-if(EXISTS ${ICON_FILE} AND WIN32)
-    set(APP_ICON_RESOURCE_WINDOWS ${ICON_FILE})
-endif()
 
-add_executable(${PROJECT_NAME}
-	${SOURCES}
-	${APP_ICON_RESOURCE_WINDOWS}
-)
+if(WIN32)
+	set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
+	if(EXISTS ${ICON_FILE})
+		set(RESOURCE_FILE ${ICON_FILE})
+	else()
+		set(RESOURCE_FILE)
+	endif()
+	if(CMAKE_BUILD_TYPE STREQUAL "Release")
+		add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${RESOURCE_FILE})
+	else()
+		add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCE_FILE})
+	endif()
+else()
+    add_executable(${PROJECT_NAME} ${SOURCES})
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
 	${raylib_SOURCE_DIR}/src
