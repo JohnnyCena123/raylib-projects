@@ -23,8 +23,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
 #include <string>
 
 #include <raylib.h>
-#include <imgui.h>
-#include <rlImGui.h>
+#include <rlgl.h>
+#ifndef CMAKE_RELEASE_BUILD
+	#include <imgui.h>
+	#include <rlImGui.h>
+	#define DEBUG_ONLY(...) __VA_ARGS__
+#else
+	#define DEBUG_ONLY(...)
+#endif
 
 int constexpr GRID_SIZE = 21;
 float constexpr TILE_SIZE = 40.f;
@@ -69,22 +75,23 @@ static inline Rectangle const constexpr& tileFromIndices(std::array<int, 2> cons
 bool startGame();
 
 int main() {
-
+	
 	InitWindow(SCREEN_SIZE, SCREEN_SIZE, "Snake");
-	rlImGuiSetup(true);
+
+	DEBUG_ONLY(rlImGuiSetup(true));
+
 	SetTargetFPS(60);
 
 	while (startGame()) continue;
 
-	rlImGuiShutdown();
+	DEBUG_ONLY(rlImGuiShutdown());
 	CloseWindow();
 
 	return 0;
 }
 
 bool startGame() {
-
-	auto roundStartTime = GetTime();
+	bool restart = false;
 
 	static std::array<int, 2> constexpr START_POS = { 12, 10, };
 
@@ -110,40 +117,36 @@ bool startGame() {
 	static int constexpr START_LENGTH = 3;
 	for (int i = 2; i < START_LENGTH; i++) snake.tiles.push_back(snake.getNextTile());
 	
-
 	bool paused = false;
 	bool hasLost = false;
 
 	static auto checkDeath = [&]() { 
-		if (snake.tiles.size() < 5) return; // no more of thiss
+		if (snake.tiles.size() < 5) return; // no more of this
 		int n = 0;
-		for (auto tile : snake.tiles) if (tile == snake.getNextTile() && tile != snake.tiles.front()) {
+		for (auto const& tile : snake.tiles) if (tile == snake.getNextTile() && tile != snake.tiles.front()) {
 			hasLost = true; 
 			break;
-		}
-	};
-
-	static auto constexpr dirToStr = [](Direction const& dir) constexpr {
-		switch (dir) {
-			case Up:    return "Up";
-			case Down:  return "Down";
-			case Left:  return "Left";
-			case Right: return "Right";
 		}
 	};
 
 	std::queue<Direction> inputQueue{};
 	static auto processInput = [&](Direction direction) {
 		if (inputQueue.size() > 5) return;
-		inputQueue.push(direction);
+		bool changeDir = false;
+		auto checkDir = inputQueue.empty() ? snake.direction : inputQueue.front();
+		switch (direction) {
+			case Up:    if (checkDir != Down  && checkDir != Up   ) changeDir = true; break;
+			case Down:  if (checkDir != Up    && checkDir != Down ) changeDir = true; break;
+			case Left:  if (checkDir != Right && checkDir != Left ) changeDir = true; break;
+			case Right: if (checkDir != Left  && checkDir != Right) changeDir = true; break;
+		}
+		if (changeDir) inputQueue.push(direction);
 	};
 
-
-	int stepCount = 0;
+	double lastStepTime;
 	while (!WindowShouldClose()) {
-		bool restart = false;
 		BeginDrawing();
-		rlImGuiBegin();
+		DEBUG_ONLY(rlImGuiBegin());
 
 		ClearBackground( { 160, 255, 96, 255, } );
 
@@ -156,19 +159,12 @@ bool startGame() {
 				else if (IsKeyPressed(KEY_LEFT))  processInput(Left);
 				else if (IsKeyPressed(KEY_RIGHT)) processInput(Right);
 			}
-			if ((GetTime() - roundStartTime) * STEPS_PER_SECOND > stepCount) {
-				stepCount++;
+			if ((GetTime() - lastStepTime) * STEPS_PER_SECOND > 1) {
+				lastStepTime = GetTime();
 				if (!paused && !hasLost) {
 					Direction prev = snake.direction;
 					if (!inputQueue.empty()) {
-						bool changeDir = false;
-						switch (inputQueue.front()) {
-							case Up:    if (snake.direction != Down  && snake.direction != Up   ) changeDir = true; break;
-							case Down:  if (snake.direction != Up    && snake.direction != Down ) changeDir = true; break;
-							case Left:  if (snake.direction != Right && snake.direction != Left ) changeDir = true; break;
-							case Right: if (snake.direction != Left  && snake.direction != Right) changeDir = true; break;
-						}
-						if (changeDir && inputQueue.size() < 5) snake.direction = inputQueue.front();
+						snake.direction = inputQueue.front();
 						inputQueue.pop();
 					}
 					checkDeath();
@@ -180,8 +176,8 @@ bool startGame() {
 			}
 		}
 
-		{
-			ImGui::Begin("debug");
+		DEBUG_ONLY(
+			ImGui::Begin("Debug Window");
 
 			ImGui::Checkbox("Pause game", &paused);
 
@@ -214,7 +210,7 @@ bool startGame() {
 			ImGui::NewLine();
 			
 			ImGui::End();
-		}
+		)
 
 		{
 			static float constexpr RESTART_BTN_RADIUS = 75.f;
@@ -266,7 +262,7 @@ bool startGame() {
 			}
 		}
 
-		rlImGuiEnd();
+		DEBUG_ONLY(rlImGuiEnd());
 		EndDrawing();
 		if (restart) return true;
 	}

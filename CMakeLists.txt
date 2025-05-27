@@ -22,30 +22,33 @@ include(cmake/CPM.cmake)
 CPMAddPackage("gh:raysan5/raylib#master") 
 target_compile_options(raylib PRIVATE "-Wno-tautological-compare")
 
-CPMAddPackage("gh:ocornut/imgui#docking") 
-CPMAddPackage("gh:raylib-extras/rlImGui#aba659e") 
+if(NOT CMAKE_BUILD_TYPE STREQUAL Release)
+	CPMAddPackage("gh:ocornut/imgui#docking") 
+	CPMAddPackage("gh:raylib-extras/rlImGui#aba659e") 
+	set(IMGUI_TARGET "imgui")
+	add_library(${IMGUI_TARGET} STATIC
+		${imgui_SOURCE_DIR}/imgui.cpp
+		${imgui_SOURCE_DIR}/imgui_widgets.cpp
+		${imgui_SOURCE_DIR}/imgui_tables.cpp
+		${imgui_SOURCE_DIR}/imgui_draw.cpp
+		${imgui_SOURCE_DIR}/imgui_demo.cpp
+		${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
+		
+		${rlImGui_SOURCE_DIR}/rlImGui.cpp
+	)
+	target_include_directories(${IMGUI_TARGET} PRIVATE 
+		${raylib_SOURCE_DIR}/src
+		${imgui_SOURCE_DIR}
+		${rlImGui_SOURCE_DIR}
+	)
 
-set(IMGUI_TARGET "imgui")
-add_library(${IMGUI_TARGET} STATIC
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp
-    ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
-	
-    ${rlImGui_SOURCE_DIR}/rlImGui.cpp
-)
-target_include_directories(${IMGUI_TARGET} PRIVATE 
-	${raylib_SOURCE_DIR}/src
-	${imgui_SOURCE_DIR}
-	${rlImGui_SOURCE_DIR}
-)
-
-if(WIN32)
-	target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
+	if(WIN32)
+		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
+	else()
+		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memaccess")
+	endif()
 else()
-	target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memaccess")
+	set(IMGUI_TARGET)
 endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
