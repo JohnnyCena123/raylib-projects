@@ -215,22 +215,22 @@ bool startGame() {
 		{
 			static float constexpr RESTART_BTN_RADIUS = 75.f;
 			static auto restartBtn = []() {
-				static Color constexpr OUTER_COLOR = { 0, 233, 62, 255 };
+				static Color constexpr OUTER_COLOR = { 0, 208, 51, 255 };
 				static Color constexpr INNER_COLOR = { 220, 220, 220, 255, };
 
 				auto image = GenImageColor(2 * RESTART_BTN_RADIUS, 2 * RESTART_BTN_RADIUS, BLANK);
 				ImageDrawCircleV(&image, { RESTART_BTN_RADIUS, RESTART_BTN_RADIUS, }, RESTART_BTN_RADIUS, OUTER_COLOR);
-				ImageDrawCircleV(&image, { RESTART_BTN_RADIUS, RESTART_BTN_RADIUS, }, RESTART_BTN_RADIUS * .8f, INNER_COLOR);
-				ImageDrawCircleV(&image, { RESTART_BTN_RADIUS, RESTART_BTN_RADIUS, }, RESTART_BTN_RADIUS * .65f, OUTER_COLOR);
+				ImageDrawCircleV(&image, { RESTART_BTN_RADIUS, RESTART_BTN_RADIUS, }, RESTART_BTN_RADIUS * .65f, INNER_COLOR);
+				ImageDrawCircleV(&image, { RESTART_BTN_RADIUS, RESTART_BTN_RADIUS, }, RESTART_BTN_RADIUS * .4f, OUTER_COLOR);
 				ImageDrawTriangle(&image, 
 					{ RESTART_BTN_RADIUS * .15f, RESTART_BTN_RADIUS / 2, }, 
 					{ RESTART_BTN_RADIUS * .15f, RESTART_BTN_RADIUS * 1.5f, }, 
 					{ RESTART_BTN_RADIUS, RESTART_BTN_RADIUS, }, 
 				OUTER_COLOR);
 				ImageDrawTriangle(&image, 
-					{ RESTART_BTN_RADIUS / 4, RESTART_BTN_RADIUS / 2, }, 
-					{ RESTART_BTN_RADIUS * .27f, RESTART_BTN_RADIUS * .8f, }, 
-					{ RESTART_BTN_RADIUS * .57f, RESTART_BTN_RADIUS * .78f, }, 
+					{ RESTART_BTN_RADIUS * .38f, RESTART_BTN_RADIUS * .57f }, 
+					{ RESTART_BTN_RADIUS * .4f,  RESTART_BTN_RADIUS * .92f, }, 
+					{ RESTART_BTN_RADIUS * .75f, RESTART_BTN_RADIUS * .89f, }, 
 				INNER_COLOR);
 
 				return LoadTextureFromImage(image);
