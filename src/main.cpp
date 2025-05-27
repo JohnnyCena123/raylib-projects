@@ -1,4 +1,4 @@
-#ifdef _WIN32
+#if defined(_WIN32) && defined(CMAKE_RELEASE_BUILD)
 // holy shit i hate raylib + windows
 // it compiles so shut up
 #define _WINGDI_
@@ -12,7 +12,6 @@
 #include <windows.h>
 #undef min
 int main();
-
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
 #endif
 #include <array>
