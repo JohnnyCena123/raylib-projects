@@ -42,7 +42,11 @@ target_include_directories(${IMGUI_TARGET} PRIVATE
 	${rlImGui_SOURCE_DIR}
 )
 
-target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
+if(WIN32)
+	target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
+else()
+	target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memaccess")
+endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp

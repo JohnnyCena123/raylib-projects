@@ -13,6 +13,8 @@
 int main();
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
 #endif
+
+#include <algorithm>
 #include <array>
 #include <optional>
 #include <deque>
