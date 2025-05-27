@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
 
-project(Template)
+execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+project(${GIT_BRANCH}) # i might decide to change this in specific branches but overall itll be the default
 
 message(STATUS "Looking for ccache/sccache")
 find_program(CCACHE_PROGRAM ccache)
