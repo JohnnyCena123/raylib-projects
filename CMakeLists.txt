@@ -80,6 +80,14 @@ if(DEFINED CMAKE_LOCAL_BUILD_DO_NOT_DEFINE_PLEASE AND CMAKE_LOCAL_BUILD_DO_NOT_D
 	else()
 		set(EXECUTABLE_NAME "${PROJECT_NAME}-${CONFIGURATION}")
 	endif()
+	# to separate different local branches
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME})
+	# and separate different build types when building locally
+	if(CONFIGURATION STREQUAL "Release")
+		set(EXECUTABLE_NAME "${PROJECT_NAME}")
+	else()
+		set(EXECUTABLE_NAME "${PROJECT_NAME}-${CONFIGURATION}")
+	endif()
 else()
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 	# separating different platforms when building in github actions
@@ -117,6 +125,7 @@ if(WIN32)
 else()
     add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
 if(CMAKE_BUILD_TYPE STREQUAL Release)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DCMAKE_RELEASE_BUILD)
