@@ -26,11 +26,13 @@ endif()
 
 include(cmake/CPM.cmake)
 CPMAddPackage("gh:raysan5/raylib#master") 
-target_compile_options(raylib PRIVATE "-Wno-tautological-compare")
+if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
+	target_compile_options(raylib PRIVATE "-Wno-tautological-compare")
+endif()
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL Release)
-	CPMAddPackage("gh:ocornut/imgui#docking") 
-	CPMAddPackage("gh:raylib-extras/rlImGui#aba659e") 
+	CPMAddPackage("gh:ocornut/imgui#eaac68c") 
+	CPMAddPackage("gh:raylib-extras/rlImGui#9512b36") 
 	set(IMGUI_TARGET "imgui")
 	add_library(${IMGUI_TARGET} STATIC
 		${imgui_SOURCE_DIR}/imgui.cpp
@@ -49,7 +51,9 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL Release)
 	)
 
 	if(WIN32)
-		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
+		if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
+			target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
+		endif()
 	else()
 		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memaccess")
 	endif()
@@ -61,10 +65,37 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/*.cpp
 )
 
+if(DEFINED CMAKE_BUILD_TYPE)
+	set(CONFIGURATION ${CMAKE_BUILD_TYPE})
+else()
+	set(CONFIGURATION $<CONFIG>)
+endif()
+
 if(DEFINED CMAKE_LOCAL_BUILD_DO_NOT_DEFINE_PLEASE AND CMAKE_LOCAL_BUILD_DO_NOT_DEFINE_PLEASE)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME}/${CMAKE_BUILD_TYPE}) # to separate different local branches and build types
+	# to separate different local branches
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME})
+	# and separate different build types when building locally
+	if(CONFIGURATION STREQUAL "Release")
+		set(EXECUTABLE_NAME "${PROJECT_NAME}")
+	else()
+		set(EXECUTABLE_NAME "${PROJECT_NAME}-${CONFIGURATION}")
+	endif()
 else()
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+	# separating different platforms when building in github actions
+	if(WIN32)
+		set(EXECUTABLE_NAME "${PROJECT_NAME}-win")
+	elseif(APPLE)
+		set(EXECUTABLE_NAME "${PROJECT_NAME}-mac")
+	else()
+		set(EXECUTABLE_NAME "${PROJECT_NAME}-linux")
+	endif()
+endif()
+if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
+	foreach(OUTPUT_CONFIG Debug Release RelWithDebInfo MinSizeRel)
+		string(TOUPPER "${OUTPUT_CONFIG}" CONFIG)
+		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+	endforeach()
 endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
@@ -78,7 +109,7 @@ if(WIN32)
 	else()
 		set(RESOURCE_FILE)
 	endif()
-	if(CMAKE_BUILD_TYPE STREQUAL "Release")
+	if(CONFIGURATION STREQUAL "Release")
 		add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${RESOURCE_FILE})
 	else()
 		add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCE_FILE})
@@ -86,8 +117,12 @@ if(WIN32)
 else()
     add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
 if(CMAKE_BUILD_TYPE STREQUAL Release)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DCMAKE_RELEASE_BUILD)
+endif()
+if(DEFINED VERBOSE_LOGGING AND VERBOSE_LOGGING) # add it to your commandline optionally, it won't do anything on Release builds
+	target_compile_definitions(${PROJECT_NAME} PRIVATE -DVERBOSE_LOGGING)
 endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
 target_include_directories(${PROJECT_NAME} PRIVATE 
@@ -103,7 +138,9 @@ target_link_libraries(${PROJECT_NAME}
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
 set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
 if(EXISTS ${RESOURCE_DIR})
-	file(GLOB_RECURSE RESOURCE_FILES ${CMAKE_SOURCE_DIR}/resources/*.*)
+	file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS 
+		${CMAKE_SOURCE_DIR}/resources/*.*
+	)
 
 	add_custom_command(
 		OUTPUT ${CMAKE_BINARY_DIR}/resources_copied.stamp
