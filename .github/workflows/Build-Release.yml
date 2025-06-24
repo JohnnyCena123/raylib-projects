@@ -39,9 +39,9 @@ jobs:
     - name: Install Latest LLVM on Windows
       if: matrix.config.os == 'windows-latest' && matrix.config.name == 'Windows LLVM'
       run: |
-        Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/clang+llvm-20.1.7-x86_64-pc-windows-msvc.tar.xz" -OutFile llvm.tar.xz
-        & tar -xf llvm.tar.xz
-        echo "${{ github.workspace }}/clang+llvm-20.1.7-x86_64-pc-windows-msvc/bin" >> $env:GITHUB_PATH
+        Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe" -OutFile llvm.exe
+        7z x llvm.exe -o"C:\Program Files\Latest LLVM"
+        echo "C:\Program Files\Latest LLVM\bin" >> $env:GITHUB_PATH
 
     - name: Install Linux dependencies
       if: matrix.config.os == 'ubuntu-latest'
