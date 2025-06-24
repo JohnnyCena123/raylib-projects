@@ -1,15 +1,18 @@
 # Snake
 
-This is where I (make)made my second project, a Snake clone!
+This is where I am making my second project, a Snake game!
 
 ## About this branch
 
 Current features are:
 
-* Teleporting to the other side when you hit a wall
+* Teleporting to the other side when you hit a wall, instead of dying \
+(which is more fun, I think)
 * Restarting the game when you lose
-* Score and Max score (with the max score being the best score you got within all rounds combined)
-* Amazing snake texture (in my opionion)
+* Score and Max score (with the max score being the best score you got within the same Executable)
+* Another apple is being added once every 10 points
+* The game speeds up by 1 tile per second once every 2 points
+* Amazing visuals (in my opinion)
 
 ## Contributions
 
@@ -21,7 +24,7 @@ I am not actively looking for contributors, however, if you find in my code:
 
 Feel free to contact me - either by opening an issue on this repository,
 or messaging me on Discord (`@johnnycena123`). \
-Or if you really want, you could open a pull request :)
+Or if you really want, you could create a pull request :)
 
 ## License
 
