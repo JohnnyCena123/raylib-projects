@@ -41,7 +41,7 @@ float constexpr FREE_SPACE = 50.f;
 float constexpr DEFAULT_SCREEN_SIZE = GRID_SIZE * TILE_SIZE + FREE_SPACE * 2;
 float constexpr DEFAULT_MONITOR_HEIGHT = 1080.f;
 
-std::string constexpr SAVE_FILE = "save.dat";
+char constexpr SAVE_FILE[] = "save.dat";
 int8_t constexpr SAVE_DATA_XOR_KEY = 47;
 
 int getSavedMaxScore();
@@ -130,8 +130,8 @@ int main() {
 }
 
 int getSavedMaxScore() {
-	if (FileExists(SAVE_FILE.c_str())) {
-		std::string rawFileData = LoadFileText(SAVE_FILE.c_str());
+	if (FileExists(SAVE_FILE)) {
+		std::string rawFileData = LoadFileText(SAVE_FILE);
 		std::string decoded;
 		{
 			int base64DecodedSize;
@@ -188,7 +188,7 @@ void saveMaxScore(int maxScore) {
 	for (char const char_ : raw) xored.push_back(char_ ^ SAVE_DATA_XOR_KEY);
 	int _;
 	std::string encoded = EncodeDataBase64((unsigned char const*)xored.c_str(), xored.size(), &_);
-	if (!SaveFileText(SAVE_FILE.c_str(), encoded.c_str())) 
+	if (!SaveFileText(SAVE_FILE, encoded.c_str())) 
 		TraceLog(LOG_ERROR, "Failed to save the following max score data: %s\n", encoded.c_str());
 }
 
