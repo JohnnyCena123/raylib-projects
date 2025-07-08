@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
 
 execute_process(
-    COMMAND git rev-parse --abbrev-ref HEAD
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_BRANCH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
+	COMMAND git rev-parse --abbrev-ref HEAD
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	OUTPUT_VARIABLE GIT_BRANCH
+	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 project(${GIT_BRANCH}) # i might decide to change this in specific branches but overall itll be the default
 
@@ -25,14 +25,14 @@ else()
 endif()
 
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:raysan5/raylib#master") 
+CPMAddPackage("gh:raysan5/raylib#master")
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
 	target_compile_options(raylib PRIVATE "-Wno-tautological-compare")
 endif()
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL Release)
 	CPMAddPackage("gh:ocornut/imgui#eaac68c") 
-	CPMAddPackage("gh:raylib-extras/rlImGui#9512b36") 
+	CPMAddPackage("gh:raylib-extras/rlImGui#9512b36")
 	set(IMGUI_TARGET "imgui")
 	add_library(${IMGUI_TARGET} STATIC
 		${imgui_SOURCE_DIR}/imgui.cpp
@@ -44,7 +44,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL Release)
 		
 		${rlImGui_SOURCE_DIR}/rlImGui.cpp
 	)
-	target_include_directories(${IMGUI_TARGET} PRIVATE 
+	target_include_directories(${IMGUI_TARGET} PRIVATE
 		${raylib_SOURCE_DIR}/src
 		${imgui_SOURCE_DIR}
 		${rlImGui_SOURCE_DIR}
@@ -123,9 +123,8 @@ if(WIN32)
 		add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCE_FILE})
 	endif()
 else()
-    add_executable(${PROJECT_NAME} ${SOURCES})
+	add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
 if(CMAKE_BUILD_TYPE STREQUAL Release)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DCMAKE_RELEASE_BUILD)
@@ -134,12 +133,12 @@ if(DEFINED VERBOSE_LOGGING AND VERBOSE_LOGGING) # add it to your commandline opt
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DVERBOSE_LOGGING)
 endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
-target_include_directories(${PROJECT_NAME} PRIVATE 
+target_include_directories(${PROJECT_NAME} PRIVATE
 	${raylib_SOURCE_DIR}/src
 	${imgui_SOURCE_DIR}
 	${rlImGui_SOURCE_DIR}
 )
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
 	raylib
 	${IMGUI_TARGET}
 )
@@ -147,13 +146,13 @@ target_link_libraries(${PROJECT_NAME}
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
 set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
 if(EXISTS ${RESOURCE_DIR})
-	file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS 
+	file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS
 		${CMAKE_SOURCE_DIR}/resources/*.*
 	)
 
 	add_custom_command(
 		OUTPUT ${CMAKE_BINARY_DIR}/resources_copied.stamp
-		BYPRODUCTS 
+		BYPRODUCTS
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_RESOURCE_DIR}
 		COMMAND ${CMAKE_COMMAND} -E copy_directory ${RESOURCE_DIR} ${OUTPUT_RESOURCE_DIR}
 		COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/resources_copied.stamp"

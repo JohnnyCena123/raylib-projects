@@ -6,10 +6,10 @@ This is where I am making my second project, a Snake game!
 
 Current features are:
 
-* Teleporting to the other side when you hit a wall, instead of dying \
-(which is more fun, I think)
+* Wrapping around the screen when you hit a border, instead of dying \
+  (which is more fun, I think)
 * Restarting the game when you lose
-* Score and Max score (with the max score being the best score you got within the same Executable)
+* Score and high-score (with the high-score being the best score you got within the same Executable)
 * Another apple is being added once every 10 points
 * The game speeds up by 1 tile per second once every 2 points
 * Amazing visuals (in my opinion)
