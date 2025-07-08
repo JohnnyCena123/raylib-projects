@@ -1,4 +1,3 @@
-#include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <string_view>
@@ -196,34 +195,8 @@ void Game::checkDeath() {
 		auto const& tail =  m_snake.m_tiles.front();
 		if (tile == nextTile && tile != tail) {
 			m_hasLost = true;
-			DEBUG_ONLY(
-				auto const& head = m_snake.m_tiles.back();
-				auto const& middleTile = m_snake.m_tiles[1];
-			)
-			if (m_snake.m_tiles.size() < 4) {
-				DEBUG_ONLY(TraceLog(LOG_DEBUG, "Oops! you are not supposed to die this short!"
-					"\n\t[DEBUG]"
-					"\n\tnextTile:     (%i, %i)"
-					"\n\ttile:         (%i, %i)"
-					"\n\ttail:         (%i, %i)"
-					"\n\thead:         (%i, %i)"
-					"\n\tmiddleTile:   (%i, %i)",
-					nextTile[0],       nextTile[1],
-					tile[0],           tile[1],
-					tail[0],           tail[1],
-					head[0],           head[1],
-					middleTile[0],     middleTile[1]
-				);
-				std::cout << "\tinput queue: ";
-				auto copy = m_inputQueue;
-				while (!copy.empty()) {
-					std::cout << directionToString(copy.front()) << ", ";
-					copy.pop();
-				}
-				std::cout << std::endl;
-			)
-			}
-			// return;
+			if (m_snake.m_tiles.size() < 4) TraceLog(LOG_WARNING, "Oops! you are not supposed to die this short!");
+			return;
 		}
 	}
 }
