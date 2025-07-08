@@ -29,7 +29,6 @@ private:
 	float m_startSpeed;
 	float m_speed;
 	float m_timeSinceStep;
-	// double m_roundStart;
 	bool m_hasLost;
 	bool m_isPaused;
 	bool m_shouldRestart;
