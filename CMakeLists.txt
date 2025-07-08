@@ -67,9 +67,8 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
 	endforeach()
 endif()
 
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-	src/*.cpp
-)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS src/*.hpp)
 
 if(WIN32)
 	set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
@@ -86,6 +85,7 @@ if(WIN32)
 else()
     add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
+target_precompile_headers(${PROJECT_NAME} PRIVATE ${HEADERS})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
 if(CMAKE_BUILD_TYPE STREQUAL Release)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DCMAKE_RELEASE_BUILD)
