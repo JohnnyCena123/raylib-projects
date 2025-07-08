@@ -13,7 +13,7 @@
 
 Game::Game() :
 	m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED), m_speed(m_startSpeed),
-	m_roundStart(0.), m_hasLost(false), m_isPaused(false), m_shouldRestart(false),
+	m_timeSinceStep(0.f), m_hasLost(false), m_isPaused(false), m_shouldRestart(false),
 	m_restartButtonHovered(false), m_restartButtonHeld(false), m_isSaveDirty(false),
 	m_inputQueue(), m_snake(SNAKE_START_LENGTH, *this), m_apples(),
 	m_saveData(loadSaveData(SAVE_FILE)) {
@@ -116,7 +116,8 @@ void Game::reset() {
 		= m_score
 		= 0;
 	m_speed = m_startSpeed;
-	m_roundStart = GetTime();
+	m_timeSinceStep = 0.f;
+	// m_roundStart = GetTime();
 	m_hasLost
 		= m_isPaused
 		= m_shouldRestart
@@ -232,11 +233,6 @@ void Game::advanceScore() {
 	m_saveData.highScore = std::max(m_saveData.highScore, m_score);
 }
 
-void Game::updateSpeed(float newSpeed) {
-	m_speed = newSpeed;
-	m_stepCount = std::ceil((GetTime() - m_roundStart) * m_speed); // to prevent sudden speed bursts/breaks when the speed changes
-}
-
 void Game::step() {
 	m_snake.m_tiles.push_back(m_snake.getNextTile());
 
@@ -255,7 +251,7 @@ void Game::step() {
 			);
 			apple = newApple;
 			advanceScore();
-			updateSpeed(m_speed + ACCELERATION_RATE);
+			m_speed += ACCELERATION_RATE;
 		}
 	}
 	if (pop) m_snake.m_tiles.pop_front();
@@ -305,8 +301,10 @@ bool Game::update() {
 				m_apples.push_back(newApple);
 			}
 		}
-		if ((GetTime() - m_roundStart) * m_speed > m_stepCount) {
+		m_timeSinceStep += GetFrameTime();
+		if (m_timeSinceStep * m_speed > 1) {
 			m_stepCount++;
+			m_timeSinceStep -= 1 / m_speed;
 			if (!m_isPaused && !m_hasLost) {
 				Direction prev = m_snake.m_direction;
 				if (!m_inputQueue.empty()) {
@@ -343,7 +341,7 @@ bool Game::debugGUI() {
 	auto currentDirection = directionToString(m_snake.m_direction);
 	ImGui::Text("Current direction: %s", currentDirection.c_str());
 	ImGui::Text("Step count: %i", m_stepCount);
-	ImGui::Text("Round start time: %f", m_roundStart);
+	ImGui::Text("Time since step: %f", m_timeSinceStep);
 	if (m_isSaveDirty) ImGui::Text("Save is dirty.");
 	if (m_restartButtonHovered) ImGui::Text("Restart button is hovered.");
 	if (m_restartButtonHeld) ImGui::Text("Restart button is held.");
@@ -404,8 +402,7 @@ bool Game::debugGUI() {
 	ImGui::SliderFloat("##start-speed", &m_startSpeed, 0, 50);
 
 	ImGui::Text("Current speed");
-	float newSpeed = m_speed;
-	if (ImGui::SliderFloat("##steps-per-second", &newSpeed, 0, 50)) updateSpeed(newSpeed);
+	ImGui::SliderFloat("##current-speed", &m_speed, 0, 50);
 
 	ImGui::End();
 	return hasStepped;

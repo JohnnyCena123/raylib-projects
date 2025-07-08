@@ -28,7 +28,8 @@ private:
 	int m_score;
 	float m_startSpeed;
 	float m_speed;
-	double m_roundStart;
+	float m_timeSinceStep;
+	// double m_roundStart;
 	bool m_hasLost;
 	bool m_isPaused;
 	bool m_shouldRestart;
@@ -49,7 +50,6 @@ private:
 	void reset();
 	void checkDeath();
 	void advanceScore();
-	void updateSpeed(float newSpeed);
 	void step();
 	// returns: true - did step, false - did not
 	bool update();
