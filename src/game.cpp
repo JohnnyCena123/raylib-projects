@@ -12,10 +12,10 @@
 #include "basics.hpp"
 
 Game::Game() :
-	m_lastSpeedup(0), m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED), m_speed(m_startSpeed),
+	m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED), m_speed(m_startSpeed),
 	m_roundStart(0.), m_hasLost(false), m_isPaused(false), m_shouldRestart(false),
-	m_restartButtonHovered(false), m_restartButtonHeld(false), m_inputQueue(),
-	m_snake(SNAKE_START_LENGTH, *this), m_apples(),
+	m_restartButtonHovered(false), m_restartButtonHeld(false), m_isSaveDirty(false),
+	m_inputQueue(), m_snake(SNAKE_START_LENGTH, *this), m_apples(),
 	m_saveData(loadSaveData(SAVE_FILE)) {
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -45,7 +45,7 @@ Game::~Game() {
 	DEBUG_ONLY(rlImGuiShutdown());
 	CloseWindow();
 
-	saveData(SAVE_FILE, m_saveData.highScore);
+	if (!m_isSaveDirty) saveData(SAVE_FILE, m_saveData.highScore);
 }
 
 SaveData Game::loadSaveData(std::string_view saveFile) {
@@ -90,7 +90,7 @@ SaveData Game::loadSaveData(std::string_view saveFile) {
 			TraceLog(LOG_INFO, "Got:\n%s", decoded.c_str());
 			TraceLog(LOG_INFO, "Parsed:\n%s", final.c_str());
 		}
-	} else TraceLog(LOG_INFO, "Save File does not exist, defaulting hi-score to 0.");
+	} else TraceLog(LOG_INFO, "Save File does not exist, defaulting high-score to 0.");
 	return 0;
 }
 
@@ -112,8 +112,7 @@ void Game::saveData(std::string_view saveFile, SaveData saveData) {
 }
 
 void Game::reset() {
-	m_lastSpeedup
-		= m_stepCount
+	m_stepCount
 		= m_score
 		= 0;
 	m_speed = m_startSpeed;
@@ -201,7 +200,7 @@ void Game::checkDeath() {
 				auto const& middleTile = m_snake.m_tiles[1];
 			)
 			if (m_snake.m_tiles.size() < 4) {
-				DEBUG_ONLY(TraceLog(LOG_DEBUG, "oops! you are not supposed to die this short!"
+				DEBUG_ONLY(TraceLog(LOG_DEBUG, "Oops! you are not supposed to die this short!"
 					"\n\t[DEBUG]"
 					"\n\tnextTile:     (%i, %i)"
 					"\n\ttile:         (%i, %i)"
@@ -213,7 +212,7 @@ void Game::checkDeath() {
 					tail[0],           tail[1],
 					head[0],           head[1],
 					middleTile[0],     middleTile[1]
-				));
+				);
 				std::cout << "\tinput queue: ";
 				auto copy = m_inputQueue;
 				while (!copy.empty()) {
@@ -221,6 +220,7 @@ void Game::checkDeath() {
 					copy.pop();
 				}
 				std::cout << std::endl;
+			)
 			}
 			// return;
 		}
@@ -330,13 +330,26 @@ bool Game::update() {
 #ifndef CMAKE_RELEASE_BUILD
 bool Game::debugGUI() {
 	bool hasStepped = false;
+
 	rlImGuiBegin();
 	ImGui::Begin("Debug Window");
 
-	ImGui::Checkbox("Pause game", &m_isPaused);
+	if (m_shouldRestart) ImGui::Text(
+		"restarting in the next frame lol"
+		"\nhow are you reading this its too long to be read in 1/60 of a second"
+		"\nunless youre reading the code, in which case... yeah...\n"
+	);
 
 	auto currentDirection = directionToString(m_snake.m_direction);
 	ImGui::Text("Current direction: %s", currentDirection.c_str());
+	ImGui::Text("Step count: %i", m_stepCount);
+	ImGui::Text("Round start time: %f", m_roundStart);
+	if (m_isSaveDirty) ImGui::Text("Save is dirty.");
+	if (m_restartButtonHovered) ImGui::Text("Restart button is hovered.");
+	if (m_restartButtonHeld) ImGui::Text("Restart button is held.");
+	ImGui::NewLine();
+
+	ImGui::Checkbox("Pause game", &m_isPaused);
 
 	if (ImGui::Button("Step")) {
 		hasStepped = true;
@@ -356,19 +369,43 @@ bool Game::debugGUI() {
 		m_snake.m_direction = _direction;                                                     \
 		step();                                                                               \
 		checkDeath();                                                                         \
-	}                                                                                         \
-	ImGui::SameLine()
-
-	DIRECTION_BUTTON(Up);
-	DIRECTION_BUTTON(Down);
-	DIRECTION_BUTTON(Left);
-	DIRECTION_BUTTON(Right);
+	}
 
 	ImGui::NewLine();
+	ImGui::Indent(20.f);
 
-	ImGui::Text("Steps per second");
+	ImGui::Indent(30.f);
+	DIRECTION_BUTTON(Up);
+	ImGui::Unindent(30.f);
+
+	DIRECTION_BUTTON(Left);
+	ImGui::SameLine(0.f, 36.f);
+	DIRECTION_BUTTON(Right);
+
+	ImGui::Indent(30.f);
+	DIRECTION_BUTTON(Down);
+	ImGui::Unindent(30.f);
+
+	ImGui::Unindent(20.f);
+	ImGui::NewLine();
+
+	if (ImGui::Button("+")) {
+		advanceScore();
+		m_isSaveDirty = true;
+	}
+	ImGui::SameLine();
+	ImGui::Text("Advance score (disables saving to file)");
+
+	ImGui::Text("Start length");
+	size_t min = 1; size_t max = 15;
+	ImGui::SliderScalar("##start-length", ImGuiDataType_U64, &m_snake.m_startLength, &min, &max, "%d");
+
+	ImGui::Text("Start speed");
+	ImGui::SliderFloat("##start-speed", &m_startSpeed, 0, 50);
+
+	ImGui::Text("Current speed");
 	float newSpeed = m_speed;
-	if (ImGui::SliderFloat("", &newSpeed, 0, 50)) updateSpeed(newSpeed);
+	if (ImGui::SliderFloat("##steps-per-second", &newSpeed, 0, 50)) updateSpeed(newSpeed);
 
 	ImGui::End();
 	return hasStepped;

@@ -24,7 +24,6 @@ public:
 	bool run();
 
 private:
-	int m_lastSpeedup;
 	int m_stepCount;
 	int m_score;
 	float m_startSpeed;
@@ -35,7 +34,8 @@ private:
 	bool m_shouldRestart;
 	bool m_restartButtonHovered;
 	bool m_restartButtonHeld;
-
+	bool m_isSaveDirty;
+	
 	std::queue<Direction> m_inputQueue;
 
 	Snake m_snake;
