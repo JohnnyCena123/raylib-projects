@@ -28,15 +28,20 @@ cmake --build build --config <build type>
 
 Optional flags you can use when building:
 
+* `-DBUILD_SHARED_LIBS=ON` - Built-into CMake, at its core just makes CMake's `add_library()` function default to \
+shared (dynamic) libraries instead of static libraries when none are specified. As a bonus, in this project, it also \
+renames raylib's shared library to `raylib-<build type` (e.g. `libraylib-RelWithDebInfo.so`) on non-Release builds, \
+allowing everything to be in one folder.
 * `-DCMAKE_LOCAL_BUILD=ON` - Enables options for building locally. Mainly helps with organizing different builds in this repo.
 * `-DDONT_USE_CACHING_COMPILER=ON` - Disables looking for ccache/sccache when building.
 * `-DDONT_DISABLE_WARNINGS=ON` - Does not disable warnings for dependencies.
-* `-DCUSTOM_OUTPUT_OPTIONS` - Allows you to specify the Executable name, and/or build output directory; or disable them
+* `-DCUSTOM_OUTPUT_OPTIONS` - Allows you to specify the Executable name, and/or build output directory; or disable them \
 completely, and let CMake use the default values for them.
-  * `-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=...` - Built-in for CMake, allows you to specify where the output Executable will be.
-  * `-DEXECUTABLE_NAME=...` - Specifies the filename of the output Executable
-* `-DSEPARATE_DIFFERENT_BUILD_TYPES_MULTI_CONFIG=ON` - Allows you to specify whether outputs of different build types will be
-placed in the same directory or not, when using a multi-config generator.
+  * `-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/path/to/output/directory` - Built-into CMake, \
+  allows you to specify where the output Executable will be.
+  * `-DEXECUTABLE_NAME=my-amazing-name` - Specifies the filename of the output Executable
+* `-DSEPARATE_DIFFERENT_BUILD_TYPES_MULTI_CONFIG=ON` - Allows you to specify whether outputs of different build types \
+will be placed in the same directory or not, when using a multi-config generator.
 * `-DINCLUDE_TERMINAL_IN_RELEASE_WINDOWS=ON` - Allows you to include terminal when building in Release mode. Windows only.
 * `-DNO_PRECOMPILED_HEADERS=ON` - Whether or not project headers will be pre-compiled before the rest of the code.
 * `-DINCLUDE_DEBUGGING_IN_RELEASE=ON` - Keep code that's meant for debugging, in Release mode

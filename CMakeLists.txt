@@ -28,10 +28,46 @@ else()
 	message(STATUS "Not looking for ccache/sccache.")
 endif()
 
+if(DEFINED CMAKE_BUILD_TYPE)
+	set(CONFIGURATION ${CMAKE_BUILD_TYPE})
+else()
+	set(CONFIGURATION $<CONFIG>)
+endif()
+
+if(NOT CUSTOM_OUTPUT_OPTIONS)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+endif()
+
+if(CMAKE_LOCAL_BUILD)
+	# separate different build types when building locally
+	if(CONFIGURATION STREQUAL "Release")
+		set(BIN_SUFFIX) # nothing
+	else()
+		set(BIN_SUFFIX "${CONFIGURATION}")
+	endif()
+endif()
+if (BUILD_SHARED_LIBS)
+	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+endif()
+if((CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode") AND NOT SEPARATE_DIFFERENT_BUILD_TYPES_MULTI_CONFIG)
+	foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
+		string(TOUPPER "${CONFIG}" UPPER_CONFIG)
+		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+		if (BUILD_SHARED_LIBS)
+			set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+		endif()
+	endforeach()
+endif()
+
 include(cmake/CPM.cmake)
+include(CheckCCompilerFlag)
 CPMAddPackage("gh:raysan5/raylib#master")
-if((CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU") AND NOT DONT_DISABLE_WARNINGS)
+check_c_compiler_flag("-Wno-tautological-compare" HAS_W_TAUTOLOGICAL_COMPARE)
+if(HAS_W_TAUTOLOGICAL_COMPARE AND NOT DONT_DISABLE_WARNINGS)
 	target_compile_options(raylib PRIVATE "-Wno-tautological-compare")
+endif()
+if(BUILD_SHARED_LIBS AND DEFINED BIN_SUFFIX)
+	set_target_properties(raylib PROPERTIES OUTPUT_NAME "raylib-${BIN_SUFFIX}")
 endif()
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL Release)
@@ -54,58 +90,15 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL Release)
 		${rlImGui_SOURCE_DIR}
 	)
 
-	if(WIN32)
-		if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
-			target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
-		endif()
-	else()
+	check_c_compiler_flag("-Wno-nontrivial-memcall" HAS_W_NONTRIVIAL_MEMCALL)
+	check_c_compiler_flag("-Wno-nontrivial-memaccess" HAS_W_NONTRIVIAL_MEMACCESS)
+	if(HAS_W_NONTRIVIAL_MEMCALL)
+		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
+	elseif(HAS_W_NONTRIVIAL_MEMACCESS)
 		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memaccess")
 	endif()
 else()
 	set(IMGUI_TARGET)
-endif()
-
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-	src/*.cpp
-)
-
-if(DEFINED CMAKE_BUILD_TYPE)
-	set(CONFIGURATION ${CMAKE_BUILD_TYPE})
-else()
-	set(CONFIGURATION $<CONFIG>)
-endif()
-
-if(CMAKE_LOCAL_BUILD)
-	# to separate different local branches
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME})
-	# and separate different build types when building locally
-	if(CONFIGURATION STREQUAL "Release")
-		set(EXECUTABLE_NAME "${PROJECT_NAME}")
-	else()
-		set(EXECUTABLE_NAME "${PROJECT_NAME}-${CONFIGURATION}")
-	endif()
-elseif(NOT CUSTOM_OUTPUT_OPTIONS)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
-	# separating different platforms when building in github actions
-	if(GITHUB_ACTIONS_BUILD)
-		if(WIN32)
-			if(CMAKE_GENERATOR MATCHES "Visual Studio")
-				set(EXECUTABLE_NAME "${PROJECT_NAME}-win-msvc")
-			else()
-				set(EXECUTABLE_NAME "${PROJECT_NAME}-win-llvm")
-			endif()
-		elseif(APPLE)
-			set(EXECUTABLE_NAME "${PROJECT_NAME}-mac")
-		else()
-			set(EXECUTABLE_NAME "${PROJECT_NAME}-linux")
-		endif()
-	endif()
-endif()
-if((CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode") AND NOT SEPARATE_DIFFERENT_BUILD_TYPES_MULTI_CONFIG)
-	foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
-		string(TOUPPER "${CONFIG}" UPPER_CONFIG)
-		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-	endforeach()
 endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
@@ -130,8 +123,8 @@ if(NOT NO_PRECOMPILED_HEADERS)
 	file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS src/*.hpp)
 	target_precompile_headers(${PROJECT_NAME} PRIVATE ${HEADERS})
 endif()
-if(DEFINED EXECUTABLE_NAME)
-	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
+if(DEFINED BIN_SUFFIX)
+	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-${BIN_SUFFIX}")
 endif()
 if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT INCLUDE_DEBUGGING_IN_RELEASE)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DCMAKE_RELEASE_BUILD)
@@ -151,23 +144,24 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
-set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
 if(EXISTS ${RESOURCE_DIR})
-	file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS
-		${CMAKE_SOURCE_DIR}/resources/*.*
-	)
+	set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
+	set(STAMP_FILE "${CMAKE_BINARY_DIR}/resources_copied.stamp")
+	file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS "${RESOURCE_DIR}/*.*")
 
 	add_custom_command(
-		OUTPUT ${CMAKE_BINARY_DIR}/resources_copied.stamp
-		BYPRODUCTS
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_RESOURCE_DIR}
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${RESOURCE_DIR} ${OUTPUT_RESOURCE_DIR}
-		COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/resources_copied.stamp"
+		OUTPUT "${STAMP_FILE}"
+		COMMAND ${CMAKE_COMMAND}
+			-DSOURCE_DIR=${RESOURCE_DIR}
+			-DDESTINATION_DIR=${OUTPUT_RESOURCE_DIR}
+			-DSTAMP_FILE=${STAMP_FILE}
+			-P "${CMAKE_SOURCE_DIR}/cmake/CopyResources.cmake"
 		DEPENDS ${RESOURCE_FILES}
 		COMMENT "Copying resources to output directory..."
 		VERBATIM
 	)
+	add_dependencies(${PROJECT_NAME} CopyResources)
 	add_custom_target(CopyResources ALL
-		DEPENDS "${CMAKE_BINARY_DIR}/resources_copied.stamp"
+		DEPENDS "${STAMP_FILE}"
 	)
 endif()
