@@ -34,6 +34,10 @@ cmake --build build --config <build type>
 
 Optional flags you can use when building:
 
+* `-DBUILD_SHARED_LIBS=ON` - Built-into CMake, at its core just makes CMake's `add_library()` function default to \
+shared (dynamic) libraries instead of static libraries if none were specified. As a bonus, in this project, it also renames \
+raylib's shared library to `raylib-<build type` (e.g. `libraylib-RelWithDebInfo.so`) on non-Release builds, \
+allowing everything to be in one folder.
 * `-DCMAKE_LOCAL_BUILD=ON` - Enables options for building locally. Mainly helps with organizing different builds in this repo.
 * `-DDONT_USE_CACHING_COMPILER=ON` - Disables looking for ccache/sccache when building.
 * `-DDONT_DISABLE_WARNINGS=ON` - Does not disable warnings for dependencies.
