@@ -117,7 +117,7 @@ jobs:
           name: Linux build
 
       - name: Publish
-        if: github.ref_name != 'Template'
+        if: github.ref_name != 'Template' && github.ref_name != 'github-actions'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly-${{ github.ref_name }}
