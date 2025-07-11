@@ -69,8 +69,6 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download build outputs
         uses: actions/download-artifact@v4
 
@@ -85,7 +83,6 @@ jobs:
             mv build-win-msvc/resources .
             rm -rf build-*/resources
             cd resources && zip -r ../resources.zip * && cd .. && rm -rf resources
-            cd ..
           fi
 
           cd build-win-msvc && zip -r ../Windows.zip *
