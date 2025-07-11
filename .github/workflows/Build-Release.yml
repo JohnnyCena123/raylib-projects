@@ -95,13 +95,13 @@ jobs:
       - name: Upload Windows MSVC output
         uses: actions/upload-artifact@v4
         with:
-          path: build-windows-msvc/*
+          path: build-win-msvc/*
           name: Windows MSVC build
 
       - name: Upload Windows LLVM output
         uses: actions/upload-artifact@v4
         with:
-          path: build-windows-llvm/*
+          path: build-win-llvm/*
           name: Windows LLVM build
 
       - name: Upload MacOS output
