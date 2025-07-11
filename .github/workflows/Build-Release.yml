@@ -79,7 +79,6 @@ jobs:
 
       - name: Organize
         run: |
-          ls -R
           if [ -d "build-win-msvc/resources" ]; then 
             mv build-win-msvc/resources .
             rm -rf build-*/resources
