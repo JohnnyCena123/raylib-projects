@@ -85,9 +85,10 @@ jobs:
             mv build-win-msvc/resources .
             rm -rf build-*/resources
             cd resources && zip -r ../resources.zip * && cd .. && rm -rf resources
+            cd ..
           fi
 
-          cd ../build-win-msvc && zip -r ../Windows.zip *
+          cd build-win-msvc && zip -r ../Windows.zip *
           cd ../build-mac && zip -r ../MacOS.zip *
           cd ../build-linux && zip -r ../Linux.zip *
       
