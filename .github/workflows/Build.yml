@@ -110,19 +110,19 @@ jobs:
 
       - name: Build installer
         run: |
-          7z x Windows-MSVC.zip -oSnake
+          7z x Windows-MSVC.zip -o${{ github.ref_name }}
           del *.zip
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
-            -SourceDir .\Snake `
-            -AppName "Snake" `
+            -SourceDir .\${{ github.ref_name }} `
+            -AppName "${{ github.ref_name }}" `
             -Manufacturer "Johnny Cena" `
             -Version "1.1.0" `
-            -OutputMsi "Snake.msi"
+            -OutputMsi "${{ github.ref_name }}.msi"
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          path: Snake.msi
+          path: ${{ github.ref_name }}.msi
           name: Windows .msi installer
 
 
@@ -149,7 +149,7 @@ jobs:
           rm Windows-LLVM.zip
 
       - name: Create release
-        if: github.ref_name != 'Template' 
+        if: github.ref_name != 'Template'
           # && github.ref_name != 'github-actions'
         uses: softprops/action-gh-release@v2
         with:
@@ -160,5 +160,7 @@ jobs:
             This is a build of the **latest commit**, it is not guaranteed to be stable.
           draft: false
           prerelease: true
-          files: Snake.msi Windows.zip MacOS.zip Linux.zip
+          files: |
+            ${{ github.ref_name }}.msi 
+            *.zip
 
