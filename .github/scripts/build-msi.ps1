@@ -20,6 +20,7 @@ $absSourceDir = (Resolve-Path $SourceDir).Path
   -g1 `
   -srd `
   -sfrag `
+  -platform x64 `
   -out $wxsFile
 
 (Get-Content $wxsFile) -replace 'SourceDir', $absSourceDir | Set-Content $wxsFile -Encoding UTF8
