@@ -24,6 +24,7 @@ $absSourceDir = (Resolve-Path $SourceDir).Path
   -out $wxsFile
 
 (Get-Content $wxsFile) -replace 'SourceDir', $absSourceDir | Set-Content $wxsFile -Encoding UTF8
+(Get-Content $wxsFile) -replace '<Component ', '<Component Win64="yes" ' | Set-Content $wxsFile
 
 $wxsContent = @"
 <?xml version=`"1.0`" encoding=`"UTF-8`"?>
