@@ -22,6 +22,8 @@ $absSourceDir = (Resolve-Path $SourceDir).Path
   -sfrag `
   -out $wxsFile
 
+(Get-Content $wxsFile) -replace '\$\(var\.SourceDir\)', $absSourceDir | Set-Content $wxsFile -Encoding UTF8
+
 $wxsContent = @"
 <?xml version=`"1.0`" encoding=`"UTF-8`"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
