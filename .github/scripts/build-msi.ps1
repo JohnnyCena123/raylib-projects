@@ -14,24 +14,28 @@ $targetDirId = "$AppName`Dir"
 & "C:\Program Files\WiX Toolset v6.0\bin\x64\heat.exe" dir $SourceDir -cg AppFiles -dr INSTALLDIR -gg -g1 -srd -sfrag -out $wxsFile
 
 $wxsContent = @"
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version=`"1.0`" encoding=`"UTF-8`"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package>
-    <Product Name="$AppName" Manufacturer="$Manufacturer" Version="$Version" Language="1033" UpgradeCode="$upgradeCode">
-      <PackageInformation InstallerVersion="500" Compressed="yes" />
-      <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
-      <Directory Id="ProgramFilesFolder">
-        <Directory Id="$targetDirId" Name="$AppName">
-          <Directory Id="INSTALLDIR" Name="." />
-        </Directory>
+  <Package Name="$AppName"
+           Manufacturer="$Manufacturer"
+           Version="$Version"
+           Language="1033"
+           UpgradeCode="$upgradeCode"
+           InstallerVersion="500"
+           Compressed="yes">
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+    <Directory Id="ProgramFilesFolder">
+      <Directory Id="$targetDirId" Name="$AppName">
+        <Directory Id="INSTALLDIR" Name="." />
       </Directory>
-      <Feature Id="DefaultFeature" Title="$AppName Feature" Level="1">
-        <ComponentGroupRef Id="AppFiles" />
-      </Feature>
-    </Product>
+    </Directory>
+    <Feature Id="DefaultFeature" Title="$AppName Feature" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+    </Feature>
   </Package>
 </Wix>
 "@
+
 
 $wxsContent | Set-Content $mainWxs -Encoding UTF8
 Write-Output [DEBUG] main wxs content here:
