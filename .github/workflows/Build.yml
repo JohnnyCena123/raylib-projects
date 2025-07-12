@@ -102,8 +102,6 @@ jobs:
         run: |
           curl.exe -LO https://github.com/wixtoolset/wix/releases/download/v6.0.1/wix-cli-x64.msi
           msiexec /i wix-cli-x64.msi /quiet
-          echo "C:\Program Files\WiX Toolset v6.0\bin" >> $GITHUB_PATH
-          echo "C:\Program Files\WiX Toolset v6.0\bin\x64" >> $GITHUB_PATH
 
       - name: Download zips
         uses: actions/download-artifact@v4

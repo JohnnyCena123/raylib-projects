@@ -11,7 +11,7 @@ $mainWxs = "$env:TEMP\$AppName-main.wxs"
 $upgradeCode = [guid]::NewGuid().ToString()
 $targetDirId = "$AppName`Dir"
 
-heat dir $SourceDir -cg AppFiles -dr INSTALLDIR -gg -g1 -srd -sfrag -out $wxsFile
+."C:\Program Files\WiX Toolset v6.0\bin\x64\heat.exe" dir $SourceDir -cg AppFiles -dr INSTALLDIR -gg -g1 -srd -sfrag -out $wxsFile
 
 $wxsContent = @"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -34,4 +34,4 @@ $wxsContent = @"
 "@
 
 $wxsContent | Set-Content $mainWxs -Encoding UTF8
-wix build -arch x64 -out $OutputMsi $mainWxs $wxsFile
+."C:\Program Files\WiX Toolset v6.0\bin\wix.exe" build -arch x64 -out $OutputMsi $mainWxs $wxsFile
