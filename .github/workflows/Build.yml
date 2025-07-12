@@ -106,7 +106,7 @@ jobs:
       - name: Setup PowerShell script
         shell: pwsh
         run: |
-          @"
+          $script = @'
           param (
             [string]$SourceDir,
             [string]$AppName,
@@ -122,7 +122,7 @@ jobs:
 
           heat dir $SourceDir -cg AppFiles -dr INSTALLDIR -gg -g1 -srd -sfrag -out $wxsFile
 
-          $wxsContent = @"
+          $wxsContent = @'
           <?xml version="1.0" encoding="UTF-8"?>
           <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
             <Package>
@@ -140,11 +140,14 @@ jobs:
               </Product>
             </Package>
           </Wix>
-          "@
+          '@
 
           $wxsContent | Set-Content $mainWxs -Encoding UTF8
           wix build -arch x64 -out $OutputMsi $mainWxs $wxsFile
-          "@ | Set-Content build-msi.ps1 -Encoding UTF8
+          '@
+
+          $script | Set-Content build-msi.ps1 -Encoding UTF8
+
 
       - name: Download zips
         uses: actions/download-artifact@v4
