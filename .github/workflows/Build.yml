@@ -151,8 +151,8 @@ jobs:
 
       - name: Build installer
         run: |
-          del Windows-LLVM.zip MacOS.zip Linux.zip
           7z x Windows-MSVC.zip -oSnake
+          del *.zip
           powershell -ExecutionPolicy Bypass -File build-msi.ps1 `
             -SourceDir .\Snake `
             -AppName "Snake" `
