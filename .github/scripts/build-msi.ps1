@@ -37,7 +37,7 @@ $wxsContent = @"
       <Directory Id="$targetDirId" Name="$AppName">
         <Directory Id="INSTALLDIR" Name="." />
       </Directory>
-    </Directory>
+    </StandardDirectory>
     <Feature Id="DefaultFeature" Title="$AppName Feature" Level="1">
       <ComponentGroupRef Id="AppFiles" />
     </Feature>
