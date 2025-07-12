@@ -22,7 +22,7 @@ $absSourceDir = (Resolve-Path $SourceDir).Path
   -sfrag `
   -out $wxsFile
 
-(Get-Content $wxsFile) -replace '\$\(var\.SourceDir\)', $absSourceDir | Set-Content $wxsFile -Encoding UTF8
+(Get-Content $wxsFile) -replace 'SourceDir', $absSourceDir | Set-Content $wxsFile -Encoding UTF8
 
 $wxsContent = @"
 <?xml version=`"1.0`" encoding=`"UTF-8`"?>
