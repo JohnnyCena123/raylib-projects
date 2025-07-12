@@ -96,58 +96,14 @@ jobs:
     needs: cleanup
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Install WiX toolset
         run: |
           curl.exe -LO https://github.com/wixtoolset/wix/releases/download/v6.0.1/wix-cli-x64.msi
           msiexec /i wix-cli-x64.msi /quiet
           echo "C:\Program Files\WiX Toolset v6.0\bin" >> $GITHUB_PATH
           echo "C:\Program Files\WiX Toolset v6.0\bin\x64" >> $GITHUB_PATH
-
-      - name: Setup PowerShell script
-        shell: pwsh
-        run: |
-          $script = @'
-          param (
-            [string]$SourceDir,
-            [string]$AppName,
-            [string]$Manufacturer,
-            [string]$Version,
-            [string]$OutputMsi
-          )
-
-          $wxsFile = "$env:TEMP\$AppName-heat.wxs"
-          $mainWxs = "$env:TEMP\$AppName-main.wxs"
-          $upgradeCode = [guid]::NewGuid().ToString()
-          $targetDirId = "$AppName`Dir"
-
-          heat dir $SourceDir -cg AppFiles -dr INSTALLDIR -gg -g1 -srd -sfrag -out $wxsFile
-
-          $wxsContent = @'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-            <Package>
-              <Product Name="$AppName" Manufacturer="$Manufacturer" Version="$Version" Language="1033" UpgradeCode="$upgradeCode">
-                <PackageInformation InstallerVersion="500" Compressed="yes" />
-                <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
-                <Directory Id="ProgramFilesFolder">
-                  <Directory Id="$targetDirId" Name="$AppName">
-                    <Directory Id="INSTALLDIR" Name="." />
-                  </Directory>
-                </Directory>
-                <Feature Id="DefaultFeature" Title="$AppName Feature" Level="1">
-                  <ComponentGroupRef Id="AppFiles" />
-                </Feature>
-              </Product>
-            </Package>
-          </Wix>
-          '@
-
-          $wxsContent | Set-Content $mainWxs -Encoding UTF8
-          wix build -arch x64 -out $OutputMsi $mainWxs $wxsFile
-          '@
-
-          $script | Set-Content build-msi.ps1 -Encoding UTF8
-
 
       - name: Download zips
         uses: actions/download-artifact@v4
@@ -158,7 +114,7 @@ jobs:
         run: |
           7z x Windows-MSVC.zip -oSnake
           del *.zip
-          powershell -ExecutionPolicy Bypass -File build-msi.ps1 `
+          powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
             -SourceDir .\Snake `
             -AppName "Snake" `
             -Manufacturer "Johnny Cena" `
@@ -204,5 +160,5 @@ jobs:
             This is a build of the **latest commit**, it is not guaranteed to be stable.
           draft: false
           prerelease: true
-          files: Snake.msi Windows.zip MacOS.zip Linux.zip 
+          files: Snake.msi Windows.zip MacOS.zip Linux.zip
 
