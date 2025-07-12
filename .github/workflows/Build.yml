@@ -62,7 +62,7 @@ jobs:
       uses: actions/upload-artifact@v4 
       with:
         name: build-${{ matrix.config.id }}
-        path: ${{ github.workspace }}/bin/*
+        path: ${{ github.workspace }}/bin/**
 
   cleanup:
     name: Cleanup
