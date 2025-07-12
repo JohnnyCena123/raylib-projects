@@ -59,7 +59,7 @@ inline struct {
 inline Color constexpr RESTART_BUTTON_OUTER_COLOR = { 0, 208, 51, 255 };
 inline Color constexpr RESTART_BUTTON_INNER_COLOR = { 220, 220, 220, 255 };
 
-inline std::string const SAVE_PATH = [] constexpr {
+inline std::string const SAVE_PATH = [] {
 #ifdef _WIN32
 	std::string appDataDir = std::getenv("APPDATA");
 	std::string ret = appDataDir + "/Snake";
