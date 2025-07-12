@@ -34,4 +34,6 @@ $wxsContent = @"
 "@
 
 $wxsContent | Set-Content $mainWxs -Encoding UTF8
+Write-Output [DEBUG] main wxs content here:
+Get-Content $mainWxs
 & "C:\Program Files\WiX Toolset v6.0\bin\wix.exe" build -arch x64 -out $OutputMsi $mainWxs $wxsFile
