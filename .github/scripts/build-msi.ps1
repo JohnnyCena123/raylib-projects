@@ -48,6 +48,7 @@ $wxsContent = @"
 "@
 
 $wxsContent | Set-Content $mainWxs -Encoding UTF8
+(Get-Content $mainWxs) -replace $targetDirId, $($targetDirId -replace '-', '_') | Set-Content $mainWxs -Encoding UTF8
 Write-Output "[DEBUG] heat wxs content here:"
 Get-Content $wxsFile
 Write-Output "[DEBUG] main wxs content here:"
