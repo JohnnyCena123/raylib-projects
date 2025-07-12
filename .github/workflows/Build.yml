@@ -112,6 +112,9 @@ jobs:
       - name: Build installer
         run: |
           7z x Windows-MSVC.zip -o${{ github.ref_name }}
+          if (Test-Path -Path resources.zip) {
+            7z x resources.zip -o${{ github.ref_name }}/resources
+          }
           del *.zip
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
             -SourceDir .\${{ github.ref_name }} `
