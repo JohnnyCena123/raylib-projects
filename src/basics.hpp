@@ -2,6 +2,8 @@
 #pragma once
 #include <cstdint>
 #include <array>
+#include <cstdlib>
+#include <string>
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
@@ -57,6 +59,14 @@ inline struct {
 inline Color constexpr RESTART_BUTTON_OUTER_COLOR = { 0, 208, 51, 255 };
 inline Color constexpr RESTART_BUTTON_INNER_COLOR = { 220, 220, 220, 255 };
 
-
+inline std::string const SAVE_PATH = [] constexpr {
+#ifdef _WIN32
+	std::string appDataDir = std::getenv("APPDATA");
+	std::string ret = appDataDir + "/Snake";
+#else
+	std::string ret = GetApplicationDirectory();
+#endif
+	return ret;
+}();
 inline char constexpr SAVE_FILE[] = "save.dat";
 inline int8_t constexpr SAVE_DATA_XOR_KEY = 0x2f;

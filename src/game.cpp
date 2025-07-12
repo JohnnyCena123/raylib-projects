@@ -15,7 +15,7 @@ Game::Game() :
 	m_timeSinceStep(0.f), m_hasLost(false), m_isPaused(false), m_shouldRestart(false),
 	m_restartButtonHovered(false), m_restartButtonHeld(false), m_isSaveDirty(false),
 	m_inputQueue(), m_snake(SNAKE_START_LENGTH, *this), m_apples(),
-	m_saveData(loadSaveData(SAVE_FILE)) {
+	m_saveData(loadSaveData(SAVE_PATH + "/" + SAVE_FILE)) {
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(DEFAULT_SCREEN_SIZE, DEFAULT_SCREEN_SIZE, "Snake");
@@ -44,7 +44,10 @@ Game::~Game() {
 	DEBUG_ONLY(rlImGuiShutdown());
 	CloseWindow();
 
-	if (!m_isSaveDirty) saveData(SAVE_FILE, m_saveData.highScore);
+	if (!m_isSaveDirty) {
+		if (!DirectoryExists(SAVE_PATH.c_str())) MakeDirectory(SAVE_PATH.c_str());
+		saveData(SAVE_PATH + "/" + SAVE_FILE, m_saveData.highScore);
+	}
 }
 
 SaveData Game::loadSaveData(std::string_view saveFile) {
