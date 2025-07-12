@@ -24,7 +24,6 @@ $absSourceDir = (Resolve-Path $SourceDir).Path
   -out $wxsFile
 
 (Get-Content $wxsFile) -replace 'SourceDir', $absSourceDir | Set-Content $wxsFile -Encoding UTF8
-(Get-Content $wxsFile) -replace '<Component ', '<Component Win64="yes" ' | Set-Content $wxsFile
 
 $wxsContent = @"
 <?xml version=`"1.0`" encoding=`"UTF-8`"?>
@@ -37,7 +36,7 @@ $wxsContent = @"
            InstallerVersion="500"
            Compressed="yes">
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
-    <StandardDirectory Id="ProgramFilesFolder">
+    <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="$targetDirId" Name="$AppName">
         <Directory Id="INSTALLDIR" Name="." />
       </Directory>
