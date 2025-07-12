@@ -140,7 +140,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT INCLUDE_DEBUGGING_IN_RELEASE)
 elseif(BUILD_SHARED_LIBS)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_USER_CONFIG="${CMAKE_SOURCE_DIR}/src/imgui-config.hpp")
 endif()
-if(DEFINED VERBOSE_LOGGING AND VERBOSE_LOGGING) # add it to your commandline optionally, it won't do anything on Release builds
+if(VERBOSE_LOGGING)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DVERBOSE_LOGGING)
 endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})

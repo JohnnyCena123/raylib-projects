@@ -4,15 +4,24 @@ This is where I am making my second project, a Snake game!
 
 ## About this branch
 
-Current features are:
+### Current features
 
 * Wrapping around the screen when you hit a border, instead of dying \
   (which is more fun, I think)
 * Restarting the game when you lose
-* Score and high-score (with the high-score being the best score you got within the same Executable)
+* Score and high-score (with the high-score being the best score you got within the same save file)
 * Another apple is being added once every 10 points
-* The game speeds up by 1 tile per second once every 2 points
+* The snake speeds up by 1/3m/s/point
 * Amazing visuals (in my opinion)
+* Extensive debug window on non-Release builds using [Dear ImGui](https://github.com/ocornut/imgui)
+
+### Planned for the future
+
+* Main menu with settings
+* Escape menu with real time configurations
+* Visual customization (theme, style, etc.)
+* More game-modes
+* Multiplayer - potentially offline or online, either way I wouldn't say that it's coming 'soon'
 
 ## Building
 
@@ -45,6 +54,7 @@ will be placed in the same directory or not, when using a multi-config generator
 * `-DINCLUDE_TERMINAL_IN_RELEASE_WINDOWS=ON` - Allows you to include terminal when building in Release mode. Windows only.
 * `-DNO_PRECOMPILED_HEADERS=ON` - Whether or not project headers will be pre-compiled before the rest of the code.
 * `-DINCLUDE_DEBUGGING_IN_RELEASE=ON` - Keep code that's meant for debugging, in Release mode
+* `-DVERBOSE_LOGGING` - Logs a bunch of seemingly useless stuff. Used for debugging
 
 ### Notes
 
