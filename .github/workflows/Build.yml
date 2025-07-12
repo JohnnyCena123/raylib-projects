@@ -56,13 +56,12 @@ jobs:
     - name: Build
       run: |
         cmake --build ${{ github.workspace }}/build --config Release
-        ls -R
 
     - name: Upload
       uses: actions/upload-artifact@v4 
       with:
         name: build-${{ matrix.config.id }}
-        path: ${{ github.workspace }}/bin/**
+        path: ${{ github.workspace }}/bin/*
 
   cleanup:
     name: Cleanup
@@ -77,7 +76,6 @@ jobs:
 
       - name: Organize
         run: |
-          ls -R
           if [ -d "build-win-msvc/resources" ]; then 
             mv build-win-msvc/resources .
             rm -rf */resources
