@@ -3,12 +3,12 @@
 #include <string_view>
 
 #include <raylib.h>
-#ifndef CMAKE_RELEASE_BUILD
+#ifndef IMGUI_OFF
 	#include <imgui.h>
 	#include <rlImGui.h>
-	#define DEBUG_ONLY(...) __VA_ARGS__
+	#define IMGUI_ONLY(...) __VA_ARGS__
 #else
-	#define DEBUG_ONLY(...)
+	#define IMGUI_ONLY(...)
 #endif
 
 #include "save-data.hpp"
@@ -53,7 +53,7 @@ private:
 	// returns: true - did step, false - did not
 	bool update();
 	// same here
-	DEBUG_ONLY(bool debugGUI());
+	IMGUI_ONLY(bool debugGUI());
 	void handleRestartButton(float resizeRatio);
 	void draw() const;
 	void drawOverlay() const;

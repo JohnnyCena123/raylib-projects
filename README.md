@@ -53,6 +53,8 @@ completely, and let CMake use the default values for them.
 will be placed in the same directory or not, when using a multi-config generator.
 * `-DINCLUDE_TERMINAL_IN_RELEASE_WINDOWS=ON` - Allows you to include terminal when building in Release mode. Windows only.
 * `-DNO_PRECOMPILED_HEADERS=ON` - Whether or not project headers will be pre-compiled before the rest of the code.
+* `-DIMGUI_IN_RELEASE=ON` - Keep ImGui debug windows in Release mode
+* `-DSHOW_TILE_NUMBERS=ON` - Show tile numbers on the snake
 * `-DVERBOSE_LOGGING` - Logs a bunch of seemingly useless stuff. Used for debugging
 
 ### Notes

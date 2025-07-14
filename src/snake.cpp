@@ -80,13 +80,11 @@ Rectangle Snake::drawTile(int id) const {
 		static Color constexpr MAIN_SNAKE_COLOR = { 0, 70, 145, 255 };
 		DrawRectangleRec(drawRec, MAIN_SNAKE_COLOR);
 
-		DEBUG_ONLY(
-			TraceLog(LOG_DEBUG, "");
-			TraceLog(LOG_DEBUG, "Tile %i: (%i, %i)", id, tile[0], tile[1]);
-			TraceLog(LOG_DEBUG, "\t\tForwards direction:   %s", id < m_tiles.size() - 1 ? directionToString(forwardsDirection).c_str() : "undefined");
-			TraceLog(LOG_DEBUG, "\t\tBackwards direction:  %s", id > 0 ? directionToString(backwardsDirection).c_str() : "undefined");
-			TraceLog(LOG_DEBUG, "\t\tDraw rec: %f, %f, %f, %f", drawRec.x, drawRec.y, drawRec.width, drawRec.height);
-		)
+		TraceLog(LOG_DEBUG, "");
+		TraceLog(LOG_DEBUG, "Tile %i: (%i, %i)", id, tile[0], tile[1]);
+		TraceLog(LOG_DEBUG, "\t\tForwards direction:   %s", id < m_tiles.size() - 1 ? directionToString(forwardsDirection).c_str() : "undefined");
+		TraceLog(LOG_DEBUG, "\t\tBackwards direction:  %s", id > 0 ? directionToString(backwardsDirection).c_str() : "undefined");
+		TraceLog(LOG_DEBUG, "\t\tDraw rec: %f, %f, %f, %f", drawRec.x, drawRec.y, drawRec.width, drawRec.height);
 
 		if (willWraparound) { // it should connect to the border forwards
 			Rectangle forwardsRec;
@@ -118,11 +116,11 @@ Rectangle Snake::drawTile(int id) const {
 				default: break;
 			}
 			DrawRectangleRec(forwardsRec, MAIN_SNAKE_COLOR);
-			DEBUG_ONLY(TraceLog(LOG_DEBUG,
+			TraceLog(LOG_DEBUG,
 				"\t\tForwards rec: %f, %f, %f, %f",
 				forwardsRec.x, forwardsRec.y,
 				forwardsRec.width, forwardsRec.height
-			));
+			);
 		}
 	}
 	return drawRec;
@@ -163,13 +161,13 @@ void Snake::draw() const {
 			GetFontDefault(),
 			TextFormat("%i", i), 25.f, 2.5f
 		);
-		DEBUG_ONLY(DrawTextEx(GetFontDefault(),
-			TextFormat("%i", i),
-			{
+	#ifdef SHOW_TILE_NUMBERS
+		DrawTextEx(GetFontDefault(),
+			TextFormat("%i", i), {
 				originalRect.x + (originalRect.width  - textSize.x) / 2,
 				originalRect.y + (originalRect.height - textSize.y) / 2
-			},
-			25.f, 2.5f, { 200, 200, 200, 200 }
-		));
+			}, 25.f, 2.5f, { 200, 200, 200, 200 }
+		);
+	#endif
 	}
 }

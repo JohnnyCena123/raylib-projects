@@ -19,7 +19,7 @@
 
 int main() {
 #ifdef VERBOSE_LOGGING
-	DEBUG_ONLY(SetTraceLogLevel(LOG_DEBUG));
+	IMGUI_ONLY(SetTraceLogLevel(LOG_DEBUG));
 #endif
 	Game game;
 	while (game.run()) continue;

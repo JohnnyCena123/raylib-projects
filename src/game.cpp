@@ -35,13 +35,13 @@ Game::Game() :
 	auto const windowPosX = GetWindowPosition().x;
 	SetWindowPosition(windowPosX, (monitorHeight - newSize) / 2);
 
-	DEBUG_ONLY(rlImGuiSetup(true));
+	IMGUI_ONLY(rlImGuiSetup(true));
 
 	SetTargetFPS(60);
 }
 
 Game::~Game() {
-	DEBUG_ONLY(rlImGuiShutdown());
+	IMGUI_ONLY(rlImGuiShutdown());
 	CloseWindow();
 
 	if (!m_isSaveDirty) {
@@ -148,7 +148,7 @@ bool Game::run() {
 	while (!WindowShouldClose()) {
 		bool hasStepped = false;
 
-		DEBUG_ONLY(hasStepped |= debugGUI());
+		IMGUI_ONLY(hasStepped |= debugGUI());
 		hasStepped |= update();
 
 		int const screenHeight = GetScreenHeight();
@@ -169,7 +169,7 @@ bool Game::run() {
 				{ 0.f, 0.f }, 0.f, WHITE
 			);
 		}
-		DEBUG_ONLY(rlImGuiEnd());
+		IMGUI_ONLY(rlImGuiEnd());
 		EndDrawing();
 
 		if (IsWindowResized()) {
@@ -301,8 +301,15 @@ bool Game::update() {
 	return false;
 }
 
-#ifndef CMAKE_RELEASE_BUILD
-bool Game::debugGUI() {
+#define DIRECTION_BUTTON(_direction)                                                          \
+	if (ImGui::ArrowButton(directionToString(_direction).c_str(), ImGuiDir_##_direction)) {   \
+		hasStepped = true;                                                                    \
+		m_snake.m_direction = _direction;                                                     \
+		step();                                                                               \
+		checkDeath();                                                                         \
+	}
+
+IMGUI_ONLY(bool Game::debugGUI() {
 	bool hasStepped = false;
 
 	rlImGuiBegin();
@@ -335,14 +342,6 @@ bool Game::debugGUI() {
 		hasStepped = true;
 		m_snake.m_tiles.push_back(m_snake.getNextTile());
 		checkDeath();
-	}
-
-#define DIRECTION_BUTTON(_direction)                                                          \
-	if (ImGui::ArrowButton(directionToString(_direction).c_str(), ImGuiDir_##_direction)) {   \
-		hasStepped = true;                                                                    \
-		m_snake.m_direction = _direction;                                                     \
-		step();                                                                               \
-		checkDeath();                                                                         \
 	}
 
 	ImGui::NewLine();
@@ -382,8 +381,7 @@ bool Game::debugGUI() {
 
 	ImGui::End();
 	return hasStepped;
-}
-#endif
+})
 
 void Game::handleRestartButton(float resizeRatio) {
 	static auto const restartBtn = [&] {
