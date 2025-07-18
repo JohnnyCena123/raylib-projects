@@ -268,7 +268,6 @@ jobs:
           mkdir Release
           mkdir RelWithDebInfo
           
-          # ls -R
           ls build-*-relwithdebinfo
           mv build-*-relwithdebinfo RelWithDebInfo/
           ls -R
