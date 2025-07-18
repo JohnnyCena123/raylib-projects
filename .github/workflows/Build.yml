@@ -211,7 +211,7 @@ jobs:
           TryExec=/usr/bin/$PACKAGE_NAME
           Terminal=false
           Type=Application
-          Categories=Utility;Game
+          Categories=Utility;Game;
           Keywords=Game;Snake;Raylib;C;CPP;
           EOF
 
