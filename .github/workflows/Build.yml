@@ -269,9 +269,12 @@ jobs:
           mkdir RelWithDebInfo
           
           mv build-*-relwithdebinfo RelWithDebInfo/
-          ls RelWithDebInfo
+          ls -R RelWithDebInfo
           echo RelWithDebInfo/build-*-relwithdebinfo
-          find RelWithDebInfo -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
+          cd RelWithDebInfo
+          find . -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
+          cd ..
+          ls -R RelWithDebInfo
 
           mv build-* Release
           cd Release
