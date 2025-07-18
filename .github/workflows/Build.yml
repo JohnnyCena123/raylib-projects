@@ -245,7 +245,7 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-latest
-    needs: [ linux-deb, win-msi ]
+    needs: [ linux-deb, win-msi, build-relwithdebinfo ]
     permissions:
       contents: write
 
@@ -261,11 +261,11 @@ jobs:
             cd resources && zip -r ../resources.zip * && cd ..
           fi
 
-          mkdir -p Release
-          mkdir -p RelWithDebInfo
+          mkdir Release
+          mkdir RelWithDebInfo
           
           mv build-*-relwithdebinfo RelWithDebInfo
-          find RelWithDebInfo -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
+          find RelWithDebInfo -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
 
           mv build-* Release
           cd Release
