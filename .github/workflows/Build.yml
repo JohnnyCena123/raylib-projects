@@ -335,6 +335,19 @@ jobs:
           mv Windows-MSVC.zip Windows.zip
           rm Windows-LLVM.zip
 
+          unzip MacOS.zip -d mac
+          unzip Linux.zip -d linux
+          cd mac
+          ln -sf libraylib.dylib.5.5.0 libraylib.so.dylib
+          ln -sf libraylib.dylib.5.5.0 libraylib.dylib
+          tar -czvf ../MacOS.tar.gz *
+          
+          cd ..
+          cd linux
+          ln -sf libraylib.so.5.5.0 libraylib.so.550
+          ln -sf libraylib.so.5.5.0 libraylib.so
+          tar -czvf ../Linux.tar.gz *
+
       - name: Create release
         if: github.ref_name != 'Template' 
           # && github.ref_name != 'github-actions'
@@ -351,3 +364,4 @@ jobs:
             *.msi
             *.deb
             *.zip
+            *.tar.gz
