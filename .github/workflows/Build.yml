@@ -256,6 +256,7 @@ jobs:
       - name: Organize
         id: organize
         run: |
+          rm -rf "Debian package" "Windows installer"
           if [ -d "build-win-msvc/resources" ]; then 
             echo "resources-found=true" >> $GITHUB_OUTPUT
             mv build-win-msvc/resources .
@@ -267,7 +268,8 @@ jobs:
           mkdir Release
           mkdir RelWithDebInfo
           
-          ls -R
+          # ls -R
+          ls build-*-relwithdebinfo
           mv build-*-relwithdebinfo RelWithDebInfo/
           ls -R
           find RelWithDebInfo -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
