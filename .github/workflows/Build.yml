@@ -287,13 +287,13 @@ jobs:
       - name: Upload Release zip
         uses: actions/upload-artifact@v4
         with:
-          path: Release/*
+          path: Release/*.zip
           name: Release Builds
 
       - name: Upload RelWithDebInfo zip
         uses: actions/upload-artifact@v4
         with:
-          path: RelWithDebInfo/*
+          path: RelWithDebInfo/*.zip
           name: RelWithDebInfo Builds
 
       - name: Upload resources zip
@@ -335,13 +335,15 @@ jobs:
           mv Windows-MSVC.zip Windows.zip
           rm Windows-LLVM.zip
 
+          ls
           unzip MacOS.zip -d mac
           rm MacOS.zip
           cd mac
-          ln -sf libraylib.dylib.5.5.0 libraylib.dylib.550
+          ln -sf libraylib.dylib.5.5.0 libraylib.550.dylib
           ln -sf libraylib.dylib.5.5.0 libraylib.dylib
           tar -czvf ../MacOS.tar.gz *
           
+          ls
           unzip Linux.zip -d linux
           rm Linux.zip
           cd ..
