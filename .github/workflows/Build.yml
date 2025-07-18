@@ -116,6 +116,51 @@ jobs:
         name: build-${{ matrix.config.id }}-relwithdebinfo
         path: ${{ github.workspace }}/bin/*
 
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [ build, build-relwithdebinfo ]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+
+      - name: Organize
+        run: |
+          if [ -d "build-win-msvc/resources" ]; then 
+            mv build-win-msvc/resources .
+            rm -rf */resources
+            cd resources && zip -r ../resources.zip * && cd ..
+          fi
+
+          mkdir -p {Release,RelWithDebInfo}
+          
+          mv build-*-relwithdebinfo RelWithDebInfo
+          cd RelWithDebInfo
+          find RelWithDebInfo -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
+          cd ..
+
+          mv build-* Release
+          cd Release
+
+      - name: Upload Release zip
+        uses: actions/upload-artifact@v4
+        with:
+          path: Release/*
+          name: Release Builds
+
+      - name: Upload Release zip
+        uses: actions/upload-artifact@v4
+        with:
+          path: RelWithDebInfo/*
+          name: RelWithDebInfo Builds
+
+      - name: Delete old artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: build-*
 
   win-msi:
     name: Build Windows installer
@@ -151,7 +196,8 @@ jobs:
       - name: Test installer
         id: test
         run: |
-          msiexec /i "${{ steps.build.outputs.installer-path }}" /norestart /quiet
+          $proc = Start-Process -FilePath msiexec.exe -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet'
+          $proc.WaitForExit(30000)
           # $proc = Start-Process -FilePath msiexec.exe -ArgumentList `
           #   "/i", "${{ steps.build.outputs.installer-path }}", `
           #   "/quiet", "/norestart", "/l*v", "C:\install.log" `
@@ -277,12 +323,14 @@ jobs:
       - name: Download zips
         uses: actions/download-artifact@v4
         with:
-          name: Build outputs
+          name: Release Builds
 
       - name: Prepare
         run: |
-          mv Windows-MSVC.zip Windows.zip
-          rm Windows-LLVM.zip
+          mv build-win-msvc.zip Windows.zip
+          rm build-win-llvm.zip
+          mv build-mac.zip MacOS.zip
+          mv build-linux.zip Linux.zip
 
       - name: Create release
         if: github.ref_name != 'Template' && github.ref_name != 'github-actions'
@@ -299,49 +347,3 @@ jobs:
             *.msi
             *.deb
             *.zip
-
-  cleanup:
-    name: Cleanup
-    runs-on: ubuntu-latest
-    needs: [ build, build-relwithdebinfo, publish ]
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download build outputs
-        uses: actions/download-artifact@v4
-
-      - name: Organize
-        run: |
-          if [ -d "build-win-msvc/resources" ]; then 
-            mv build-win-msvc/resources .
-            rm -rf */resources
-            cd resources && zip -r ../resources.zip * && cd ..
-          fi
-
-          mkdir -p {Release,RelWithDebInfo}
-          
-          mv build-*-relwithdebinfo RelWithDebInfo
-          cd RelWithDebInfo
-          find RelWithDebInfo -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
-          cd ..
-
-          mv build-* Release
-          cd Release
-
-      - name: Upload Release zip
-        uses: actions/upload-artifact@v4
-        with:
-          path: Release/*
-          name: Release Builds
-
-      - name: Upload Release zip
-        uses: actions/upload-artifact@v4
-        with:
-          path: RelWithDebInfo/*
-          name: RelWithDebInfo Builds
-
-      - name: Delete old artifacts
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: build-*
