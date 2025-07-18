@@ -63,6 +63,56 @@ jobs:
         name: build-${{ matrix.config.id }}
         path: ${{ github.workspace }}/bin/*
 
+  build-relwithdebinfo:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: Windows MSVC
+            os: windows-latest
+            cmake-platform-args: -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -G "Visual Studio 17 2022"
+
+          - name: Windows LLVM
+            os: windows-latest
+            cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
+
+          - name: MacOS
+            os: macos-latest
+            cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
+
+          - name: Linux
+            os: ubuntu-latest
+            cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
+
+    name: Build ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Latest LLVM on Windows
+      if: matrix.config.name == 'Windows LLVM'
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe" -OutFile llvm.exe
+        7z x llvm.exe -o"C:\Program Files\Latest LLVM"
+        echo "C:\Program Files\Latest LLVM\bin" >> $env:GITHUB_PATH
+
+    - name: Install Linux dependencies
+      if: matrix.config.name == 'Linux'
+      run: sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
+
+    - name: Configure CMake
+      run: cmake -B ${{ github.workspace }}/build ${{ matrix.config.cmake-platform-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build --config RelWithDebInfo
+
+    - name: Upload
+      uses: actions/upload-artifact@v4 
+      with:
+        name: ${{ matrix.config.name }} build - RelWithDebInfo
+        path: ${{ github.workspace }}/bin/*
+
+
   cleanup:
     name: Cleanup
     runs-on: ubuntu-latest
@@ -111,7 +161,9 @@ jobs:
           name: Build outputs
 
       - name: Build installer
+        id: build
         run: |
+          $version = 1.0.0
           7z x Windows-MSVC.zip -o${{ github.ref_name }}
           if (Test-Path -Path resources.zip) {
             7z x resources.zip -o${{ github.ref_name }}/resources
@@ -121,27 +173,101 @@ jobs:
             -SourceDir .\${{ github.ref_name }} `
             -AppName "${{ github.ref_name }}" `
             -Manufacturer "Johnny Cena" `
-            -Version "1.1.0" `
-            -OutputMsi "${{ github.ref_name }}.msi"
+            -Version "$version" `
+            -OutputMsi "${{ github.ref_name }}-$version.msi"
+          echo "INSTALLER_PATH=${{ github.ref_name }}-$version.msi" >> $GITHUB_OUTPUT
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.ref_name }}.msi
-          name: Windows .msi installer
+          path: ${{ steps.build.outputs.INSTALLER_PATH }}
+          name: Windows installer
 
+  linux-deb:
+    name: Build Debian package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux
+          path: ${{ github.workspace }}
+
+      - name: Build
+        id: build
+        run: |
+          PACKAGE_NAME=${{ github.ref_name }}
+          PACKAGE_VERSION=1.0.0
+          PACKAGE_DIR="./$PACKAGE_NAME-$PACKAGE_VERSION"
+          mkdir -p ./$PACKAGE_DIR/usr/{bin,lib}
+          mv ./$PACKAGE_NAME $PACKAGE_DIR/usr/bin/
+          ln -sf libraylib.so.5.5.0 libraylib.so.550
+          ln -sf libraylib.so.5.5.0 libraylib.so
+          mv ./*.so* $PACKAGE_DIR/usr/lib
+
+          if [ -d "./resources" ]; then 
+            mkdir -p $PACKAGE_DIR/usr/share/$PACKAGE_NAME/
+            mv ./resources $PACKAGE_DIR/usr/share/$PACKAGE_NAME/
+            if [ -f "./resources/icon.png" ]; then
+              ICON_PATH="usr/share/icons/$PACKAGE_NAME.png"
+              cp ./resources/icon.png "$PACKAGE_DIR/$ICON_PATH"
+              DESKTOP_ICON_LINE="Icon=/$ICON_PATH"
+            fim
+          fi
+
+          cat <<EOF > "$PACKAGE_DIR/usr/share/applications/$PACKAGE_NAME.desktop"
+          [Desktop Entry]
+          Version=$PACKAGE_VERSION
+          Name=$PACKAGE_NAME
+          GenericName=$PACKAGE_NAME
+          $DESKTOP_ICON_LINE
+          Comment=Placeholder - to be replaced
+          Exec=/usr/bin/$PACKAGE_NAME
+          TryExec=/usr/bin/$PACKAGE_NAME
+          Terminal=false
+          Type=Application
+          Categories=Utility;
+          Keywords=Game;Snake;Raylib;C;CPP;
+          EOF
+
+          mkdir -p $PACKAGE_DIR/DEBIAN
+          cat <<EOF > "$PACKAGE_DIR/DEBIAN/control"
+          Package: $PACKAGE_NAME
+          Version: $PACKAGE_VERSION
+          Section: utils
+          Depends: libc6, libopengl0, libglx0, libglu1-mesa, libstdc++6, libgcc-s1, libx11-6, libxcb1
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Johnny Cena <iamahuman1395@gmail.com>
+          Description: Placeholder - to be replaced
+          EOF
+
+          dpkg-deb --build $PACKAGE_DIR $PACKAGE_DIR.deb
+
+          echo "PACKAGE_PATH=$PACKAGE_DIR.deb" >> $GITHUB_OUTPUT
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ steps.build.outputs.PACKAGE_PATH }}
+          name: Debian package
 
   publish:
     name: Publish
     permissions:
       contents: write
-    needs: win-msi
+    needs: [ "win-msi", "linux-deb" ]
     runs-on: ubuntu-latest
     steps:
-      - name: Download Windows .msi installer
+      - name: Download Windows installer
         uses: actions/download-artifact@v4
         with:
-          name: Windows .msi installer
+          name: Windows installer
+
+      - name: Download Debian package
+        uses: actions/download-artifact@v4
+        with:
+          name: Debian package
 
       - name: Download zips
         uses: actions/download-artifact@v4
@@ -165,6 +291,7 @@ jobs:
           draft: false
           prerelease: true
           files: |
-            ${{ github.ref_name }}.msi 
+            *.msi
+            *.deb
             *.zip
 
