@@ -150,7 +150,7 @@ jobs:
 
       - name: Test installer
         run: |
-          msiexec /i ${{ steps.build.outputs.installer-path }}
+          msiexec /i ${{ steps.build.outputs.installer-path }} /passive
           dir -Recurse "C:\Program Files\Snake"
 
       - name: Upload installer
