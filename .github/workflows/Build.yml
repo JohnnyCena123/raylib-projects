@@ -151,7 +151,7 @@ jobs:
       - name: Test installer
         run: |
           msiexec /i ${{ steps.build.outputs.installer-path }} /passive
-          dir -Recurse "C:\Program Files\Snake"
+          dir -Recurse "C:\Program Files\${{ github.ref_name }}"
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
