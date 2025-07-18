@@ -151,7 +151,7 @@ jobs:
       - name: Test installer
         id: test
         run: |
-          msiexec /i "${{ steps.build.outputs.installer-path }}" /norestart
+          msiexec /i "${{ steps.build.outputs.installer-path }}" /norestart /quiet
           # $proc = Start-Process -FilePath msiexec.exe -ArgumentList `
           #   "/i", "${{ steps.build.outputs.installer-path }}", `
           #   "/quiet", "/norestart", "/l*v", "C:\install.log" `
