@@ -148,6 +148,11 @@ jobs:
             -OutputMsi "$packageName-$version.msi"
           echo "installer-path=$packageName-$version.msi" >> $GITHUB_OUTPUT
 
+      - name: Test installer
+        run: |
+          msiexec /i ${{ steps.build.outputs.installer-path }}
+          dir -Recurse "C:\Program Files\Snake"
+
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
@@ -222,6 +227,10 @@ jobs:
           dpkg-deb --build "$PACKAGE_DIR" "$PACKAGE_DIR".deb
 
           echo "package-path=$PACKAGE_DIR.deb" >> $GITHUB_OUTPUT
+
+      - name: Test package
+        run: |
+          sudo dpkg -i ${{ steps.build.outputs.package-path }}
 
       - name: Upload
         uses: actions/upload-artifact@v4
