@@ -150,7 +150,7 @@ jobs:
 
       - name: Test installer
         run: |
-          msiexec /i ${{ steps.build.outputs.installer-path }} /passive
+          msiexec /i ${{ steps.build.outputs.installer-path }} /quiet
           dir -Recurse "C:\Program Files\${{ github.ref_name }}"
 
       - name: Upload installer
