@@ -139,6 +139,7 @@ jobs:
         id: build
         run: |
           $packageName = "${{ github.ref_name }}"
+          ren build-win-msvc $packageName 
           $version = '1.0.0'
           del *.zip
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
