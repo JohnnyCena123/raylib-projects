@@ -64,6 +64,7 @@ jobs:
         path: ${{ github.workspace }}/bin/*
 
   build-relwithdebinfo:
+    needs: cleanup # to avoid mixing the Release builds with the RelWithDebInfo builds in the cleanup job
     strategy:
       fail-fast: false
       matrix:
@@ -84,7 +85,7 @@ jobs:
             os: ubuntu-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
 
-    name: Build ${{ matrix.config.name }}
+    name: Build ${{ matrix.config.name }} RelWithDebInfo
     runs-on: ${{ matrix.config.os }}
 
     steps:
@@ -111,7 +112,6 @@ jobs:
       with:
         name: ${{ matrix.config.name }} build - RelWithDebInfo
         path: ${{ github.workspace }}/bin/*
-
 
   cleanup:
     name: Cleanup
@@ -163,19 +163,20 @@ jobs:
       - name: Build installer
         id: build
         run: |
-          $version = 1.0.0
-          7z x Windows-MSVC.zip -o${{ github.ref_name }}
+          $packageName = ${{ github.ref_name }}
+          $version = "1.0.0"
+          7z x Windows-MSVC.zip -o$packageName
           if (Test-Path -Path resources.zip) {
-            7z x resources.zip -o${{ github.ref_name }}/resources
+            7z x resources.zip -o$packageName/resources
           }
           del *.zip
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
-            -SourceDir .\${{ github.ref_name }} `
-            -AppName "${{ github.ref_name }}" `
+            -SourceDir .\$packageName `
+            -AppName "$packageName" `
             -Manufacturer "Johnny Cena" `
             -Version "$version" `
-            -OutputMsi "${{ github.ref_name }}-$version.msi"
-          echo "INSTALLER_PATH=${{ github.ref_name }}-$version.msi" >> $GITHUB_OUTPUT
+            -OutputMsi "$packageName-$version.msi"
+          echo "INSTALLER_PATH=$packageName-$version.msi" >> $GITHUB_OUTPUT
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
@@ -185,6 +186,7 @@ jobs:
 
   linux-deb:
     name: Build Debian package
+    needs: cleanup
     runs-on: ubuntu-latest
     steps:
       - name: Download build outputs
