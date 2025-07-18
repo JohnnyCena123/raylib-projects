@@ -338,7 +338,7 @@ jobs:
           unzip MacOS.zip -d mac
           rm MacOS.zip
           cd mac
-          ln -sf libraylib.dylib.5.5.0 libraylib.so.dylib
+          ln -sf libraylib.dylib.5.5.0 libraylib.dylib.550
           ln -sf libraylib.dylib.5.5.0 libraylib.dylib
           tar -czvf ../MacOS.tar.gz *
           
