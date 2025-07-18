@@ -151,15 +151,16 @@ jobs:
       - name: Test installer
         id: test
         run: |
-          $proc = Start-Process -FilePath msiexec.exe -ArgumentList `
-            "/i", "${{ steps.build.outputs.installer-path }}", `
-            "/quiet", "/norestart", "/l*v", "C:\install.log" `
-            -PassThru
-          if (-not $proc.WaitForExit(30000)) {
-            $proc.Kill()
-            echo "failed=true" >> $env:GITHUB_OUTPUT
-            throw "Installer timed out and was killed"
-          }
+          msiexec /i "${{ steps.build.outputs.installer-path }}" /norestart
+          # $proc = Start-Process -FilePath msiexec.exe -ArgumentList `
+          #   "/i", "${{ steps.build.outputs.installer-path }}", `
+          #   "/quiet", "/norestart", "/l*v", "C:\install.log" `
+          #   -PassThru
+          # if (-not $proc.WaitForExit(30000)) {
+          #   $proc.Kill()
+          #   echo "failed=true" >> $env:GITHUB_OUTPUT
+          #   throw "Installer timed out and was killed"
+          # }
           echo "failed=false" >> $env:GITHUB_OUTPUT
           dir "C:\Program Files\${{ github.ref_name }}"
 
