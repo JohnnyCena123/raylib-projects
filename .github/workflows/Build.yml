@@ -335,15 +335,14 @@ jobs:
           mv Windows-MSVC.zip Windows.zip
           rm Windows-LLVM.zip
 
-          ls
           unzip MacOS.zip -d mac
           rm MacOS.zip
           cd mac
           ln -sf libraylib.dylib.5.5.0 libraylib.550.dylib
           ln -sf libraylib.dylib.5.5.0 libraylib.dylib
           tar -czvf ../MacOS.tar.gz *
+          cd ..
           
-          ls
           unzip Linux.zip -d linux
           rm Linux.zip
           cd ..
