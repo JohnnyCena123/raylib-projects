@@ -146,12 +146,12 @@ jobs:
             -Manufacturer "Johnny Cena" `
             -Version "$version" `
             -OutputMsi "$packageName-$version.msi"
-          echo "INSTALLER_PATH=$packageName-$version.msi" >> $GITHUB_OUTPUT
+          echo "installer-path=$packageName-$version.msi" >> $GITHUB_OUTPUT
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ steps.build.outputs.INSTALLER_PATH }}
+          path: ${{ steps.build.outputs.installer-path }}
           name: Windows installer
 
   linux-deb:
@@ -221,12 +221,12 @@ jobs:
 
           dpkg-deb --build "$PACKAGE_DIR" "$PACKAGE_DIR".deb
 
-          echo "PACKAGE_PATH=$PACKAGE_DIR.deb" >> $GITHUB_OUTPUT
+          echo "package-path=$PACKAGE_DIR.deb" >> $GITHUB_OUTPUT
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ steps.build.outputs.PACKAGE_PATH }}
+          path: ${{ steps.build.outputs.package-path }}
           name: Debian package
 
   publish:
