@@ -269,19 +269,20 @@ jobs:
           mkdir RelWithDebInfo
           
           mv build-*-relwithdebinfo RelWithDebInfo/
-          ls -R RelWithDebInfo
-          echo RelWithDebInfo/build-*-relwithdebinfo
           cd RelWithDebInfo
-          ls
-          find . \
-            -type d \
-            -name "build-*-relwithdebinfo" \
-            -exec bash -c 'mv "$1" "${1%-relwithdebinfo}"' _ {} \;
+            cd build-win-msvc-relwithdebinfo && zip -r ../Windows-MSVC.zip * && cd ..
+            cd build-win-llvm-relwithdebinfo && zip -r ../Windows-LLVM.zip * && cd ..
+            cd build-mac-relwithdebinfo && zip -r ../MacOS.zip * && cd ..
+            cd build-linux-relwithdebinfo && zip -r ../Linux.zip * && cd ..
           cd ..
-          ls -R RelWithDebInfo
 
           mv build-* Release
           cd Release
+            cd build-win-msvc && zip -r ../Windows-MSVC.zip * && cd ..
+            cd build-win-llvm && zip -r ../Windows-LLVM.zip * && cd ..
+            cd build-mac && zip -r ../MacOS.zip * && cd ..
+            cd build-linux && zip -r ../Linux.zip * && cd ..
+          cd ..
 
       - name: Upload Release zip
         uses: actions/upload-artifact@v4
