@@ -133,15 +133,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-win-msvc
-
+          path: ${{ github.ref_name }}
 
       - name: Build installer
         id: build
         run: |
           $packageName = "${{ github.ref_name }}"
-          ren build-win-msvc $packageName 
-          $version = '1.0.0'
-          del *.zip
+          $version = "1.0.0"
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
             -SourceDir .\$packageName `
             -AppName "$packageName" `
