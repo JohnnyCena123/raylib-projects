@@ -336,12 +336,14 @@ jobs:
           rm Windows-LLVM.zip
 
           unzip MacOS.zip -d mac
-          unzip Linux.zip -d linux
+          rm MacOS.zip
           cd mac
           ln -sf libraylib.dylib.5.5.0 libraylib.so.dylib
           ln -sf libraylib.dylib.5.5.0 libraylib.dylib
           tar -czvf ../MacOS.tar.gz *
           
+          unzip Linux.zip -d linux
+          rm Linux.zip
           cd ..
           cd linux
           ln -sf libraylib.so.5.5.0 libraylib.so.550
