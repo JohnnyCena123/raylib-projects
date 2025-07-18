@@ -272,6 +272,7 @@ jobs:
           ls -R RelWithDebInfo
           echo RelWithDebInfo/build-*-relwithdebinfo
           cd RelWithDebInfo
+          ls
           find . -type d -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
           cd ..
           ls -R RelWithDebInfo
