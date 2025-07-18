@@ -265,9 +265,7 @@ jobs:
           mkdir -p RelWithDebInfo
           
           mv build-*-relwithdebinfo RelWithDebInfo
-          cd RelWithDebInfo
           find RelWithDebInfo -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
-          cd ..
 
           mv build-* Release
           cd Release
