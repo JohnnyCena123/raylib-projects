@@ -276,7 +276,8 @@ jobs:
             cd resources && zip -r ../resources.zip * && cd ..
           fi
 
-          mkdir -p {Release,RelWithDebInfo}
+          mkdir -p Release
+          mkdir -p RelWithDebInfo
           
           mv build-*-relwithdebinfo RelWithDebInfo
           cd RelWithDebInfo
