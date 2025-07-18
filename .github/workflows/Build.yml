@@ -332,13 +332,12 @@ jobs:
 
       - name: Prepare
         run: |
-          mv build-win-msvc.zip Windows.zip
-          rm build-win-llvm.zip
-          mv build-mac.zip MacOS.zip
-          mv build-linux.zip Linux.zip
+          mv Windows-MSVC.zip Windows.zip
+          rm Windows-LLVM.zip
 
       - name: Create release
-        if: github.ref_name != 'Template' && github.ref_name != 'github-actions'
+        if: github.ref_name != 'Template' 
+          # && github.ref_name != 'github-actions'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly-${{ github.ref_name }}
