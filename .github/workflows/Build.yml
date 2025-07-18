@@ -161,7 +161,7 @@ jobs:
             throw "Installer timed out and was killed"
           }
           echo "failed=false" >> $env:GITHUB_OUTPUT
-          dir -Recurse "C:\Program Files\${{ github.ref_name }}"
+          dir "C:\Program Files\${{ github.ref_name }}"
 
       - name: Upload install log
         if: steps.test.outputs.failed == 'true'
