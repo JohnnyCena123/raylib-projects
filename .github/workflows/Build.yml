@@ -163,7 +163,7 @@ jobs:
       - name: Build installer
         id: build
         run: |
-          $packageName = ${{ github.ref_name }}
+          $packageName = "${{ github.ref_name }}""
           $version = "1.0.0"
           7z x Windows-MSVC.zip -o$packageName
           if (Test-Path -Path resources.zip) {
