@@ -202,7 +202,7 @@ jobs:
           mkdir -p "$PACKAGE_DIR/usr/share/applications/"
           cat <<EOF > "$PACKAGE_DIR/usr/share/applications/$PACKAGE_NAME.desktop"
           [Desktop Entry]
-          Version=$PACKAGE_VERSION
+          Version=v$PACKAGE_VERSION
           Name=$PACKAGE_NAME
           GenericName=$PACKAGE_NAME
           $DESKTOP_ICON_LINE
