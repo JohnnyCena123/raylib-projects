@@ -36,7 +36,7 @@ $wxsContent = @"
            InstallerVersion="500"
            Compressed="yes">
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
-    <StandardDirectory Id="LocalAppDataFolder">
+    <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="$targetDirId" Name="$AppName">
         <Directory Id="INSTALLDIR" Name="." />
       </Directory>
