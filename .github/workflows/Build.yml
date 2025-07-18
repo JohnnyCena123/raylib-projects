@@ -269,6 +269,8 @@ jobs:
           mkdir RelWithDebInfo
           
           mv build-*-relwithdebinfo RelWithDebInfo/
+          ls RelWithDebInfo
+          echo RelWithDebInfo/build-*-relwithdebinfo
           find RelWithDebInfo -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
 
           mv build-* Release
