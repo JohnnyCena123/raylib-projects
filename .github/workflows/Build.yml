@@ -150,7 +150,7 @@ jobs:
       - name: Test installer
         id: test
         run: |
-          $proc = Start-Process -FilePath msiexec.exe -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet'
+          $proc = Start-Process -FilePath msiexec.exe -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' -PassThru
           $proc.WaitForExit(30000)
           # $proc = Start-Process -FilePath msiexec.exe -ArgumentList `
           #   "/i", "${{ steps.build.outputs.installer-path }}", `
