@@ -50,7 +50,6 @@ completely, and let CMake use the default values for them.
 will be placed in the same directory or not, when using a multi-config generator.
 * `-DINCLUDE_TERMINAL_IN_RELEASE_WINDOWS=ON` - Allows you to include terminal when building in Release mode. Windows only.
 * `-DNO_PRECOMPILED_HEADERS=ON` - Whether or not project headers will be pre-compiled before the rest of the code.
-* `-DINCLUDE_DEBUGGING_IN_RELEASE=ON` - Keep code that's meant for debugging, in Release mode
 
 ### Notes
 
