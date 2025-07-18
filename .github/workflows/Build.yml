@@ -64,24 +64,27 @@ jobs:
         path: ${{ github.workspace }}/bin/*
 
   build-relwithdebinfo:
-    needs: cleanup # to avoid mixing the Release builds with the RelWithDebInfo builds in the cleanup job
     strategy:
       fail-fast: false
       matrix:
         config:
-          - name: Windows MSVC
+          - id: win-msvc
+            name: Windows MSVC
             os: windows-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -G "Visual Studio 17 2022"
 
-          - name: Windows LLVM
+          - id: win-llvm
+            name: Windows LLVM
             os: windows-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
 
-          - name: MacOS
+          - id: mac
+            name: MacOS
             os: macos-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
 
-          - name: Linux
+          - id: linux
+            name: Linux
             os: ubuntu-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
 
@@ -110,42 +113,13 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4 
       with:
-        name: ${{ matrix.config.name }} build - RelWithDebInfo
+        name: build-${{ matrix.config.id }}-relwithdebinfo
         path: ${{ github.workspace }}/bin/*
 
-  cleanup:
-    name: Cleanup
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download build outputs
-        uses: actions/download-artifact@v4
-
-      - name: Organize
-        run: |
-          if [ -d "build-win-msvc/resources" ]; then 
-            mv build-win-msvc/resources .
-            rm -rf */resources
-            cd resources && zip -r ../resources.zip * && cd ..
-          fi
-
-          cd build-win-msvc && zip -r ../Windows-MSVC.zip *
-          cd ../build-win-llvm && zip -r ../Windows-LLVM.zip *
-          cd ../build-mac && zip -r ../MacOS.zip *
-          cd ../build-linux && zip -r ../Linux.zip *
-
-      - name: Upload new zips
-        uses: actions/upload-artifact@v4
-        with:
-          path: '*.zip'
-          name: Build outputs
 
   win-msi:
     name: Build Windows installer
-    needs: cleanup
+    needs: build
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -155,20 +129,17 @@ jobs:
           curl.exe -LO https://github.com/wixtoolset/wix/releases/download/v6.0.1/wix-cli-x64.msi
           msiexec /i wix-cli-x64.msi /quiet
 
-      - name: Download zips
+      - name: Download zip
         uses: actions/download-artifact@v4
         with:
-          name: Build outputs
+          name: build-win-msvc
+
 
       - name: Build installer
         id: build
         run: |
           $packageName = "${{ github.ref_name }}""
           $version = "1.0.0"
-          7z x Windows-MSVC.zip -o$packageName
-          if (Test-Path -Path resources.zip) {
-            7z x resources.zip -o$packageName/resources
-          }
           del *.zip
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
             -SourceDir .\$packageName `
@@ -186,10 +157,10 @@ jobs:
 
   linux-deb:
     name: Build Debian package
-    needs: cleanup
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Download build outputs
+      - name: Download build output
         uses: actions/download-artifact@v4
         with:
           name: build-linux
@@ -302,3 +273,48 @@ jobs:
             *.deb
             *.zip
 
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [ build, build-relwithdebinfo, publish ]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+
+      - name: Organize
+        run: |
+          if [ -d "build-win-msvc/resources" ]; then 
+            mv build-win-msvc/resources .
+            rm -rf */resources
+            cd resources && zip -r ../resources.zip * && cd ..
+          fi
+
+          mkdir -p {Release,RelWithDebInfo}
+          
+          mv build-*-relwithdebinfo RelWithDebInfo
+          cd RelWithDebInfo
+          find RelWithDebInfo -name "build-*-relwithdebinfo" -exec bash -c 'mv "$0" "${0%-relwithdebinfo}"' {} \;
+          cd ..
+
+          mv build-* Release
+          cd Release
+
+      - name: Upload Release zip
+        uses: actions/upload-artifact@v4
+        with:
+          path: Release/*
+          name: Release Builds
+
+      - name: Upload Release zip
+        uses: actions/upload-artifact@v4
+        with:
+          path: RelWithDebInfo/*
+          name: RelWithDebInfo Builds
+
+      - name: Delete old artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: build-*
