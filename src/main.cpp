@@ -1,4 +1,4 @@
-#if defined(_WIN32) && defined(CMAKE_RELEASE_BUILD)
+#ifdef NO_TERMINAL_WINDOWS
 	// holy shit i hate raylib + windows
 	// it compiles so shut up
 	#define _WINGDI_
