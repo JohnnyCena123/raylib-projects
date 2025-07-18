@@ -150,26 +150,11 @@ jobs:
       - name: Test installer
         id: test
         run: |
-          $proc = Start-Process -FilePath msiexec.exe -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' -PassThru
+          $proc = Start-Process -FilePath msiexec.exe `
+            -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' `
+            -PassThru
           $proc.WaitForExit(30000)
-          # $proc = Start-Process -FilePath msiexec.exe -ArgumentList `
-          #   "/i", "${{ steps.build.outputs.installer-path }}", `
-          #   "/quiet", "/norestart", "/l*v", "C:\install.log" `
-          #   -PassThru
-          # if (-not $proc.WaitForExit(30000)) {
-          #   $proc.Kill()
-          #   echo "failed=true" >> $env:GITHUB_OUTPUT
-          #   throw "Installer timed out and was killed"
-          # }
-          echo "failed=false" >> $env:GITHUB_OUTPUT
           dir "C:\Program Files\${{ github.ref_name }}"
-
-      - name: Upload install log
-        if: steps.test.outputs.failed == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          path: C:\install.log
-          name: Windows installer log
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
