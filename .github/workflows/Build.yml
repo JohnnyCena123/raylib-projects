@@ -1,4 +1,4 @@
-name: Build Release
+name: Build
 
 on:
   workflow_dispatch:
@@ -63,39 +63,62 @@ jobs:
         name: build-${{ matrix.config.id }}
         path: ${{ github.workspace }}/bin/*
 
-  cleanup:
-    name: Cleanup
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      contents: write
+  build-relwithdebinfo:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - id: win-msvc
+            name: Windows MSVC
+            os: windows-latest
+            cmake-platform-args: -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -G "Visual Studio 17 2022"
+
+          - id: win-llvm
+            name: Windows LLVM
+            os: windows-latest
+            cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
+
+          - id: mac
+            name: MacOS
+            os: macos-latest
+            cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
+
+          - id: linux
+            name: Linux
+            os: ubuntu-latest
+            cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
+
+    name: Build ${{ matrix.config.name }} RelWithDebInfo
+    runs-on: ${{ matrix.config.os }}
 
     steps:
-      - name: Download build outputs
-        uses: actions/download-artifact@v4
+    - uses: actions/checkout@v4
 
-      - name: Organize
-        run: |
-          if [ -d "build-win-msvc/resources" ]; then 
-            mv build-win-msvc/resources .
-            rm -rf */resources
-            cd resources && zip -r ../resources.zip * && cd ..
-          fi
+    - name: Install Latest LLVM on Windows
+      if: matrix.config.name == 'Windows LLVM'
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe" -OutFile llvm.exe
+        7z x llvm.exe -o"C:\Program Files\Latest LLVM"
+        echo "C:\Program Files\Latest LLVM\bin" >> $env:GITHUB_PATH
 
-          cd build-win-msvc && zip -r ../Windows-MSVC.zip *
-          cd ../build-win-llvm && zip -r ../Windows-LLVM.zip *
-          cd ../build-mac && zip -r ../MacOS.zip *
-          cd ../build-linux && zip -r ../Linux.zip *
+    - name: Install Linux dependencies
+      if: matrix.config.name == 'Linux'
+      run: sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
 
-      - name: Upload new zips
-        uses: actions/upload-artifact@v4
-        with:
-          path: '*.zip'
-          name: Build outputs
+    - name: Configure CMake
+      run: cmake -B ${{ github.workspace }}/build ${{ matrix.config.cmake-platform-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build --config RelWithDebInfo
+
+    - name: Upload
+      uses: actions/upload-artifact@v4 
+      with:
+        name: build-${{ matrix.config.id }}-relwithdebinfo
+        path: ${{ github.workspace }}/bin/*
 
   win-msi:
     name: Build Windows installer
-    needs: cleanup
+    needs: build
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,56 +128,231 @@ jobs:
           curl.exe -LO https://github.com/wixtoolset/wix/releases/download/v6.0.1/wix-cli-x64.msi
           msiexec /i wix-cli-x64.msi /quiet
 
-      - name: Download zips
+      - name: Download zip
         uses: actions/download-artifact@v4
         with:
-          name: Build outputs
+          name: build-win-msvc
+          path: ${{ github.ref_name }}
 
       - name: Build installer
+        id: build
         run: |
-          7z x Windows-MSVC.zip -o${{ github.ref_name }}
-          if (Test-Path -Path resources.zip) {
-            7z x resources.zip -o${{ github.ref_name }}/resources
-          }
-          del *.zip
+          $packageName = "${{ github.ref_name }}"
+          $version = "1.0.0"
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
-            -SourceDir .\${{ github.ref_name }} `
-            -AppName "${{ github.ref_name }}" `
+            -SourceDir .\$packageName `
+            -AppName "$packageName" `
             -Manufacturer "Johnny Cena" `
-            -Version "1.1.0" `
-            -OutputMsi "${{ github.ref_name }}.msi"
+            -Version "$version" `
+            -OutputMsi "$packageName-$version.msi"
+          echo "installer-path=$packageName-$version.msi" >> $env:GITHUB_OUTPUT
+
+      - name: Test installer
+        id: test
+        run: |
+          $proc = Start-Process -FilePath msiexec.exe `
+            -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' `
+            -PassThru
+          $proc.WaitForExit(30000)
+          dir "C:\Program Files\${{ github.ref_name }}"
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.ref_name }}.msi
-          name: Windows .msi installer
+          path: ${{ steps.build.outputs.installer-path }}
+          name: Windows installer
 
+  linux-deb:
+    name: Build Debian package
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux
+          path: ${{ github.workspace }}
+
+      - name: Build
+        id: build
+        run: |
+          PACKAGE_NAME=${{ github.ref_name }}
+          PACKAGE_VERSION=1.0.0
+          PACKAGE_DIR="./$PACKAGE_NAME-$PACKAGE_VERSION"
+          mkdir -p "$PACKAGE_DIR"/usr/bin
+          chmod +x ./$PACKAGE_NAME
+          mv "./$PACKAGE_NAME" "$PACKAGE_DIR/usr/bin/"
+          ln -sf libraylib.so.5.5.0 libraylib.so.550
+          ln -sf libraylib.so.5.5.0 libraylib.so
+          mkdir -p "$PACKAGE_DIR"/usr/lib/$PACKAGE_NAME
+          mv ./*.so* "$PACKAGE_DIR/usr/lib/$PACKAGE_NAME/"
+
+          if [ -d "./resources" ]; then
+            mkdir -p "$PACKAGE_DIR/usr/share/$PACKAGE_NAME/"
+            cp -r ./resources "$PACKAGE_DIR/usr/share/$PACKAGE_NAME/"
+            if [ -f "./resources/icon.png" ]; then
+              ICON_DIR="usr/share/icons"
+              mkdir -p "$PACKAGE_DIR/$ICON_DIR"
+              ICON_PATH="$ICON_DIR/$PACKAGE_NAME.png"
+              cp ./resources/icon.png "$PACKAGE_DIR/$ICON_PATH"
+              DESKTOP_ICON_LINE="Icon=/$ICON_PATH"
+            fi
+            rm -rf resources
+          fi
+
+          mkdir -p "$PACKAGE_DIR/usr/share/applications/"
+          cat <<EOF > "$PACKAGE_DIR/usr/share/applications/$PACKAGE_NAME.desktop"
+          [Desktop Entry]
+          Version=1.0
+          Name=$PACKAGE_NAME
+          GenericName=$PACKAGE_NAME
+          $DESKTOP_ICON_LINE
+          Comment=Placeholder - to be replaced
+          Exec=/usr/bin/$PACKAGE_NAME
+          TryExec=/usr/bin/$PACKAGE_NAME
+          Terminal=false
+          Type=Application
+          Categories=Utility;Game;
+          Keywords=Game;Snake;Raylib;C;CPP;
+          EOF
+
+          mkdir -p $PACKAGE_DIR/DEBIAN
+          cat <<EOF > "$PACKAGE_DIR/DEBIAN/control"
+          Package: $PACKAGE_NAME
+          Version: $PACKAGE_VERSION
+          Section: utils
+          Depends: libc6, libopengl0, libglx0, libglu1-mesa, libstdc++6, libgcc-s1, libx11-6, libxcb1
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Johnny Cena <iamahuman1395@gmail.com>
+          Description: Placeholder - to be replaced
+          EOF
+
+          dpkg-deb --build "$PACKAGE_DIR" "$PACKAGE_DIR".deb
+
+          echo "package-path=$PACKAGE_DIR.deb" >> $GITHUB_OUTPUT
+
+      - name: Test package
+        run: |
+          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
+          sudo dpkg -i ${{ steps.build.outputs.package-path }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ steps.build.outputs.package-path }}
+          name: Debian package
+
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [ linux-deb, win-msi, build-relwithdebinfo ]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+
+      - name: Organize
+        id: organize
+        run: |
+          rm -rf "Debian package" "Windows installer"
+          if [ -d "build-win-msvc/resources" ]; then 
+            echo "resources-found=true" >> $GITHUB_OUTPUT
+            mv build-win-msvc/resources .
+            rm -rf */resources
+          else
+            echo "resources-found=false" >> $GITHUB_OUTPUT
+          fi
+
+          mkdir Release
+          mkdir RelWithDebInfo
+          
+          mv build-*-relwithdebinfo RelWithDebInfo/
+          cd RelWithDebInfo
+            cd build-win-msvc-relwithdebinfo && zip -r ../Windows-MSVC.zip * && cd ..
+            cd build-win-llvm-relwithdebinfo && zip -r ../Windows-LLVM.zip * && cd ..
+            cd build-mac-relwithdebinfo && zip -r ../MacOS.zip * && cd ..
+            cd build-linux-relwithdebinfo && zip -r ../Linux.zip * && cd ..
+          cd ..
+
+          mv build-* Release
+          cd Release
+            cd build-win-msvc && zip -r ../Windows-MSVC.zip * && cd ..
+            cd build-win-llvm && zip -r ../Windows-LLVM.zip * && cd ..
+            cd build-mac && zip -r ../MacOS.zip * && cd ..
+            cd build-linux && zip -r ../Linux.zip * && cd ..
+          cd ..
+
+      - name: Upload Release zip
+        uses: actions/upload-artifact@v4
+        with:
+          path: Release/*.zip
+          name: Release Builds
+
+      - name: Upload RelWithDebInfo zip
+        uses: actions/upload-artifact@v4
+        with:
+          path: RelWithDebInfo/*.zip
+          name: RelWithDebInfo Builds
+
+      - name: Upload resources zip
+        if: steps.organize.outputs.resources-found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          path: resources/*
+          name: resources
+
+      - name: Delete old artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: build-*
 
   publish:
     name: Publish
     permissions:
       contents: write
-    needs: win-msi
+    needs: cleanup
     runs-on: ubuntu-latest
     steps:
-      - name: Download Windows .msi installer
+      - name: Download Windows installer
         uses: actions/download-artifact@v4
         with:
-          name: Windows .msi installer
+          name: Windows installer
+
+      - name: Download Debian package
+        uses: actions/download-artifact@v4
+        with:
+          name: Debian package
 
       - name: Download zips
         uses: actions/download-artifact@v4
         with:
-          name: Build outputs
+          name: Release Builds
 
       - name: Prepare
         run: |
           mv Windows-MSVC.zip Windows.zip
           rm Windows-LLVM.zip
 
+          unzip MacOS.zip -d mac
+          rm MacOS.zip
+          cd mac
+          ln -sf libraylib.dylib.5.5.0 libraylib.550.dylib
+          ln -sf libraylib.dylib.5.5.0 libraylib.dylib
+          tar -czvf ../MacOS.tar.gz *
+          cd ..
+          
+          unzip Linux.zip -d linux
+          rm Linux.zip
+          cd linux
+          ln -sf libraylib.so.5.5.0 libraylib.so.550
+          ln -sf libraylib.so.5.5.0 libraylib.so
+          tar -czvf ../Linux.tar.gz *
+
       - name: Create release
-        if: github.ref_name != 'Template' && github.ref_name != 'github-actions'
+        if: github.ref_name != 'Template' 
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly-${{ github.ref_name }}
@@ -165,6 +363,7 @@ jobs:
           draft: false
           prerelease: true
           files: |
-            ${{ github.ref_name }}.msi 
+            *.msi
+            *.deb
             *.zip
-
+            *.tar.gz
