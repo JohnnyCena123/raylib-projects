@@ -176,6 +176,7 @@ jobs:
       - name: Build
         id: build
         run: |
+          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
           PACKAGE_NAME=${{ github.ref_name }}
           chmod +x ./$PACKAGE_NAME
           PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
@@ -231,7 +232,6 @@ jobs:
 
       - name: Test package
         run: |
-          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
           sudo dpkg -i ${{ steps.build.outputs.package-path }}
 
       - name: Upload
