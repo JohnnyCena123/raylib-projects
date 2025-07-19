@@ -1,3 +1,4 @@
+#include <raylib.h>
 #if defined(NO_TERMINAL_WINDOWS)
 	// holy shit i hate raylib + windows
 	// it compiles so shut up
@@ -10,28 +11,21 @@
 	#define _IMM_SDK_DEFINED_
 	#define _PLAYSOUNDAPI_H_
 	#include <windows.h>
-	int main();
-	int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(); }
-#endif
-#include <raylib.h>
-
-int constexpr SCREEN_WIDTH = 1800;
-int constexpr SCREEN_HEIGHT = 900;
-
-int main() {
-
-	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hello!");
-
-	SetTargetFPS(60);
-
-	while (!WindowShouldClose()) {
-		BeginDrawing();
-		ClearBackground(SKYBLUE);
-
-		EndDrawing();
+	int main(int argc, char* argv[]);
+	int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+		// TODO: implement actual commandline arguments handling
+		char buffer[MAX_PATH];
+		(void)GetModuleFileName(NULL, buffer, MAX_PATH);
+		char* argv[] = { buffer };
+		return main(1, argv);
 	}
+#endif
+#include "game.hpp"
 
-	CloseWindow();
+int main(int argc, char* argv[]) {
+
+	Game game{argc, argv};
+	game.run();
 
 	return 0;
 }

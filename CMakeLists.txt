@@ -7,7 +7,10 @@ execute_process(
 	OUTPUT_VARIABLE GIT_BRANCH
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-project(${GIT_BRANCH}) # i might decide to change this in specific branches but overall itll be the default
+project(${GIT_BRANCH}
+	LANGUAGES CXX
+	VERSION 1.0.0
+)
 
 if(NOT DONT_USE_CACHING_COMPILER)
 	message(STATUS "Looking for ccache/sccache")
@@ -96,9 +99,11 @@ if(DEFINED BIN_SUFFIX)
 	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-${BIN_SUFFIX}")
 endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES
-  BUILD_RPATH "$ORIGIN:$ORIGIN/../lib/${PROJECT_NAME}:/usr/lib/${PROJECT_NAME}"
+	BUILD_RPATH "$ORIGIN:$ORIGIN/../lib/${PROJECT_NAME}:/usr/lib/${PROJECT_NAME}"
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
 target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
 target_link_libraries(${PROJECT_NAME} raylib)
 
