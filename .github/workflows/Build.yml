@@ -224,6 +224,7 @@ jobs:
           Architecture: amd64
           Maintainer: Johnny Cena <iamahuman1395@gmail.com>
           Description: $PACKAGE_DESCRIPTION
+          
           EOF
 
           dpkg-deb --build "$PACKAGE_DIR" "$PACKAGE_DIR".deb
