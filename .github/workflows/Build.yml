@@ -348,7 +348,7 @@ jobs:
         uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
           tag_name: nightly-${{ github.ref_name }}
-          delete_release: false
+          delete_release: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
