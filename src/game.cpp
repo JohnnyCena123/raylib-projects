@@ -3,8 +3,12 @@
 #include "game.hpp"
 #include "basics.hpp"
 
-Game::Game() : m_screenWidth(START_SCREEN_WIDTH), 
-    m_screenHeight(START_SCREEN_HEIGHT), m_resourceManager() {
+Game::Game(int argc, char* argv[]) : m_shouldSaveLogs(false), m_logs(""),
+	m_screenWidth(START_SCREEN_WIDTH), m_screenHeight(START_SCREEN_HEIGHT), 
+	m_resourceManager() {
+	
+	handleArgv(argc, argv);
+
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(m_screenWidth, m_screenHeight, "Hello!");
 	SetTargetFPS(60);
@@ -21,6 +25,23 @@ Game::Game() : m_screenWidth(START_SCREEN_WIDTH),
 Game::~Game() {
     m_resourceManager.uninitialize();
 	CloseWindow();
+
+	std::time_t currentTime = std::time(0); 
+	std::tm* localTime = std::localtime(&currentTime);
+
+	if (m_shouldSaveLogs) {
+		char const* logFileName = TextFormat("%i.%i.%i-%i:%i:%i.log",
+			localTime->tm_year + 1900,
+			localTime->tm_mon + 1,
+			localTime->tm_mday,
+			localTime->tm_hour,
+			localTime->tm_min,
+			localTime->tm_sec
+		);
+		Path logsDir = saveDir/"logs";
+		if (!DirectoryExists(logsDir.string().c_str())) MakeDirectory(logsDir.string().c_str());
+		SaveFileText((logsDir/logFileName).string().c_str(), m_logs.str().c_str());
+	}
 }
 
 void Game::run() {

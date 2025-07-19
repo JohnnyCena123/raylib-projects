@@ -10,20 +10,20 @@ Path const resourceDir = [] -> Path {
 	return exeDir;
 #elif defined(__linux__)
 	if (exeDir.string().starts_with("/usr") && 
-		DirectoryExists("/usr/share/" APP_NAME "/resources")
-	) return "/usr/share/" APP_NAME;
+		DirectoryExists("/usr/share/" PROJECT_NAME "/resources")
+	) return Path{"/usr/share"}/PROJECT_NAME/"resources";
 #endif
 	return exeDir/"resources";
 }();
 
-Path const saveDir = [] -> Path {
+Path saveDir = [] -> Path {
 	Path ret = Path{GetApplicationDirectory()} / "save";
 #ifdef _WIN32
 	Path appData = std::getenv("APPDATA");
-	ret = appData/APP_NAME;
+	ret = appData/PROJECT_NAME;
 #elif defined(__linux__)
 	Path homeDir = std::getenv("HOME");
-	ret = homeDir/".local"/"share"/APP_NAME;
+	ret = homeDir/".local"/"share"/PROJECT_NAME;
 #endif
 	if (!DirectoryExists(ret.string().c_str())) 
 		MakeDirectory(ret.string().c_str());
