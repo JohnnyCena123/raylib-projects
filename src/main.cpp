@@ -11,7 +11,7 @@
 	#define _IMM_SDK_DEFINED_
 	#define _PLAYSOUNDAPI_H_
 	#include <windows.h>
-	int main();
+	int main(int argc, char* argv[]);
 	int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// TODO: implement actual commandline arguments handling
 		char buffer[MAX_PATH];
