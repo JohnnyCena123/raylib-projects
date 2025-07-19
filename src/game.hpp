@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sstream>
 #include "basics.hpp"
 #include "resource-manager.hpp"
 

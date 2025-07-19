@@ -16,7 +16,8 @@
 		// TODO: implement actual commandline arguments handling
 		char buffer[MAX_PATH];
 		(void)GetModuleFileName(NULL, buffer, MAX_PATH);
-		return main(1, { buffer });
+		char* argv[] = { buffer };
+		return main(1, argv);
 	}
 #endif
 #include "game.hpp"
