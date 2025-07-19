@@ -188,18 +188,14 @@ jobs:
           mkdir -p "$PACKAGE_DIR"/usr/lib/$PACKAGE_NAME
           mv ./*.so* "$PACKAGE_DIR/usr/lib/$PACKAGE_NAME/"
 
-          if [ -d "./resources" ]; then
-            mkdir -p "$PACKAGE_DIR/usr/share/$PACKAGE_NAME/"
-            cp -r ./resources "$PACKAGE_DIR/usr/share/$PACKAGE_NAME/"
-            if [ -f "./resources/icon.png" ]; then
-              ICON_DIR="usr/share/icons"
-              mkdir -p "$PACKAGE_DIR/$ICON_DIR"
-              ICON_PATH="$ICON_DIR/$PACKAGE_NAME.png"
-              cp ./resources/icon.png "$PACKAGE_DIR/$ICON_PATH"
-              DESKTOP_ICON_LINE="Icon=/$ICON_PATH"
-            fi
-            rm -rf resources
-          fi
+          mkdir -p "$PACKAGE_DIR/usr/share/$PACKAGE_NAME/"
+          cp -r ./resources "$PACKAGE_DIR/usr/share/$PACKAGE_NAME/"
+          ICON_DIR="usr/share/icons"
+          mkdir -p "$PACKAGE_DIR/$ICON_DIR"
+          ICON_PATH="$ICON_DIR/$PACKAGE_NAME.png"
+          cp ./resources/icon.png "$PACKAGE_DIR/$ICON_PATH"
+          DESKTOP_ICON_LINE="Icon=/$ICON_PATH"
+          rm -rf resources
 
           mkdir -p "$PACKAGE_DIR/usr/share/applications/"
           cat <<EOF > "$PACKAGE_DIR/usr/share/applications/$PACKAGE_NAME.desktop"
@@ -259,13 +255,8 @@ jobs:
         id: organize
         run: |
           rm -rf "Debian package" "Windows installer"
-          if [ -d "build-win-msvc/resources" ]; then 
-            echo "resources-found=true" >> $GITHUB_OUTPUT
-            mv build-win-msvc/resources .
-            rm -rf */resources
-          else
-            echo "resources-found=false" >> $GITHUB_OUTPUT
-          fi
+          mv build-win-msvc/resources .
+          rm -rf */resources
 
           mkdir Release
           mkdir RelWithDebInfo
@@ -299,7 +290,6 @@ jobs:
           name: RelWithDebInfo Builds
 
       - name: Upload resources zip
-        if: steps.organize.outputs.resources-found == 'true'
         uses: actions/upload-artifact@v4
         with:
           path: resources/*
