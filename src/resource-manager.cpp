@@ -25,8 +25,8 @@ void ResourceManager::uninitialize() {
 	}
 }
 
-bool ResourceManager::loadImage(std::string id, Path relativePath, LoadImageCallback manipulator) {
-	Path const fullPath = resourceDir / relativePath;
+bool ResourceManager::loadImage(std::string id, fs::path relativePath, LoadImageCallback manipulator) {
+	fs::path const fullPath = resourceDir / relativePath;
 	if (!FileExists(fullPath.string().c_str())) {
 		TraceLog(LOG_WARNING, "Image file does not exist [%s]: %s", id.c_str(), fullPath.string().c_str());
 		return false;
@@ -48,7 +48,7 @@ bool ResourceManager::loadImage(std::string id, Path relativePath, LoadImageCall
 	m_images[id] = image;
 	return true;
 }
-bool ResourceManager::loadTexture(std::string id, Path relativePath, LoadImageCallback manipulator) {
+bool ResourceManager::loadTexture(std::string id, fs::path relativePath, LoadImageCallback manipulator) {
 	if (!loadImage(id, relativePath, manipulator)) {
 		TraceLog(LOG_WARNING, "Texture of id %s failed to load", id.c_str());
 		return false;

@@ -34,7 +34,7 @@ void Game::handleArgv(int argc, char* argv[]) {
 			{ 'd', "--desc", printDescription },
 		};
 		
-		std::optional<Path> altSaveDir;
+		std::optional<fs::path> altSaveDir;
 		for (size_t i = 1; i < argc; i++) {
 			std::string arg = argv[i];
 			if (arg.starts_with("--")) {

@@ -17,8 +17,8 @@ public:
 	void initialize();
 	void uninitialize();
 
-	bool loadImage(std::string id, Path relativePath, LoadImageCallback manipulator = dummyImageManipulator);
-	bool loadTexture(std::string id, Path relativePath, LoadImageCallback manipulator = dummyImageManipulator);
+	bool loadImage(std::string id, fs::path relativePath, LoadImageCallback manipulator = dummyImageManipulator);
+	bool loadTexture(std::string id, fs::path relativePath, LoadImageCallback manipulator = dummyImageManipulator);
 
 	Image const& getImage(std::string id) const;
 	Texture2D const& getTexture(std::string id) const;

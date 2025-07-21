@@ -38,7 +38,7 @@ Game::~Game() {
 			localTime->tm_min,
 			localTime->tm_sec
 		);
-		Path logsDir = saveDir/"logs";
+		fs::path logsDir = saveDir/"logs";
 		if (!DirectoryExists(logsDir.string().c_str())) MakeDirectory(logsDir.string().c_str());
 		SaveFileText((logsDir/logFileName).string().c_str(), m_logs.str().c_str());
 	}
