@@ -2,15 +2,17 @@
 #include <raylib.h>
 #include "game.hpp"
 #include "basics.hpp"
+#include "libclipboard.h"
 
 Game::Game() : m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
-	m_hadWarning(false), m_logs(""), m_screenWidth(START_SCREEN_WIDTH), 
-	m_screenHeight(START_SCREEN_HEIGHT), m_resourceManager() 
+	m_hadWarning(false), m_logs(""), m_screenWidth(START_SCREEN_WIDTH),
+	m_screenHeight(START_SCREEN_HEIGHT), m_resourceManager()
 { /* cant call initGame() here, handleCli() needs to be called first */ }
 
 Game::~Game() { }
 
 void Game::init() {
+	m_cb = clipboard_new(nullptr);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(m_screenWidth, m_screenHeight, "Hello!");
 	SetTargetFPS(60);
@@ -42,9 +44,9 @@ void Game::run() {
 
 		Vector2 texSize = { static_cast<float>(m_dummyResource.width), static_cast<float>(m_dummyResource.height) };
 
-		DrawTexturePro(m_dummyResource, { 0, 0, texSize.x, texSize.y }, { 
-			m_screenWidth / 2.f, m_screenHeight / 2.f, 
-			texSize.x * scale, texSize.y * scale 
+		DrawTexturePro(m_dummyResource, { 0, 0, texSize.x, texSize.y }, {
+			m_screenWidth / 2.f, m_screenHeight / 2.f,
+			texSize.x * scale, texSize.y * scale
 		}, { texSize.x / 2, texSize.y / 2 }, m_dummyResourceRotation, WHITE);
 
 		EndDrawing();
@@ -60,4 +62,6 @@ void Game::deinit() {
 	m_resourceManager.deinit();
 	CloseWindow();
 	if (m_shouldSaveLogs || m_hadWarning) saveLogs();
+
+	clipboard_free(m_cb);
 }

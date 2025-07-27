@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_C_STANDARD 23)
 
 execute_process(
 	COMMAND git rev-parse --abbrev-ref HEAD
@@ -8,7 +9,7 @@ execute_process(
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 project(${GIT_BRANCH}
-	LANGUAGES CXX
+	LANGUAGES CXX C
 	VERSION 1.0.0
 )
 
@@ -73,6 +74,16 @@ if(BUILD_SHARED_LIBS AND DEFINED BIN_SUFFIX)
 	set_target_properties(raylib PROPERTIES OUTPUT_NAME "raylib-${BIN_SUFFIX}")
 endif()
 
+CPMAddPackage(NAME "tinyfd"
+	GIT_REPOSITORY "https://git.code.sf.net/p/tinyfiledialogs/code"
+	GIT_TAG "master"
+)
+set(TINYFD_TARGET "tinyfd")
+add_library(${TINYFD_TARGET} STATIC "${tinyfd_SOURCE_DIR}/tinyfiledialogs.c")
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
+CPMAddPackage("gh:jtanx/libclipboard#master")
+target_include_directories(clipboard PRIVATE "${libclipboard_BINARY_DIR}/include")
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
 if(WIN32)
@@ -93,6 +104,7 @@ else()
 endif()
 if(NOT NO_PRECOMPILED_HEADERS)
 	file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS src/*.hpp)
+	list(APPEND HEADERS "${tinyfd_SOURCE_DIR}/tinyfiledialogs.h")
 	target_precompile_headers(${PROJECT_NAME} PRIVATE ${HEADERS})
 endif()
 if(DEFINED BIN_SUFFIX)
@@ -104,8 +116,17 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
-target_include_directories(${PROJECT_NAME} PRIVATE ${raylib_SOURCE_DIR}/src)
-target_link_libraries(${PROJECT_NAME} raylib)
+target_include_directories(${PROJECT_NAME} PRIVATE
+	"${raylib_SOURCE_DIR}/src"
+	"${tinyfd_SOURCE_DIR}"
+	"${libclipboard_SOURCE_DIR}/include"
+	"${libclipboard_BINARY_DIR}/include"
+)
+target_link_libraries(${PROJECT_NAME}
+	raylib
+	${TINYFD_TARGET}
+	clipboard
+)
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
 if(EXISTS ${RESOURCE_DIR})

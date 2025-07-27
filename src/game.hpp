@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sstream>
+#include <libclipboard.h>
 #include "basics.hpp"
 #include "resource-manager.hpp"
 
@@ -17,6 +18,8 @@ public:
 	void deinit();
 
 private:
+
+	clipboard_c* m_cb;
 
 	int m_traceLogLevel;
 	bool m_silent;
