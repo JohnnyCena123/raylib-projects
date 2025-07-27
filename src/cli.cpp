@@ -6,7 +6,7 @@
 #include "game.hpp"
 
 #define ERROR_MSG argv[0] << ": \033[1;31merror:\033[0m "
-#define HELP_SUGGESTION "use \033[1;33m" << argv[0] << " --help\033[0m for more info."
+#define HELP_SUGGESTION "use \033[1;33m" << argv[0] << " --help\033[0m for more info." << std::endl
 
 void Game::handleCli(int argc, char* argv[]) {
 
