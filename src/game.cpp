@@ -3,17 +3,19 @@
 #include "game.hpp"
 #include "basics.hpp"
 
-Game::Game(int argc, char* argv[]) : m_shouldSaveLogs(false), m_logs(""),
-	m_screenWidth(START_SCREEN_WIDTH), m_screenHeight(START_SCREEN_HEIGHT), 
-	m_resourceManager() {
-	
-	handleArgv(argc, argv);
+Game::Game() : m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
+	m_hadWarning(false), m_logs(""), m_screenWidth(START_SCREEN_WIDTH), 
+	m_screenHeight(START_SCREEN_HEIGHT), m_resourceManager() 
+{ /* cant call initGame() here, handleCli() needs to be called first */ }
 
+Game::~Game() { }
+
+void Game::init() {
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(m_screenWidth, m_screenHeight, "Hello!");
 	SetTargetFPS(60);
 
-    m_resourceManager.initialize();
+	m_resourceManager.init();
 	if (!m_resourceManager.loadImage("app-icon", "icon.png"))
 		TraceLog(LOG_WARNING, "Failed to load app icon");
 	SetWindowIcon(m_resourceManager.getImage("app-icon"));
@@ -21,27 +23,6 @@ Game::Game(int argc, char* argv[]) : m_shouldSaveLogs(false), m_logs(""),
 	if (!m_resourceManager.loadTexture("image", "image.png"))
 		TraceLog(LOG_WARNING, "Failed to load dummy resource");
 	m_dummyResource = m_resourceManager.getTexture("image");
-}
-Game::~Game() {
-    m_resourceManager.uninitialize();
-	CloseWindow();
-
-	std::time_t currentTime = std::time(0); 
-	std::tm* localTime = std::localtime(&currentTime);
-
-	if (m_shouldSaveLogs) {
-		char const* logFileName = TextFormat("%i.%i.%i-%i:%i:%i.log",
-			localTime->tm_year + 1900,
-			localTime->tm_mon + 1,
-			localTime->tm_mday,
-			localTime->tm_hour,
-			localTime->tm_min,
-			localTime->tm_sec
-		);
-		fs::path logsDir = saveDir/"logs";
-		if (!DirectoryExists(logsDir.string().c_str())) MakeDirectory(logsDir.string().c_str());
-		SaveFileText((logsDir/logFileName).string().c_str(), m_logs.str().c_str());
-	}
 }
 
 void Game::run() {
@@ -73,4 +54,10 @@ void Game::run() {
 	}
 
 
+}
+
+void Game::deinit() {
+	m_resourceManager.deinit();
+	CloseWindow();
+	if (m_shouldSaveLogs || m_hadWarning) saveLogs();
 }

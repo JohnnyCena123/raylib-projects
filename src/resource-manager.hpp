@@ -14,8 +14,8 @@ public:
 	ResourceManager(ResourceManager&&) = delete;
 	~ResourceManager();
 
-	void initialize();
-	void uninitialize();
+	void init();
+	void deinit();
 
 	bool loadImage(std::string id, fs::path relativePath, LoadImageCallback manipulator = dummyImageManipulator);
 	bool loadTexture(std::string id, fs::path relativePath, LoadImageCallback manipulator = dummyImageManipulator);

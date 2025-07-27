@@ -205,7 +205,7 @@ jobs:
           Name=$PACKAGE_NAME
           GenericName=$PACKAGE_NAME
           $DESKTOP_ICON_LINE
-          Comment=$PACKAGE_DESCRIPTION
+          Comment=$PACKAGE_DESC
           Exec=/usr/bin/$PACKAGE_NAME
           TryExec=/usr/bin/$PACKAGE_NAME
           Terminal=false
@@ -223,8 +223,7 @@ jobs:
           Priority: optional
           Architecture: amd64
           Maintainer: Johnny Cena <iamahuman1395@gmail.com>
-          Description: $PACKAGE_DESCRIPTION
-          
+          Description: $PACKAGE_DESC
           EOF
 
           dpkg-deb --build "$PACKAGE_DIR" "$PACKAGE_DIR".deb

@@ -7,7 +7,7 @@ void dummyImageManipulator(Image& image) { }
 ResourceManager::ResourceManager() : m_initialized(false) { }
 ResourceManager::~ResourceManager() { }
 
-void ResourceManager::initialize() {
+void ResourceManager::init() {
 	if (!m_initialized) {
 		m_emptyImage = GenImageColor(1, 1, BLANK);
 		m_emptyTexture = LoadTextureFromImage(m_emptyImage);
@@ -15,7 +15,7 @@ void ResourceManager::initialize() {
 	}
 }
 
-void ResourceManager::uninitialize() {
+void ResourceManager::deinit() {
 	if (m_initialized) {
 		for (auto const& [id, image] : m_images) UnloadImage(image);
 		for (auto const& [id, texture] : m_textures) UnloadTexture(texture);

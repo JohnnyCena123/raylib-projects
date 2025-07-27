@@ -24,8 +24,12 @@
 
 int main(int argc, char* argv[]) {
 
-	Game game{argc, argv};
+	Game game{};
+	game.handleCli(argc, argv);
+
+	game.init();
 	game.run();
+	game.deinit();
 
 	return 0;
 }
