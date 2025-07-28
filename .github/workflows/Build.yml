@@ -213,7 +213,7 @@ jobs:
           Terminal=false
           Type=Application
           Categories=Utility;Game;
-          Keywords=Game;Snake;Raylib;C;CPP;
+          Keywords=Game;$PACKAGE_NAME;Raylib;C;CPP;
           EOF
 
           mkdir -p $PACKAGE_DIR/DEBIAN
