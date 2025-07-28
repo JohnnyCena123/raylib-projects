@@ -24,6 +24,7 @@ void Game::handleCli(int argc, char* argv[]) {
 		bool printVersion = false;
 		bool printHelp = false;
 		bool printDescription = false;
+		bool printRepository = false;
 		std::array options{
 			Option{ 'm', "--minimal-output", minimalOutput },
 			Option{ 's', "--silent", m_silent },
@@ -33,6 +34,7 @@ void Game::handleCli(int argc, char* argv[]) {
 			Option{ 'h', "--help", printHelp },
 			Option{ 'u', "--usage", printHelp },
 			Option{ 'd', "--desc", printDescription },
+			Option{ 'r', "--repo", printRepository },
 		};
 		
 		std::optional<fs::path> altSaveDir;
@@ -92,22 +94,29 @@ void Game::handleCli(int argc, char* argv[]) {
 			exit(0);
 		} else if (printHelp) {
 			std::cout << "Usage: \033" << argv[0] << " <options>\n"
-				"    -m, --minimal-output   --  used for --version and --description. meant to automate package metadata in GitHub Actions.\n"
+				"    -m, --minimal-output   --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
 				"    -s, --silent           --  disables all logging.\n"
 				"    -V, --verbose          --  sets the log level to LOG_TRACE instead of LOG_INFO.\n"
 				"    -S, --save-logs        --  saves logs to a file. unaffected by --silent.\n"
 				"    -h, --help             --  prints this help message and exits.\n"
 				"    -u, --usage            --  same as --help.\n"
 				"    -d, --desc             --  prints a general description of this app.\n"
+				"    -r, --repo             --  provides a link to the GitHub repository of the project.\n"
 				"        --save-dir=DIR     --  sets a custom directory to use for save data. includes log files.\n"
 				"        --log-level=LEVEL  --  sets the log level to the specified input.\n"
 				"                               available log levels: all, trace, debug, info, warning, error, fatal, none\n";
 			exit(0);
 		} else if (printDescription) {
-			if (minimalOutput) std::cout << "Template project for raylib apps\n";
+			if (minimalOutput) std::cout << "Template project for raylib apps";
 			else std::cout <<
 				"'" PROJECT_NAME "' is a template project. it is used to easily create\n"
 				"and start new projects using raylib. it is not a full game or app.\n";
+			exit(0);
+		} else if (printRepository) {
+			if (!minimalOutput) std::cout << "The repository for the project " PROJECT_NAME " can be found in \033[1;33m";
+			std::cout << PROJECT_HOMEPAGE_URL;
+			if (!minimalOutput) std::cout << "\033[0m.";
+			std::cout << std::endl;
 			exit(0);
 		}
 

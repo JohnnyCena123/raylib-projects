@@ -11,6 +11,7 @@ execute_process(
 project(${GIT_BRANCH}
 	LANGUAGES CXX C
 	VERSION 1.0.0
+	HOMEPAGE_URL "https://github.com/JohnnyCena123/raylib-projects/tree/${GIT_BRANCH}"
 )
 
 if(NOT DONT_USE_CACHING_COMPILER)
@@ -125,6 +126,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"${raylib_SOURCE_DIR}/src"
 	"${tinyfd_SOURCE_DIR}"
