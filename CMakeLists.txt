@@ -50,8 +50,18 @@ if(CMAKE_LOCAL_BUILD)
 		set(BIN_SUFFIX "${CONFIGURATION}")
 	endif()
 endif()
+
+include(cmake/CPM.cmake)
+
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
+CPMAddPackage("gh:jtanx/libclipboard#master")
+target_include_directories(clipboard PRIVATE "${libclipboard_BINARY_DIR}/include")
+
 if (BUILD_SHARED_LIBS)
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+	set_target_properties(clipboard PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+	)
 endif()
 if((CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode") AND NOT SEPARATE_DIFFERENT_BUILD_TYPES_MULTI_CONFIG)
 	foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
@@ -59,11 +69,13 @@ if((CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
 		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 		if (BUILD_SHARED_LIBS)
 			set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+			set_target_properties(clipboard PROPERTIES
+				LIBRARY_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+			)
 		endif()
 	endforeach()
 endif()
 
-include(cmake/CPM.cmake)
 include(CheckCCompilerFlag)
 CPMAddPackage("gh:raysan5/raylib#master")
 check_c_compiler_flag("-Wno-tautological-compare" HAS_W_TAUTOLOGICAL_COMPARE)
@@ -80,9 +92,6 @@ CPMAddPackage(NAME "tinyfd"
 )
 set(TINYFD_TARGET "tinyfd")
 add_library(${TINYFD_TARGET} STATIC "${tinyfd_SOURCE_DIR}/tinyfiledialogs.c")
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
-CPMAddPackage("gh:jtanx/libclipboard#master")
-target_include_directories(clipboard PRIVATE "${libclipboard_BINARY_DIR}/include")
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
