@@ -101,7 +101,7 @@ void Game::handleCli(int argc, char* argv[]) {
 				"    -d, --desc             --  prints a general description of this app.\n"
 				"        --save-dir=DIR     --  sets a custom directory to use for save data. includes log files.\n"
 				"        --log-level=LEVEL  --  sets the log level to the specified input.\n"
-				"                               available log levels: all, trace, debug, info, warning, error, fatal, none";
+				"                               available log levels: all, trace, debug, info, warning, error, fatal, none\n";
 			exit(0);
 		} else if (printDescription) {
 			if (minimalOutput) std::cout << "Template project for raylib apps\n";
