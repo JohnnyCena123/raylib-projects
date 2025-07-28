@@ -269,28 +269,52 @@ jobs:
           cd RelWithDebInfo
             cd build-win-msvc-relwithdebinfo && zip -r ../Windows-MSVC.zip * && cd ..
             cd build-win-llvm-relwithdebinfo && zip -r ../Windows-LLVM.zip * && cd ..
-            cd build-mac-relwithdebinfo && zip -r ../MacOS.zip * && cd ..
-            cd build-linux-relwithdebinfo && zip -r ../Linux.zip * && cd ..
+
+            cd build-mac-relwithdebinfo
+              ln -sf libraylib-RelWithDebInfo.dylib.5.5.0 libraylib-RelWithDebInfo.dylib.550
+              ln -sf libraylib-RelWithDebInfo.dylib.550 libraylib-RelWithDebInfo.dylib
+              tar -czvf ../MacOS.tar.gz *
+            cd ..
+
+            cd build-linux-relwithdebinfo
+              ln -sf libraylib-RelWithDebInfo.so.5.5.0 libraylib-RelWithDebInfo.so.550
+              ln -sf libraylib-RelWithDebInfo.so.550 libraylib-RelWithDebInfo.so
+              tar -czvf ../MacOS.tar.gz *
+            cd ..
           cd ..
 
           mv build-* Release
           cd Release
             cd build-win-msvc && zip -r ../Windows-MSVC.zip * && cd ..
             cd build-win-llvm && zip -r ../Windows-LLVM.zip * && cd ..
-            cd build-mac && zip -r ../MacOS.zip * && cd ..
-            cd build-linux && zip -r ../Linux.zip * && cd ..
+
+            cd build-mac
+              ln -sf libraylib.dylib.5.5.0 libraylib.dylib.550
+              ln -sf libraylib.dylib.550 libraylib.dylib
+              tar -czvf ../MacOS.tar.gz *
+            cd ..
+
+            cd build-linux
+              ln -sf libraylib.so.5.5.0 libraylib.so.550
+              ln -sf libraylib.so.550 libraylib.so
+              tar -czvf ../MacOS.tar.gz *
+            cd ..
           cd ..
 
       - name: Upload Release zip
         uses: actions/upload-artifact@v4
         with:
-          path: Release/*.zip
+          path: |
+            Release/*.zip
+            Release/*.tar.gz
           name: Release Builds
 
       - name: Upload RelWithDebInfo zip
         uses: actions/upload-artifact@v4
         with:
-          path: RelWithDebInfo/*.zip
+          path: |
+            RelWithDebInfo/*.zip
+            RelWithDebInfo/*.tar.gz
           name: RelWithDebInfo Builds
 
       - name: Upload resources zip
@@ -331,21 +355,6 @@ jobs:
         run: |
           mv Windows-MSVC.zip Windows.zip
           rm Windows-LLVM.zip
-
-          unzip MacOS.zip -d mac
-          rm MacOS.zip
-          cd mac
-          ln -sf libraylib.dylib.5.5.0 libraylib.550.dylib
-          ln -sf libraylib.dylib.5.5.0 libraylib.dylib
-          tar -czvf ../MacOS.tar.gz *
-          cd ..
-          
-          unzip Linux.zip -d linux
-          rm Linux.zip
-          cd linux
-          ln -sf libraylib.so.5.5.0 libraylib.so.550
-          ln -sf libraylib.so.5.5.0 libraylib.so
-          tar -czvf ../Linux.tar.gz *
 
       - name: Delete tag
         uses: dev-drprasad/delete-tag-and-release@v1.1
