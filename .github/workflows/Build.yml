@@ -14,12 +14,12 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - id: win-msvc
+          - id: win-MSVC
             name: Windows MSVC
             os: windows-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -G "Visual Studio 17 2022"
 
-          - id: win-llvm
+          - id: win-LLVM
             name: Windows LLVM
             os: windows-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
@@ -60,20 +60,20 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4 
       with:
-        name: build-${{ matrix.config.id }}
+        name: build-${{ matrix.config.id }}-Release
         path: ${{ github.workspace }}/bin/*
 
-  build-relwithdebinfo:
+  build-RelWithDebInfo:
     strategy:
       fail-fast: false
       matrix:
         config:
-          - id: win-msvc
+          - id: win-MSVC
             name: Windows MSVC
             os: windows-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -G "Visual Studio 17 2022"
 
-          - id: win-llvm
+          - id: win-LLVM
             name: Windows LLVM
             os: windows-latest
             cmake-platform-args: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
@@ -113,7 +113,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4 
       with:
-        name: build-${{ matrix.config.id }}-relwithdebinfo
+        name: build-${{ matrix.config.id }}-RelWithDebInfo
         path: ${{ github.workspace }}/bin/*
 
   win-msi:
@@ -170,7 +170,7 @@ jobs:
       - name: Download build output
         uses: actions/download-artifact@v4
         with:
-          name: build-linux
+          name: build-linux-Release
           path: ${{ github.workspace }}
 
       - name: Build
@@ -247,7 +247,7 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-latest
-    needs: [ linux-deb, win-msi, build-relwithdebinfo ]
+    needs: [ linux-deb, win-msi, build-RelWithDebInfo ]
     permissions:
       contents: write
 
@@ -264,42 +264,28 @@ jobs:
 
           mkdir Release
           mkdir RelWithDebInfo
-          
-          mv build-*-relwithdebinfo RelWithDebInfo/
-          cd RelWithDebInfo
-            cd build-win-msvc-relwithdebinfo && zip -r ../Windows-MSVC.zip * && cd ..
-            cd build-win-llvm-relwithdebinfo && zip -r ../Windows-LLVM.zip * && cd ..
+          mv build-*-RelWithDebInfo RelWithDebInfo/
+          mv build-* Release/
 
-            cd build-mac-relwithdebinfo
-              ln -sf libraylib-RelWithDebInfo.dylib.5.5.0 libraylib-RelWithDebInfo.dylib.550
-              ln -sf libraylib-RelWithDebInfo.dylib.550 libraylib-RelWithDebInfo.dylib
-              tar -czvf ../MacOS.tar.gz *
+          for config in Release RelWithDebInfo; do
+
+            cd $config
+              for toolchain in MSVC LLVM; do
+                cd build-win-$toolchain-$config && zip -r ../Windows-$toolchain.zip * && cd ..
+              done
+
+              cd build-mac-$config
+                ln -sf libraylib-$config.5.5.0.dylib libraylib-$config.550.dylib
+                ln -sf libraylib-$config.550.dylib libraylib-$config.dylib
+                tar -czvf ../MacOS.tar.gz *
+              cd ..
+              cd build-linux-$config
+                ln -sf libraylib-$config.so.5.5.0 libraylib-$config.so.550
+                ln -sf libraylib-$config.so.550 libraylib-$config.so
+                tar -czvf ../MacOS.tar.gz *
+              cd ..
             cd ..
-
-            cd build-linux-relwithdebinfo
-              ln -sf libraylib-RelWithDebInfo.so.5.5.0 libraylib-RelWithDebInfo.so.550
-              ln -sf libraylib-RelWithDebInfo.so.550 libraylib-RelWithDebInfo.so
-              tar -czvf ../MacOS.tar.gz *
-            cd ..
-          cd ..
-
-          mv build-* Release
-          cd Release
-            cd build-win-msvc && zip -r ../Windows-MSVC.zip * && cd ..
-            cd build-win-llvm && zip -r ../Windows-LLVM.zip * && cd ..
-
-            cd build-mac
-              ln -sf libraylib.dylib.5.5.0 libraylib.dylib.550
-              ln -sf libraylib.dylib.550 libraylib.dylib
-              tar -czvf ../MacOS.tar.gz *
-            cd ..
-
-            cd build-linux
-              ln -sf libraylib.so.5.5.0 libraylib.so.550
-              ln -sf libraylib.so.550 libraylib.so
-              tar -czvf ../MacOS.tar.gz *
-            cd ..
-          cd ..
+          done
 
       - name: Upload Release zip
         uses: actions/upload-artifact@v4
