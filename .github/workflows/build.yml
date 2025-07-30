@@ -154,7 +154,7 @@ jobs:
                 ;;
               esac
               case "$os" in
-                linux-*|macos-*) ;;
+                ubuntu-*|macos-*) ;;
                 *)
                   echo "Expected Linux or MacOS for Unix Makefiles." >&2
                   exit 2

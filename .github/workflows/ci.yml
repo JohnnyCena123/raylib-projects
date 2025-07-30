@@ -12,32 +12,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        id: [ 'win-MSVC', 'win-LLVM', 'mac', 'linux' ]
-        compiler: [ 'clang' ]
-        generator: [ 'Ninja' ]
-        shared-libs: [ true ]
-        build-type: [ 'Release' ]
-        include:
-          - id: win-MSVC
-            name: Windows MSVC
-            os: windows-latest
-            compiler: cl
-            generator: 'Visual Studio 17 2022'
+        config:
+        - id: win-MSVC
+          name: Windows MSVC
+          os: windows-latest
+          compiler: cl
+          generator: 'Visual Studio 17 2022'
 
-          - id: win-LLVM
-            name: Windows LLVM
-            os: windows-latest
+        - id: win-LLVM
+          name: Windows LLVM
+          os: windows-latest
+          compiler: clang
+          generator: Ninja
 
-          - id: mac
-            name: MacOS
-            os: macos-latest
+        - id: mac
+          name: MacOS
+          os: macos-latest
+          compiler: clang
+          generator: Ninja
 
-          - id: linux
-            name: Linux
-            os: ubuntu-latest
+        - id: linux
+          name: Linux
+          os: ubuntu-latest
+          compiler: clang
+          generator: Ninja
 
-    name: Build ${{ matrix.name }} Release
-    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.config.name }} Release
+    runs-on: ${{ matrix.config.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -45,11 +46,11 @@ jobs:
       - name: Build
         uses: ./.github/workflows/build.yml
         with:
-          os: ${{ matrix.os }}
-          compiler: ${{ matrix.compiler }}
-          generator: ${{ matrix.generator }}
-          shared-libs: ${{ matrix.shared-libs }}
-          build-type: ${{ matrix.build-type }}
+          os: ${{ matrix.config.os }}
+          compiler: ${{ matrix.config.compiler }}
+          generator: ${{ matrix.config.generator }}
+          shared-libs: ${{ matrix.config.shared-libs }}
+          build-type: ${{ matrix.config.build-type }}
 
   build-RelWithDebInfo:
     strategy:
