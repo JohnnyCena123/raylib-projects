@@ -38,18 +38,18 @@ Optional flags you can use when building:
 shared (dynamic) libraries instead of static libraries when none are specified. As a bonus, in this project, it also \
 renames raylib's shared library to `raylib-<build type` (e.g. `libraylib-RelWithDebInfo.so`) on non-Release builds, \
 allowing everything to be in one folder.
-* `-DCMAKE_LOCAL_BUILD=ON` - Enables options for building locally. Mainly helps with organizing different builds in this repo.
-* `-DDONT_USE_CACHING_COMPILER=ON` - Disables looking for ccache/sccache when building.
-* `-DDONT_DISABLE_WARNINGS=ON` - Does not disable warnings for dependencies.
+* `-DUSE_CACHING_COMPILER=OFF` - Disables looking for ccache/sccache when configuring the project.
+* `-DALL_BUILD_TYPES_TOGETHER=OFF` - Places the output of each build type in its own separate directory.
+* `-DCMAKE_LOCAL_BUILD=ON` - Enables options for building locally. Mainly helps with organizing builds of different build types.
 * `-DCUSTOM_OUTPUT_OPTIONS` - Allows you to specify the Executable name, and/or build output directory; or disable them \
 completely, and let CMake use the default values for them.
   * `-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/path/to/output/directory` - Built-into CMake, \
   allows you to specify where the output Executable will be.
-  * `-DEXECUTABLE_NAME=my-amazing-name` - Specifies the filename of the output Executable
-* `-DSEPARATE_DIFFERENT_BUILD_TYPES_MULTI_CONFIG=ON` - Allows you to specify whether outputs of different build types \
-will be placed in the same directory or not, when using a multi-config generator.
-* `-DINCLUDE_TERMINAL_IN_RELEASE_WINDOWS=ON` - Allows you to include terminal when building in Release mode. Windows only.
-* `-DNO_PRECOMPILED_HEADERS=ON` - Whether or not project headers will be pre-compiled before the rest of the code.
+  * `-DBIN_SUFFIX=-foobar` - Specifies the suffix for the filename of the output Executable
+* `-DDISABLE_WARNINGS=OFF` - Disables disabling warnings for dependencies.
+* `-DINCLUDE_TERMINAL_IN_RELEASE=ON` - Allows you to include the terminal popup when building for Windows in Release mode.
+* `-DINCLUDE_ICON=OFF` - Lets you decide whether or not the application will have a taskbar/explorer icon on Windows.
+* `-DUSE_PRECOMPILED_HEADERS=OFF` - Whether or not project headers will be pre-compiled before the rest of the code.
 
 ### Notes
 
