@@ -11,30 +11,32 @@ on:
       compiler:
         type: string
         required: true
+        default: clang
         description: Compiler to use for the build process
 
       generator:
         type: string
-        required: false
+        required: true
         default: Ninja
         description: CMake Generator
 
       shared-libs:
         type: boolean
-        required: false
+        required: true
         default: true
-        description: Build shared libraries
+        description: Whether or not to build shared libraries
 
       build-type:
         type: string
         required: true
+        default: Release
         description: CMake build type
 
       upload-outputs:
         type: boolean
-        required: false
+        required: true
         default: false
-        description: Upload build outputs
+        description: Whether or not the build outputs will be uploaded as artifacts
 
   workflow_dispatch:
     inputs:
@@ -46,28 +48,30 @@ on:
       compiler:
         type: string
         required: true
+        default: clang
         description: Compiler to use for the build process
 
       generator:
         type: string
-        required: false
+        required: true
         default: Ninja
         description: CMake Generator
 
       shared-libs:
         type: boolean
-        required: false
+        required: true
         default: true
-        description: Whether or not to build shared libraries
+        description: Build shared libraries
 
       build-type:
         type: string
         required: true
+        default: Release
         description: CMake build type
 
       upload-outputs:
         type: boolean
-        required: false
+        required: true
         default: false
         description: Upload build outputs
 

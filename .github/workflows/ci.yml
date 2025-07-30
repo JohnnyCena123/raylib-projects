@@ -12,94 +12,61 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config:
-        - id: win-MSVC
-          name: Windows MSVC
-          os: windows-latest
-          compiler: cl
-          generator: 'Visual Studio 17 2022'
-          upload-outputs: true
-
-        - id: win-Ninja
-          name: Windows Ninja
-          os: windows-latest
-          compiler: clang
-          generator: Ninja
-
-        - id: win-MinGW
-          name: Windows MinGW
-          os: windows-latest
-          compiler: gcc
-          generator: MinGW Makefiles
-
-        - id: mac-Xcode
-          name: MacOS Xcode
-          os: macos-latest
-          compiler: clang
-          generator: Xcode
-
-        - id: mac-Ninja
-          name: MacOS Ninja
-          os: macos-latest
-          compiler: clang
-          generator: Ninja
-
-        - id: mac-Makefiles
-          name: MacOS Makefiles
-          os: macos-latest
-          compiler: gcc
-          generator: Unix Makefiles
-
-        - id: linux-Ninja
-          name: Linux Ninja
-          os: ubuntu-latest
-          compiler: clang
-          generator: Ninja
-
-        - id: linux-Makefiles
-          name: Linux Makefiles
-          os: ubuntu-latest
-          compiler: gcc
-          generator: Unix Makefiles
-
-    name: Build ${{ matrix.config.name }} Release
-    uses: ./.github/workflows/build.yml
-    with:
-      os: ${{ matrix.config.os }}
-      compiler: ${{ matrix.config.compiler }}
-      generator: ${{ matrix.config.generator }}
-      shared-libs: ${{ matrix.config.shared-libs }}
-      build-type: ${{ matrix.config.build-type }}
-
-  build-RelWithDebInfo:
-    strategy:
-      fail-fast: false
-      matrix:
-        id: [ 'win-MSVC', 'win-LLVM', 'mac', 'linux' ]
-        compiler: [ 'clang' ]
-        generator: [ 'Ninja' ]
-        shared-libs: [ true ]
+        os: [ 'windows-latest', 'macos-latest', 'ubuntu-latest' ]
+        compiler: [ 'cl', 'clang', 'gcc' ]
+        generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
+        shared-libs: [ false, true ]
         build-type: [ 'RelWithDebInfo' ]
+        upload-outputs: [ false ]
         include:
-          - id: win-MSVC
-            name: Windows MSVC
-            os: windows-latest
-            compiler: cl
+          - generator: 'Visual Studio 17 2022'
+            upload-outputs: true
+
+          - generator: 'Xcode'
+            upload-outputs: true
+
+          - generator: 'Unix Makefiles'
+            os: 'ubuntu-latest'
+            compiler: 'gcc'
+            upload-outputs: true
+
+        exclude:
+          - os: 'windows-latest'
+            generator: 'Xcode'
+          - os: 'windows-latest'
+            generator: 'Unix Makefiles'
+          - os: 'macos-latest'
             generator: 'Visual Studio 17 2022'
+          - os: 'macos-latest'
+            generator: 'MinGW Makefiles'
+          - os: 'ubuntu-latest'
+            generator: 'Visual Studio 17 2022'
+          - os: 'ubuntu-latest'
+            generator: 'Xcode'
+          - os: 'ubuntu-latest'
+            generator: 'MinGW Makefiles'
 
-          - id: win-LLVM
-            name: Windows LLVM
-            os: windows-latest
+          - os: 'windows-latest'
+            generator: 'Visual Studio 17 2022'
+            compiler: 'clang'
+          - os: 'windows-latest'
+            generator: 'Visual Studio 17 2022'
+            compiler: 'gcc'
+          - os: 'windows-latest'
+            generator: 'MinGW Makefiles'
+            compiler: 'cl'
+          - os: 'windows-latest'
+            generator: 'Ninja'
+            compiler: 'cl'
+          - os: 'macos-latest'
+            compiler: 'cl'
+          - os: 'macos-latest'
+            generator: 'Xcode'
+            compiler: 'gcc'
+          - os: 'ubuntu-latest'
+            compiler: 'cl'
 
-          - id: mac
-            name: MacOS
-            os: macos-latest
-
-          - id: linux
-            name: Linux
-            os: ubuntu-latest
-
-    name: Build ${{ matrix.name }} RelWithDebInfo
+    name: Build ${{ matrix.os }} with ${{ matrix.generator }} Release
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
@@ -107,6 +74,79 @@ jobs:
       generator: ${{ matrix.generator }}
       shared-libs: ${{ matrix.shared-libs }}
       build-type: ${{ matrix.build-type }}
+      upload-outputs: ${{ matrix.upload-outputs }}
+
+  build-RelWithDebInfo:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'windows-latest', 'macos-latest', 'ubuntu-latest' ]
+        compiler: [ 'cl', 'clang', 'gcc' ]
+        generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
+        shared-libs: [ false, true ]
+        build-type: [ 'RelWithDebInfo' ]
+        upload-outputs: [ false ]
+        include:
+          - generator: 'Visual Studio 17 2022'
+            shared-libs: true
+            upload-outputs: true
+
+          - generator: 'Xcode'
+            shared-libs: true
+            upload-outputs: true
+
+          - generator: 'Unix Makefiles'
+            shared-libs: true
+            os: 'ubuntu-latest'
+            compiler: 'gcc'
+            upload-outputs: true
+
+        exclude:
+          - os: 'windows-latest'
+            generator: 'Xcode'
+          - os: 'windows-latest'
+            generator: 'Unix Makefiles'
+          - os: 'macos-latest'
+            generator: 'Visual Studio 17 2022'
+          - os: 'macos-latest'
+            generator: 'MinGW Makefiles'
+          - os: 'ubuntu-latest'
+            generator: 'Visual Studio 17 2022'
+          - os: 'ubuntu-latest'
+            generator: 'Xcode'
+          - os: 'ubuntu-latest'
+            generator: 'MinGW Makefiles'
+
+          # tie compilers to platforms/generators explicitly (examples)
+          - os: 'windows-latest'
+            generator: 'Visual Studio 17 2022'
+            compiler: 'clang'
+          - os: 'windows-latest'
+            generator: 'Visual Studio 17 2022'
+            compiler: 'gcc'
+          - os: 'windows-latest'
+            generator: 'MinGW Makefiles'
+            compiler: 'cl'
+          - os: 'windows-latest'
+            generator: 'Ninja'
+            compiler: 'cl'
+          - os: 'macos-latest'
+            compiler: 'cl'
+          - os: 'macos-latest'
+            generator: 'Xcode'
+            compiler: 'gcc'
+          - os: 'ubuntu-latest'
+            compiler: 'cl'
+
+    name: Build ${{ matrix.os }} with ${{ matrix.generator }} RelWithDebInfo
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ${{ matrix.os }}
+      compiler: ${{ matrix.compiler }}
+      generator: ${{ matrix.generator }}
+      shared-libs: ${{ matrix.shared-libs }}
+      build-type: ${{ matrix.build-type }}
+      upload-outputs: ${{ matrix.upload-outputs }}
 
   win-msi:
     name: Build Windows installer
@@ -252,7 +292,7 @@ jobs:
         id: organize
         run: |
           rm -rf "Debian package" "Windows installer"
-          mv build-win-msvc/resources .
+          mv build-win-MSVC-Release/resources .
           rm -rf */resources
 
           mkdir Release
@@ -263,9 +303,7 @@ jobs:
           for config in Release RelWithDebInfo; do
 
             cd $config
-              for toolchain in MSVC Ninja; do
-                cd build-win-$toolchain-$config && zip -r ../Windows-$toolchain.zip * && cd ..
-              done
+              cd build-win-MSVC-$config && zip -r ../Windows.zip * && cd ..
 
               cd build-mac-$config
                 ln -sf libraylib-$config.5.5.0.dylib libraylib-$config.550.dylib
@@ -310,7 +348,6 @@ jobs:
 
   publish:
     name: Publish
-    if: github.ref_name != 'Template' 
     permissions:
       contents: write
     needs: cleanup
@@ -330,12 +367,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Release Builds
-
-      - name: Prepare
-        run: |
-          mv Windows-MSVC.zip Windows.zip
-          rm Windows-LLVM.zip
-        shell: bash
 
       - name: Delete tag
         uses: dev-drprasad/delete-tag-and-release@v1.1
