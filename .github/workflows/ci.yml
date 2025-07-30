@@ -63,19 +63,13 @@ jobs:
           generator: Unix Makefiles
 
     name: Build ${{ matrix.config.name }} Release
-    runs-on: ${{ matrix.config.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build
-        uses: ./.github/workflows/build.yml
-        with:
-          os: ${{ matrix.config.os }}
-          compiler: ${{ matrix.config.compiler }}
-          generator: ${{ matrix.config.generator }}
-          shared-libs: ${{ matrix.config.shared-libs }}
-          build-type: ${{ matrix.config.build-type }}
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ${{ matrix.config.os }}
+      compiler: ${{ matrix.config.compiler }}
+      generator: ${{ matrix.config.generator }}
+      shared-libs: ${{ matrix.config.shared-libs }}
+      build-type: ${{ matrix.config.build-type }}
 
   build-RelWithDebInfo:
     strategy:
@@ -106,19 +100,13 @@ jobs:
             os: ubuntu-latest
 
     name: Build ${{ matrix.name }} RelWithDebInfo
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build
-        uses: ./.github/workflows/build.yml
-        with:
-          os: ${{ matrix.os }}
-          compiler: ${{ matrix.compiler }}
-          generator: ${{ matrix.generator }}
-          shared-libs: ${{ matrix.shared-libs }}
-          build-type: ${{ matrix.build-type }}
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ${{ matrix.os }}
+      compiler: ${{ matrix.compiler }}
+      generator: ${{ matrix.generator }}
+      shared-libs: ${{ matrix.shared-libs }}
+      build-type: ${{ matrix.build-type }}
 
   win-msi:
     name: Build Windows installer
