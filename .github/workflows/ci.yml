@@ -27,10 +27,11 @@ jobs:
             shared-libs: true
             upload-outputs: true
 
-          - generator: 'Unix Makefiles'
-            shared-libs: true
-            os: 'ubuntu-latest'
+          - os: 'ubuntu-latest'
             compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            shared-libs: true
+            build-type: Release
             upload-outputs: true
 
         exclude:
@@ -98,10 +99,11 @@ jobs:
             shared-libs: true
             upload-outputs: true
 
-          - generator: 'Unix Makefiles'
-            shared-libs: true
-            os: 'ubuntu-latest'
+          - os: 'ubuntu-latest'
             compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            shared-libs: true
+            build-type: RelWithDebInfo
             upload-outputs: true
 
         exclude:
