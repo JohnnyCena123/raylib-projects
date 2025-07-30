@@ -33,7 +33,7 @@ void Game::handleCli(int argc, char* argv[]) {
 			Option{ 'v', "--version", printVersion },
 			Option{ 'h', "--help", printHelp },
 			Option{ 'u', "--usage", printHelp },
-			Option{ 'd', "--desc", printDescription },
+			Option{ 'd', "--description", printDescription },
 			Option{ 'r', "--repo", printRepository },
 		};
 		
@@ -101,7 +101,7 @@ void Game::handleCli(int argc, char* argv[]) {
 				"    -v, --version          --  prints the version and exits.\n"
 				"    -h, --help             --  prints this help message and exits.\n"
 				"    -u, --usage            --  same as --help.\n"
-				"    -d, --desc             --  prints a general description of this app.\n"
+				"    -d, --description             --  prints a general description of this app.\n"
 				"    -r, --repo             --  provides a link to the GitHub repository of the project.\n"
 				"        --save-dir=DIR     --  sets a custom directory to use for save data. includes log files.\n"
 				"        --log-level=LEVEL  --  sets the log level to the specified input.\n"

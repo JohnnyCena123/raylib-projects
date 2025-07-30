@@ -159,8 +159,8 @@ jobs:
           PACKAGE_NAME=${{ github.ref_name }}
           chmod +x ./$PACKAGE_NAME
           PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
-          PACKAGE_DESC="$(./$PACKAGE_NAME --desc)"
-          PACKAGE_DESC_MINIMAL="$(./$PACKAGE_NAME --desc --minimal-output)"
+          PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description)"
+          PACKAGE_DESCRIPTION_MINIMAL="$(./$PACKAGE_NAME --description --minimal-output)"
           PACKAGE_REPO="$(./$PACKAGE_NAME --repo --minimal-output)"
           PACKAGE_DIR="./$PACKAGE_NAME-$PACKAGE_VERSION"
           mkdir -p "$PACKAGE_DIR"/usr/bin
@@ -185,7 +185,7 @@ jobs:
           Name=$PACKAGE_NAME
           GenericName=$PACKAGE_NAME
           Icon=/$ICON_PATH
-          Comment=$PACKAGE_DESC_MINIMAL. Source code: $PACKAGE_REPO.
+          Comment=$PACKAGE_DESCRIPTION_MINIMAL. Source code: $PACKAGE_REPO.
           Exec=/usr/bin/$PACKAGE_NAME
           TryExec=/usr/bin/$PACKAGE_NAME
           Terminal=false
@@ -203,8 +203,8 @@ jobs:
           Priority: optional
           Architecture: amd64
           Maintainer: Johnny Cena <iamahuman1395@gmail.com>
-          Description: $PACKAGE_DESC_MINIMAL
-            $PACKAGE_DESC
+          Description: $PACKAGE_DESCRIPTION_MINIMAL
+            $PACKAGE_DESCRIPTION
             Source code is in $PACKAGE_REPO.
           EOF
 
