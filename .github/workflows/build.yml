@@ -148,7 +148,7 @@ jobs:
                 windows-*) echo "id=win-Ninja" >> "$GITHUB_OUTPUT" ;;
                 macos-*) echo "id=mac-Ninja" >> "$GITHUB_OUTPUT" ;;
                 ubuntu-*) echo "id=linux-Ninja" >> "$GITHUB_OUTPUT" ;;
-              ;;
+              esac
             "MinGW Makefiles")
               case "$compiler" in
                 clang|gcc) ;;
