@@ -1,0 +1,197 @@
+name: Build raylib project
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        type: string
+        required: true
+        description: Runner OS
+
+      compiler:
+        type: string
+        required: true
+        description: Compiler to use for the build process
+
+      generator:
+        type: string
+        required: false
+        default: Ninja
+        description: CMake Generator
+
+      shared-libs:
+        type: boolean
+        required: false
+        default: true
+        description: Whether or not to build shared libraries
+
+      build-type:
+        type: string
+        required: true
+        description: CMake build type
+
+  workflow_dispatch:
+    inputs:
+      os:
+        type: string
+        required: true
+        description: Runner OS
+
+      compiler:
+        type: string
+        required: true
+        description: Compiler to use for the build process
+
+      generator:
+        type: string
+        required: false
+        default: Ninja
+        description: CMake Generator
+
+      shared-libs:
+        type: boolean
+        required: false
+        default: true
+        description: Whether or not to build shared libraries
+
+      build-type:
+        type: string
+        required: true
+        description: CMake build type
+
+jobs:
+  build:
+    runs-on: ${{ inputs.os }}
+    steps:
+      - name: Validate inputs and generate build data
+        id: build-data
+        run: |
+          os="${{ inputs.os }}"
+          compiler="${{ inputs.compiler }}"
+          generator="${{ inputs.generator }}"
+
+          case "$compiler" in
+            cl)
+              cmake_args="-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl"
+              ;;
+            clang|gcc) 
+              cmake_args="-DCMAKE_C_COMPILER=$compiler -DCMAKE_CXX_COMPILER=$compiler++"
+              ;;
+            *)
+              echo "Unknown compiler: $compiler" >&2
+              exit 2
+              ;;
+          esac
+
+          case "$generator" in
+            "Visual Studio 15 2017" | \
+            "Visual Studio 16 2019" | \
+            "Visual Studio 17 2022")
+              if [ "$compiler" != "cl" ]; then
+                echo "Expected cl compiler for a Visual Studio generator." >&2
+                exit 2
+              fi
+              case "$os" in
+                windows-*) ;;
+                *)
+                  echo "Expected Windows for a Visual Studio generator." >&2
+                  exit 2
+                  ;;
+              esac
+              cmake_args="$cmake_args -G $generator"
+              echo "id=win-MSVC" >> "$GITHUB_OUTPUT"
+              ;;
+            "Xcode")
+              case "$compiler" in
+                clang) ;;
+                *)
+                  echo "Expected clang for Xcode generator." >&2
+                  exit 2
+                ;;
+              esac
+              case "$os" in
+                macos-*) ;;
+                *)
+                  echo "Expected MacOS for Xcode generator." >&2
+                  exit 2
+                  ;;
+              esac
+              cmake_args="$cmake_args -G $generator"
+              ;;
+            "Ninja")
+              case "$compiler" in
+                clang|gcc) ;;
+                *)
+                  echo "Expected clang or gcc for Ninja." >&2
+                  exit 2
+                ;;
+              esac
+              cmake_args="$cmake_args -G $generator"
+              ;;
+            "MinGW Makefiles")
+              case "$compiler" in
+                clang|gcc) ;;
+                *)
+                  echo "Expected clang or gcc for MinGW Makefiles." >&2
+                  exit 2
+                ;;
+              esac
+              case "$os" in
+                windows-*) ;;
+                *)
+                  echo "Expected Windows for MinGW Makefiles." >&2
+                  exit 2
+                  ;;
+              esac
+              cmake_args="$cmake_args -G $generator"
+              ;;
+            "Unix Makefiles")
+              case "$compiler" in
+                clang|gcc) ;;
+                *)
+                  echo "Expected clang or gcc for Unix Makefiles." >&2
+                  exit 2
+                ;;
+              esac
+              case "$os" in
+                linux-*|macos-*) ;;
+                *)
+                  echo "Expected Linux or MacOS for Unix Makefiles." >&2
+                  exit 2
+                  ;;
+              esac
+              cmake_args="$cmake_args -G $generator"
+              ;;
+            *)
+              echo "Unexpected generator: $generator" >&2
+              exit 2
+              ;;
+          esac
+          echo "cmake_args=$cmake_args" >> "$GITHUB_OUTPUT"
+
+
+        shell: bash
+
+      - uses: actions/checkout@v4
+
+      - name: Install Latest LLVM on Windows
+        if: inputs.compiler == 'clang' && startsWith(inputs.os, 'windows-')
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe" -OutFile llvm.exe
+          7z x llvm.exe -o"C:\Program Files\Latest LLVM"
+          echo "C:\Program Files\Latest LLVM\bin" >> $env:GITHUB_PATH
+
+      - name: Install Linux dependencies
+        if: startsWith(inputs.os, 'ubuntu-')
+        run: sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Configure CMake
+        run: cmake -B ${{ github.workspace }}/build ${{ steps.build-data.outputs.CMAKE_ARGS }}
+      - name: Build
+        run: cmake --build ${{ github.workspace }}/build --config ${{ inputs.build-type }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v4 
+        with:
+          name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
+          path: ${{ github.workspace }}/bin/*
