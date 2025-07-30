@@ -90,8 +90,11 @@ jobs:
             cl)
               cmake_args="-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl"
               ;;
-            clang|gcc) 
-              cmake_args="-DCMAKE_C_COMPILER=$compiler -DCMAKE_CXX_COMPILER=$compiler++"
+            clang) 
+              cmake_args="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+              ;;
+            gcc) 
+              cmake_args="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
               ;;
             *)
               echo "Unknown compiler: $compiler" >&2
