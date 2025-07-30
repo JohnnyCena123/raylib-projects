@@ -16,7 +16,7 @@ jobs:
         compiler: [ 'cl', 'clang', 'gcc' ]
         generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
         shared-libs: [ false, true ]
-        build-type: [ 'RelWithDebInfo' ]
+        build-type: [ 'Release' ]
         upload-outputs: [ false ]
         include:
           - generator: 'Visual Studio 17 2022'
