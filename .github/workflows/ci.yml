@@ -18,24 +18,49 @@ jobs:
           os: windows-latest
           compiler: cl
           generator: 'Visual Studio 17 2022'
+          upload-outputs: true
 
-        - id: win-LLVM
-          name: Windows LLVM
+        - id: win-Ninja
+          name: Windows Ninja
           os: windows-latest
           compiler: clang
           generator: Ninja
 
-        - id: mac
-          name: MacOS
+        - id: win-MinGW
+          name: Windows MinGW
+          os: windows-latest
+          compiler: gcc
+          generator: MinGW Makefiles
+
+        - id: mac-Xcode
+          name: MacOS Xcode
+          os: macos-latest
+          compiler: clang
+          generator: Xcode
+
+        - id: mac-Ninja
+          name: MacOS Ninja
           os: macos-latest
           compiler: clang
           generator: Ninja
 
-        - id: linux
-          name: Linux
+        - id: mac-Makefiles
+          name: MacOS Makefiles
+          os: macos-latest
+          compiler: gcc
+          generator: Unix Makefiles
+
+        - id: linux-Ninja
+          name: Linux Ninja
           os: ubuntu-latest
           compiler: clang
           generator: Ninja
+
+        - id: linux-Makefiles
+          name: Linux Makefiles
+          os: ubuntu-latest
+          compiler: gcc
+          generator: Unix Makefiles
 
     name: Build ${{ matrix.config.name }} Release
     runs-on: ${{ matrix.config.os }}
@@ -250,7 +275,7 @@ jobs:
           for config in Release RelWithDebInfo; do
 
             cd $config
-              for toolchain in MSVC LLVM; do
+              for toolchain in MSVC Ninja; do
                 cd build-win-$toolchain-$config && zip -r ../Windows-$toolchain.zip * && cd ..
               done
 

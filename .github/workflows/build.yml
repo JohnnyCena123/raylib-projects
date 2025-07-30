@@ -23,12 +23,18 @@ on:
         type: boolean
         required: false
         default: true
-        description: Whether or not to build shared libraries
+        description: Build shared libraries
 
       build-type:
         type: string
         required: true
         description: CMake build type
+
+      upload-outputs:
+        type: boolean
+        required: false
+        default: false
+        description: Upload build outputs
 
   workflow_dispatch:
     inputs:
@@ -58,6 +64,12 @@ on:
         type: string
         required: true
         description: CMake build type
+
+      upload-outputs:
+        type: boolean
+        required: false
+        default: false
+        description: Upload build outputs
 
 jobs:
   build:
@@ -117,6 +129,7 @@ jobs:
                   ;;
               esac
               cmake_args="$cmake_args -G $generator"
+              echo "id=mac-Xcode" >> "$GITHUB_OUTPUT"
               ;;
             "Ninja")
               case "$compiler" in
@@ -127,6 +140,10 @@ jobs:
                 ;;
               esac
               cmake_args="$cmake_args -G $generator"
+              case "${{ inputs.os }}" in
+                windows-*) echo "id=win-Ninja" >> "$GITHUB_OUTPUT" ;;
+                macos-*) echo "id=mac-Ninja" >> "$GITHUB_OUTPUT" ;;
+                ubuntu-*) echo "id=linux-Ninja" >> "$GITHUB_OUTPUT" ;;
               ;;
             "MinGW Makefiles")
               case "$compiler" in
@@ -144,6 +161,7 @@ jobs:
                   ;;
               esac
               cmake_args="$cmake_args -G $generator"
+              echo "id=win-MinGW" >> "$GITHUB_OUTPUT"
               ;;
             "Unix Makefiles")
               case "$compiler" in
@@ -154,7 +172,8 @@ jobs:
                 ;;
               esac
               case "$os" in
-                ubuntu-*|macos-*) ;;
+                macos-*) echo "id=mac-Makefiles" >> "$GITHUB_OUTPUT" ;;
+                ubuntu-*) echo "id=linux-Makefiles" >> "$GITHUB_OUTPUT" ;;
                 *)
                   echo "Expected Linux or MacOS for Unix Makefiles." >&2
                   exit 2
@@ -168,8 +187,6 @@ jobs:
               ;;
           esac
           echo "cmake_args=$cmake_args" >> "$GITHUB_OUTPUT"
-
-
         shell: bash
 
       - uses: actions/checkout@v4
@@ -191,7 +208,8 @@ jobs:
         run: cmake --build ${{ github.workspace }}/build --config ${{ inputs.build-type }}
 
       - name: Upload
-        uses: actions/upload-artifact@v4 
+        uses: actions/upload-artifact@v4
+        if: inputs.upload-outputs
         with:
           name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
           path: ${{ github.workspace }}/bin/*
