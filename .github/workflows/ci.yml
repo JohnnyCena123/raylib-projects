@@ -70,7 +70,7 @@ jobs:
           - os: 'ubuntu-latest'
             compiler: 'cl'
 
-    name: ${{ matrix.build-type }} build for ${{ matrix.os }} with ${{ matrix.generator }} and ${{ matrix.compiler }}, ${{ (matrix.shared-libs && '') || 'no' }} shared libraries
+    name: ${{ matrix.build-type }} build for ${{ matrix.os }} with ${{ matrix.generator }} and ${{ matrix.compiler }}, shared libraries - ${{ matrix.shared-libs}}
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
