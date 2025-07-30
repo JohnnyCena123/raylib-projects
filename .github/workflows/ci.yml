@@ -20,12 +20,15 @@ jobs:
         upload-outputs: [ false ]
         include:
           - generator: 'Visual Studio 17 2022'
+            shared-libs: true
             upload-outputs: true
 
           - generator: 'Xcode'
+            shared-libs: true
             upload-outputs: true
 
           - generator: 'Unix Makefiles'
+            shared-libs: true
             os: 'ubuntu-latest'
             compiler: 'gcc'
             upload-outputs: true
@@ -66,7 +69,7 @@ jobs:
           - os: 'ubuntu-latest'
             compiler: 'cl'
 
-    name: Release build for ${{ matrix.os }} with ${{ matrix.generator }} and ${{ matrix.compiler }}, ${{ matrix.shared-libs || 'no' }} shared libraries
+    name: ${{ matrix.build-type }} build for ${{ matrix.os }} with ${{ matrix.generator }} and ${{ matrix.compiler }}, ${{ matrix.shared-libs || 'no' }} shared libraries
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
@@ -138,7 +141,7 @@ jobs:
           - os: 'ubuntu-latest'
             compiler: 'cl'
 
-    name: Build ${{ matrix.os }} with ${{ matrix.generator }} RelWithDebInfo
+    name: ${{ matrix.build-type }} build for ${{ matrix.os }} with ${{ matrix.generator }} and ${{ matrix.compiler }}, ${{ matrix.shared-libs || 'no' }} shared libraries
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
