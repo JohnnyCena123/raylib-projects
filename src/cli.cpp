@@ -98,6 +98,7 @@ void Game::handleCli(int argc, char* argv[]) {
 				"    -s, --silent           --  disables all logging.\n"
 				"    -V, --verbose          --  sets the log level to LOG_TRACE instead of LOG_INFO.\n"
 				"    -S, --save-logs        --  saves logs to a file. unaffected by --silent.\n"
+				"    -v, --version          --  prints the version and exits.\n"
 				"    -h, --help             --  prints this help message and exits.\n"
 				"    -u, --usage            --  same as --help.\n"
 				"    -d, --desc             --  prints a general description of this app.\n"
