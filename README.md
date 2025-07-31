@@ -47,6 +47,7 @@ completely, and let CMake use the default values for them.
   allows you to specify where the output Executable will be.
   * `-DBIN_SUFFIX=-foobar` - Specifies the suffix for the filename of the output Executable
 * `-DDISABLE_WARNINGS=OFF` - Disables disabling warnings for dependencies.
+* `-DIMGUI_IN_RELEASE=ON` - Keep ImGui debug windows in Release mode
 * `-DINCLUDE_TERMINAL_IN_RELEASE=ON` - Allows you to include the terminal popup when building for Windows in Release mode.
 * `-DINCLUDE_ICON=OFF` - Lets you decide whether or not the application will have a taskbar/explorer icon on Windows.
 * `-DUSE_PRECOMPILED_HEADERS=OFF` - Whether or not project headers will be pre-compiled before the rest of the code.

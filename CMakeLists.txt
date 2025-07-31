@@ -108,6 +108,47 @@ CPMAddPackage(NAME "tinyfd"
 set(TINYFD_TARGET "tinyfd")
 add_library(${TINYFD_TARGET} STATIC "${tinyfd_SOURCE_DIR}/tinyfiledialogs.c")
 
+if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
+	CPMAddPackage("gh:ocornut/imgui#eaac68c") 
+	CPMAddPackage("gh:raylib-extras/rlImGui#9512b36")
+	set(IMGUI_TARGET "imgui")
+	add_library(${IMGUI_TARGET}
+		${imgui_SOURCE_DIR}/imgui.cpp
+		${imgui_SOURCE_DIR}/imgui_widgets.cpp
+		${imgui_SOURCE_DIR}/imgui_tables.cpp
+		${imgui_SOURCE_DIR}/imgui_draw.cpp
+		${imgui_SOURCE_DIR}/imgui_demo.cpp
+		${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
+		
+		${rlImGui_SOURCE_DIR}/rlImGui.cpp
+	)
+	target_include_directories(${IMGUI_TARGET} PRIVATE
+		${raylib_SOURCE_DIR}/src
+		${imgui_SOURCE_DIR}
+		${rlImGui_SOURCE_DIR}
+	)
+	target_link_libraries(${IMGUI_TARGET} PRIVATE raylib)
+
+	if(BUILD_SHARED_LIBS)
+		if(DEFINED BIN_SUFFIX)
+			set_target_properties(${IMGUI_TARGET} PROPERTIES OUTPUT_NAME "${IMGUI_TARGET}-${BIN_SUFFIX}")
+		endif()
+		target_compile_definitions(${IMGUI_TARGET} PRIVATE -DBUILD_LIBTYPE_SHARED)
+		target_compile_definitions(${IMGUI_TARGET} PRIVATE -DIMGUI_EXPORTING)
+		target_compile_definitions(${IMGUI_TARGET} PRIVATE -DIMGUI_USER_CONFIG="${CMAKE_SOURCE_DIR}/src/imgui-config.hpp")
+	endif()
+
+	check_c_compiler_flag("-Wno-nontrivial-memcall" HAS_W_NONTRIVIAL_MEMCALL)
+	check_c_compiler_flag("-Wno-nontrivial-memaccess" HAS_W_NONTRIVIAL_MEMACCESS)
+	if(HAS_W_NONTRIVIAL_MEMCALL)
+		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memcall")
+	elseif(HAS_W_NONTRIVIAL_MEMACCESS)
+		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memaccess")
+	endif()
+else()
+	set(IMGUI_TARGET)
+endif()
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
 if(WIN32)
@@ -137,6 +178,13 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	BUILD_RPATH "$ORIGIN:$ORIGIN/../lib/${PROJECT_NAME}:/usr/lib/${PROJECT_NAME}"
 )
+if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT IMGUI_IN_RELEASE)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_OFF)
+	message(STATUS "ImGui: OFF")
+elseif(BUILD_SHARED_LIBS)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_USER_CONFIG="${CMAKE_SOURCE_DIR}/src/imgui-config.hpp")
+	message(STATUS "ImGui: ON")
+endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
@@ -146,11 +194,14 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"${tinyfd_SOURCE_DIR}"
 	"${libclipboard_SOURCE_DIR}/include"
 	"${libclipboard_BINARY_DIR}/include"
+	${imgui_SOURCE_DIR}
+	${rlImGui_SOURCE_DIR}
 )
 target_link_libraries(${PROJECT_NAME}
 	raylib
 	${TINYFD_TARGET}
 	clipboard
+	${IMGUI_TARGET}
 )
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")

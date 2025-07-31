@@ -2,7 +2,9 @@
 #include <raylib.h>
 #include "game.hpp"
 #include "basics.hpp"
+#include "imgui.h"
 #include "libclipboard.h"
+#include "rlImGui.h"
 
 Game::Game() : m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
 	m_hadWarning(false), m_logs(""), m_screenWidth(START_SCREEN_WIDTH),
@@ -16,6 +18,7 @@ void Game::init() {
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(m_screenWidth, m_screenHeight, "Hello!");
 	SetTargetFPS(60);
+	IMGUI_ONLY(rlImGuiSetup(true));
 
 	m_resourceManager.init();
 	if (!m_resourceManager.loadImage("app-icon", "icon.png"))
@@ -32,7 +35,6 @@ void Game::run() {
 	while (!WindowShouldClose()) {
 		BeginDrawing();
 		ClearBackground(SKYBLUE);
-
 		m_dummyResourceRotation += GetFrameTime() * (70 * cos(GetTime() * 1.5) + 100.f);
 		if (m_dummyResourceRotation > 360) m_dummyResourceRotation -= 360;
 
@@ -49,6 +51,11 @@ void Game::run() {
 			texSize.x * scale, texSize.y * scale
 		}, { texSize.x / 2, texSize.y / 2 }, m_dummyResourceRotation, WHITE);
 
+		IMGUI_ONLY(
+			rlImGuiBegin();
+			debugGUI();
+			rlImGuiEnd();
+		)
 		EndDrawing();
 
 		m_screenWidth = GetScreenWidth();
@@ -58,8 +65,16 @@ void Game::run() {
 
 }
 
+IMGUI_ONLY(void Game::debugGUI() {
+	ImGui::Begin("Debug Window");
+	ImGui::Text("Hello world!");
+	ImGui::SliderFloat("rotation", &m_dummyResourceRotation, 0.f, 360.f);
+	ImGui::End();
+})
+
 void Game::deinit() {
 	m_resourceManager.deinit();
+	IMGUI_ONLY(rlImGuiShutdown());
 	CloseWindow();
 	if (m_shouldSaveLogs || m_hadWarning) saveLogs();
 

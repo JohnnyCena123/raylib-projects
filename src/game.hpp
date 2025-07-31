@@ -2,6 +2,13 @@
 
 #include <sstream>
 #include <libclipboard.h>
+#ifndef IMGUI_OFF
+	#include <imgui.h>
+	#include <rlImGui.h>
+	#define IMGUI_ONLY(...) __VA_ARGS__
+#else
+	#define IMGUI_ONLY(...)
+#endif
 #include "basics.hpp"
 #include "resource-manager.hpp"
 
@@ -26,6 +33,7 @@ private:
 	bool m_shouldSaveLogs;
 	bool m_hadWarning;
 	std::stringstream m_logs;
+	void saveLogs();
 
 	int m_screenWidth = START_SCREEN_WIDTH;
 	int m_screenHeight = START_SCREEN_HEIGHT;
@@ -35,6 +43,8 @@ private:
 
 	ResourceManager m_resourceManager{};
 
-	void saveLogs();
+	IMGUI_ONLY(
+		void debugGUI();
+	)
 
 };
