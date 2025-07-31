@@ -230,7 +230,7 @@ jobs:
           Architecture: amd64
           Maintainer: Johnny Cena <iamahuman1395@gmail.com>
           Description: $PACKAGE_DESCRIPTION_MINIMAL
-            $PACKAGE_DESCRIPTION
+            $(echo "$PACKAGE_DESCRIPTION" | sed 's/^/  /')
             Source code is in $PACKAGE_REPO.
           EOF
 
