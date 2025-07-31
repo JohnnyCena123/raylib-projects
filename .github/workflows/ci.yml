@@ -135,7 +135,7 @@ jobs:
       - name: Download zip
         uses: actions/download-artifact@v4
         with:
-          name: build-win-msvc
+          name: build-win-MSVC-Release
           path: ${{ github.ref_name }}
 
       - name: Build installer
@@ -175,7 +175,7 @@ jobs:
       - name: Download build output
         uses: actions/download-artifact@v4
         with:
-          name: build-linux-Release
+          name: build-linux-Makefiles-Release
           path: ${{ github.workspace }}
 
       - name: Build
@@ -277,12 +277,12 @@ jobs:
             cd $config
               cd build-win-MSVC-$config && zip -r ../Windows.zip * && cd ..
 
-              cd build-mac-$config
+              cd build-mac-Xcode-$config
                 ln -sf libraylib-$config.5.5.0.dylib libraylib-$config.550.dylib
                 ln -sf libraylib-$config.550.dylib libraylib-$config.dylib
                 tar -czvf ../MacOS.tar.gz *
               cd ..
-              cd build-linux-$config
+              cd build-linux-Makefiles-$config
                 ln -sf libraylib-$config.so.5.5.0 libraylib-$config.so.550
                 ln -sf libraylib-$config.so.550 libraylib-$config.so
                 tar -czvf ../MacOS.tar.gz *
