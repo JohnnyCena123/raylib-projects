@@ -16,25 +16,65 @@ jobs:
         compiler: [ 'cl', 'clang', 'gcc' ]
         generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
         shared-libs: [ false, true ]
-        build-type: [ 'Release' ]
+        build-type: [ 'Release', 'RelWithDebInfo' ]
         upload-outputs: [ false ]
         include:
-          - generator: 'Visual Studio 17 2022'
+          - os: 'windows-latest'
+            compiler: 'cl'
+            generator: 'Visual Studio 17 2022'
             shared-libs: true
+            build-type: 'Release'
+            upload-outputs: true
+          - os: 'windows-latest'
+            compiler: 'cl'
+            generator: 'Visual Studio 17 2022'
+            shared-libs: true
+            build-type: 'RelWithDebInfo'
             upload-outputs: true
 
-          - generator: 'Xcode'
+          - os: 'macos-latest'
+            compiler: clang
+            generator: 'Xcode'
             shared-libs: true
+            build-type: 'Release'
+            upload-outputs: true
+          - os: 'macos-latest'
+            compiler: clang
+            generator: 'Xcode'
+            shared-libs: true
+            build-type: 'RelWithDebInfo'
             upload-outputs: true
 
           - os: 'ubuntu-latest'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
             shared-libs: true
-            build-type: Release
+            build-type: 'Release'
+            upload-outputs: true
+          - os: 'ubuntu-latest'
+            compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            shared-libs: true
+            build-type: 'RelWithDebInfo'
             upload-outputs: true
 
-        exclude:
+        exclude:          
+          - os: 'windows-latest'
+            compiler: 'cl'
+            generator: 'Visual Studio 17 2022'
+            shared-libs: true
+            upload-outputs: false
+          - os: 'macos-latest'
+            compiler: clang
+            generator: 'Xcode'
+            shared-libs: true
+            upload-outputs: false
+          - os: 'ubuntu-latest'
+            compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            shared-libs: true
+            upload-outputs: false
+
           - os: 'windows-latest'
             generator: 'Xcode'
           - os: 'windows-latest'
@@ -71,79 +111,6 @@ jobs:
             compiler: 'cl'
 
     name: ${{ matrix.build-type }} build for ${{ matrix.os }} with ${{ matrix.generator }} and ${{ matrix.compiler }}, shared libraries - ${{ matrix.shared-libs}}
-    uses: ./.github/workflows/build.yml
-    with:
-      os: ${{ matrix.os }}
-      compiler: ${{ matrix.compiler }}
-      generator: ${{ matrix.generator }}
-      shared-libs: ${{ matrix.shared-libs }}
-      build-type: ${{ matrix.build-type }}
-      upload-outputs: ${{ matrix.upload-outputs }}
-
-  build-RelWithDebInfo:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ 'windows-latest', 'macos-latest', 'ubuntu-latest' ]
-        compiler: [ 'cl', 'clang', 'gcc' ]
-        generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
-        shared-libs: [ false, true ]
-        build-type: [ 'RelWithDebInfo' ]
-        upload-outputs: [ false ]
-        include:
-          - generator: 'Visual Studio 17 2022'
-            shared-libs: true
-            upload-outputs: true
-
-          - generator: 'Xcode'
-            shared-libs: true
-            upload-outputs: true
-
-          - os: 'ubuntu-latest'
-            compiler: 'gcc'
-            generator: 'Unix Makefiles'
-            shared-libs: true
-            build-type: RelWithDebInfo
-            upload-outputs: true
-
-        exclude:
-          - os: 'windows-latest'
-            generator: 'Xcode'
-          - os: 'windows-latest'
-            generator: 'Unix Makefiles'
-          - os: 'macos-latest'
-            generator: 'Visual Studio 17 2022'
-          - os: 'macos-latest'
-            generator: 'MinGW Makefiles'
-          - os: 'ubuntu-latest'
-            generator: 'Visual Studio 17 2022'
-          - os: 'ubuntu-latest'
-            generator: 'Xcode'
-          - os: 'ubuntu-latest'
-            generator: 'MinGW Makefiles'
-
-          # tie compilers to platforms/generators explicitly (examples)
-          - os: 'windows-latest'
-            generator: 'Visual Studio 17 2022'
-            compiler: 'clang'
-          - os: 'windows-latest'
-            generator: 'Visual Studio 17 2022'
-            compiler: 'gcc'
-          - os: 'windows-latest'
-            generator: 'MinGW Makefiles'
-            compiler: 'cl'
-          - os: 'windows-latest'
-            generator: 'Ninja'
-            compiler: 'cl'
-          - os: 'macos-latest'
-            compiler: 'cl'
-          - os: 'macos-latest'
-            generator: 'Xcode'
-            compiler: 'gcc'
-          - os: 'ubuntu-latest'
-            compiler: 'cl'
-
-    name: ${{ matrix.build-type }} build for ${{ matrix.os }} with ${{ matrix.generator }} and ${{ matrix.compiler }}, ${{ matrix.shared-libs || 'no' }} shared libraries
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
@@ -285,7 +252,7 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-latest
-    needs: [ linux-deb, win-msi, build-RelWithDebInfo ]
+    needs: [ linux-deb, win-msi ]
     permissions:
       contents: write
 
