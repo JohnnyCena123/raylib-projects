@@ -340,6 +340,15 @@ jobs:
         with:
           name: Release Builds
 
+      - name: Download resources
+        uses: actions/download-artifact@v4
+        with:
+          name: resources
+          path: ./resources
+
+      - name: Re-zip resources
+        run: cd resources && zip -r ../resources.zip * && cd ..
+
       - name: Delete tag
         uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
