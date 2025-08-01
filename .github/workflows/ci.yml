@@ -45,13 +45,13 @@ jobs:
             build-type: 'RelWithDebInfo'
             upload-outputs: true
 
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-25.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
             pch: true
             build-type: 'Release'
             upload-outputs: true
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-25.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
             pch: true
@@ -69,7 +69,7 @@ jobs:
             generator: 'Xcode'
             pch: true
             upload-outputs: false
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-25.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
             pch: true
@@ -83,11 +83,11 @@ jobs:
             generator: 'Visual Studio 17 2022'
           - os: 'macos-15'
             generator: 'MinGW Makefiles'
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-25.04'
             generator: 'Visual Studio 17 2022'
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-25.04'
             generator: 'Xcode'
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-25.04'
             generator: 'MinGW Makefiles'
 
           - os: 'windows-2025'
@@ -107,7 +107,7 @@ jobs:
           - os: 'macos-15'
             generator: 'Xcode'
             compiler: 'gcc'
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-25.04'
             compiler: 'cl'
 
     name: >
@@ -175,7 +175,7 @@ jobs:
   linux-deb:
     name: Build Debian package
     needs: build-Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-25.04
     steps:
       - name: Download build output
         uses: actions/download-artifact@v4
@@ -256,7 +256,7 @@ jobs:
 
   cleanup:
     name: Cleanup
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-25.04
     needs: [ linux-deb, win-msi ]
     permissions:
       contents: write
@@ -330,7 +330,7 @@ jobs:
     permissions:
       contents: write
     needs: cleanup
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-25.04
     steps:
       - name: Download Windows installer
         uses: actions/download-artifact@v4
