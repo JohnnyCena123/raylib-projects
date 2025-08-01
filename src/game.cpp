@@ -1,10 +1,12 @@
 #include <cmath>
+#include <cstdlib>
 #include <raylib.h>
 #include "game.hpp"
 #include "basics.hpp"
 #include "imgui.h"
-#include "libclipboard.h"
 #include "rlImGui.h"
+#include "libclipboard.h"
+#include "tinyfiledialogs.h"
 
 Game::Game() :  m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
 	#ifdef PORTABLE
@@ -22,12 +24,6 @@ Game::~Game() { }
 fs::path Game::getrResourceDir() { return m_resourceDir; }
 
 void Game::init() {
-	m_cb = clipboard_new(nullptr);
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
-	SetTargetFPS(60);
-	IMGUI_ONLY(rlImGuiSetup(true));
-
 	m_resourceDir = fs::path{GetApplicationDirectory()}/"resources";
 	m_resourceDir = [&] -> fs::path {
 		fs::path ret = fs::path{GetApplicationDirectory()}/"resources";
@@ -40,8 +36,20 @@ void Game::init() {
 		}
 		return ret;
 	}();
-	if (!DirectoryExists(m_resourceDir.string().c_str()))
-		TraceLog(LOG_WARNING, "failed to find the resources directory");
+	if (!DirectoryExists(m_resourceDir.string().c_str())) {
+		tinyfd_messageBox("Failure",
+			"Could not find the resource directory.\n"
+			"Are you sure you downloaded the resources and extracted them to the right place?\n"
+			"NOTE: the folder structure should look like this:\n"
+			"/path/to/" PROJECT_NAME "/\n"
+			"    |-- " PROJECT_NAME "\n"
+			"    |-- libraries...\n"
+			"    |-- resources/\n"
+			"         |-- resources...",
+			"ok", "error", 0
+		);
+		exit(1);
+	}
 
 	m_saveDir = [&] -> fs::path {
 		fs::path ret = fs::path{GetApplicationDirectory()}/"save";
@@ -57,6 +65,12 @@ void Game::init() {
 		if (!DirectoryExists(ret.string().c_str())) MakeDirectory(ret.string().c_str());
 		return ret;
 	}();
+
+	m_cb = clipboard_new(nullptr);
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
+	SetTargetFPS(60);
+	IMGUI_ONLY(rlImGuiSetup(true));
 
 	// i can only get the monitors size after the window is initialized :( this causes annoying problems
 	int const monitorWidth = GetMonitorWidth(GetCurrentMonitor());

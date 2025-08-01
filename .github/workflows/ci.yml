@@ -272,6 +272,7 @@ jobs:
           rm -rf "Debian package" "Windows installer"
           mv build-win-MSVC-Release/resources .
           rm -rf */resources
+          zip -r ./resources.zip ./resources/
 
           mkdir Release
           mkdir RelWithDebInfo
@@ -319,7 +320,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: resources/*
-          name: resources
+          name: resources.zip
 
       - name: Delete old artifacts
         uses: geekyeggo/delete-artifact@v5
@@ -352,10 +353,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: resources
-          path: ./resources
-
-      - name: Re-zip resources
-        run: cd resources && zip -r ../resources.zip * && cd ..
 
       - name: Delete tag
         uses: dev-drprasad/delete-tag-and-release@v1.1
