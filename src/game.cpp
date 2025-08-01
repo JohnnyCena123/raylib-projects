@@ -13,7 +13,7 @@ Game::Game() :  m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
 		FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
 	#endif
 	), m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
-	m_hadWarning(false), m_logs(""), m_screenSize(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y),
+	m_hadWarning(false), m_logs(""), m_screenSize(DEFAULT_SCREEN_SIZE),
 	m_resourceManager(*this), m_dummyResourceRotation(0.f)
 { /* cant call init() here, handleCli() needs to be called first */ }
 
