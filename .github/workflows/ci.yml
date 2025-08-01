@@ -293,7 +293,7 @@ jobs:
                 touch ./.portable-application
                 ln -sf libraylib-$config.so.5.5.0 libraylib-$config.so.550
                 ln -sf libraylib-$config.so.550 libraylib-$config.so
-                tar -czvf ../MacOS.tar.gz *
+                tar -czvf ../Linux.tar.gz *
               cd ..
             cd ..
           done
