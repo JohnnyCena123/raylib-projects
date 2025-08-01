@@ -51,15 +51,6 @@ else()
 	set(CONFIGURATION $<CONFIG>)
 endif()
 
-if(CMAKE_LOCAL_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
-	# separate different build types when building locally
-	if(CONFIGURATION STREQUAL "Release")
-		set(BIN_SUFFIX) # nothing
-	else()
-		set(BIN_SUFFIX "${CONFIGURATION}")
-	endif()
-endif()
-
 include(cmake/CPM.cmake)
 
 if(DISABLE_WARNINGS)
@@ -73,8 +64,18 @@ if(ALL_BUILD_TYPES_TOGETHER)
 elseif(NOT CUSTOM_OUTPUT_OPTIONS)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/$CONFIGURATION")
 endif()
+if(CMAKE_LOCAL_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
+	# separate different projects
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}")
+	# separate different build types
+	if(CONFIGURATION STREQUAL "Release")
+		set(BIN_SUFFIX) # nothing
+	else()
+		set(BIN_SUFFIX "${CONFIGURATION}")
+	endif()
+endif()
 if(BUILD_SHARED_LIBS)
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/..")
 	set_target_properties(clipboard PROPERTIES
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
 	)
@@ -177,7 +178,7 @@ if(DEFINED BIN_SUFFIX)
 	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-${BIN_SUFFIX}")
 endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES
-	BUILD_RPATH "$ORIGIN:$ORIGIN/../lib/${PROJECT_NAME}:/usr/lib/${PROJECT_NAME}"
+	BUILD_RPATH "$ORIGIN:$ORIGIN/..:$ORIGIN/../lib/${PROJECT_NAME}:/usr/lib/${PROJECT_NAME}"
 )
 if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT IMGUI_IN_RELEASE)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_OFF)
@@ -231,7 +232,8 @@ endif()
 set(PORTABLE_INDICATOR_FILE ".portable-application")
 target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE_INDICATOR_FILE="${PORTABLE_INDICATOR_FILE}")
 if(BUILD_PORTABLE_APPLICATION)
-	execute_process(
+	add_custom_command(
+		OUTPUT "${CMAKE_BINARY_DIR}/unused"
 		COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PORTABLE_INDICATOR_FILE}"
 	)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE)

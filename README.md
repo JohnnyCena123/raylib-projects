@@ -40,7 +40,8 @@ renames raylib's shared library to `raylib-<build type` (e.g. `libraylib-RelWith
 allowing everything to be in one folder.
 * `-DUSE_CACHING_COMPILER=OFF` - Disables looking for ccache/sccache when configuring the project.
 * `-DALL_BUILD_TYPES_TOGETHER=OFF` - Places the output of each build type in its own separate directory.
-* `-DCMAKE_LOCAL_BUILD=ON` - Enables options for building locally. Mainly helps with organizing builds of different build types.
+* `-DCMAKE_LOCAL_BUILD=ON` - Enables options for building locally. \
+  Mainly helps with organizing builds of different build types or different projects.
 * `-DCUSTOM_OUTPUT_OPTIONS` - Allows you to specify the Executable name, and/or build output directory; or disable them \
 completely, and let CMake use the default values for them.
   * `-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/path/to/output/directory` - Built-into CMake, \
