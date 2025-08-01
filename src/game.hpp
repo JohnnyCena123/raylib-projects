@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sstream>
-#include <libclipboard.h>
+#include <raylib.h>
 #ifndef IMGUI_OFF
 	#include <imgui.h>
 	#include <rlImGui.h>
@@ -9,7 +9,7 @@
 #else
 	#define IMGUI_ONLY(...)
 #endif
-#include "basics.hpp"
+#include <libclipboard.h>
 #include "resource-manager.hpp"
 
 class Game {
@@ -35,8 +35,9 @@ private:
 	std::stringstream m_logs;
 	void saveLogs();
 
-	int m_screenWidth = START_SCREEN_WIDTH;
-	int m_screenHeight = START_SCREEN_HEIGHT;
+	Vector2 m_screenSize;
+
+	RenderTexture2D m_screen;
 
 	Texture2D m_dummyResource;
 	float m_dummyResourceRotation;
