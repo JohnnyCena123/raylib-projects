@@ -15,46 +15,46 @@ jobs:
         os: [ 'windows-latest', 'macos-latest', 'ubuntu-latest' ]
         compiler: [ 'cl', 'clang', 'gcc' ]
         generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
-        shared-libs: [ false, true ]
+        pch: [ false, true ]
         build-type: [ 'Release', 'RelWithDebInfo' ]
         upload-outputs: [ false ]
         include:
           - os: 'windows-latest'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
-            shared-libs: true
+            pch: true
             build-type: 'Release'
             upload-outputs: true
           - os: 'windows-latest'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
-            shared-libs: true
+            pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
 
           - os: 'macos-latest'
             compiler: clang
             generator: 'Xcode'
-            shared-libs: true
+            pch: true
             build-type: 'Release'
             upload-outputs: true
           - os: 'macos-latest'
             compiler: clang
             generator: 'Xcode'
-            shared-libs: true
+            pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
 
           - os: 'ubuntu-latest'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
-            shared-libs: true
+            pch: true
             build-type: 'Release'
             upload-outputs: true
           - os: 'ubuntu-latest'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
-            shared-libs: true
+            pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
 
@@ -62,17 +62,17 @@ jobs:
           - os: 'windows-latest'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
-            shared-libs: true
+            pch: true
             upload-outputs: false
           - os: 'macos-latest'
             compiler: clang
             generator: 'Xcode'
-            shared-libs: true
+            pch: true
             upload-outputs: false
           - os: 'ubuntu-latest'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
-            shared-libs: true
+            pch: true
             upload-outputs: false
 
           - os: 'windows-latest'
@@ -110,13 +110,18 @@ jobs:
           - os: 'ubuntu-latest'
             compiler: 'cl'
 
-    name: ${{ matrix.build-type }} build for ${{ matrix.os }} with ${{ matrix.generator }} and ${{ matrix.compiler }}, shared libraries - ${{ matrix.shared-libs}}
+    name: >
+      ${{ matrix.build-type }} build
+      for ${{ matrix.os }}
+      with ${{ matrix.generator }}
+      and ${{ matrix.compiler }};
+      pch - ${{ matrix.pch && 'on' || 'off' }}
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
       compiler: ${{ matrix.compiler }}
       generator: ${{ matrix.generator }}
-      shared-libs: ${{ matrix.shared-libs }}
+      pch: ${{ matrix.pch }}
       build-type: ${{ matrix.build-type }}
       upload-outputs: ${{ matrix.upload-outputs }}
 

@@ -20,11 +20,11 @@ on:
         default: Ninja
         description: CMake Generator
 
-      shared-libs:
+      pch:
         type: boolean
         required: true
         default: true
-        description: Whether or not to build shared libraries
+        description: Whether or not the project headers should be precompiled
 
       build-type:
         type: string
@@ -57,11 +57,11 @@ on:
         default: Ninja
         description: CMake Generator
 
-      shared-libs:
+      pch:
         type: boolean
         required: true
         default: true
-        description: Build shared libraries
+        description: Precompile headers
 
       build-type:
         type: string
@@ -194,7 +194,11 @@ jobs:
               exit 2
               ;;
           esac
-          echo "cmake_args=$cmake_args" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ inputs.pch }}" -ne "true" ]; then
+            cmake_args="$cmake_args -DUSE_PRECOMPILED_HEADERS=OFF"
+          fi
+          echo "cmake-args=$cmake_args" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - uses: actions/checkout@v4
@@ -211,7 +215,7 @@ jobs:
         run: sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
 
       - name: Configure CMake
-        run: cmake -B ${{ github.workspace }}/build ${{ steps.build-data.outputs.CMAKE_ARGS }}
+        run: cmake -B ${{ github.workspace }}/build ${{ steps.build-data.outputs.cmake-args }}
       - name: Build
         run: cmake --build ${{ github.workspace }}/build --config ${{ inputs.build-type }}
 
