@@ -12,46 +12,46 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ 'windows-latest', 'macos-latest', 'ubuntu-latest' ]
+        os: [ 'windows-2025', 'macos-15', 'ubuntu-25.04' ]
         compiler: [ 'cl', 'clang', 'gcc' ]
         generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
         pch: [ false, true ]
         build-type: [ 'Release', 'RelWithDebInfo' ]
         upload-outputs: [ false ]
         include:
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
             pch: true
             build-type: 'Release'
             upload-outputs: true
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
             pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
 
-          - os: 'macos-latest'
-            compiler: clang
+          - os: 'macos-15'
+            compiler: 'clang'
             generator: 'Xcode'
             pch: true
             build-type: 'Release'
             upload-outputs: true
-          - os: 'macos-latest'
-            compiler: clang
+          - os: 'macos-15'
+            compiler: 'clang'
             generator: 'Xcode'
             pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
 
-          - os: 'ubuntu-latest'
+          - os: 'ubuntu-24.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
             pch: true
             build-type: 'Release'
             upload-outputs: true
-          - os: 'ubuntu-latest'
+          - os: 'ubuntu-24.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
             pch: true
@@ -59,55 +59,55 @@ jobs:
             upload-outputs: true
 
         exclude:          
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
             pch: true
             upload-outputs: false
-          - os: 'macos-latest'
-            compiler: clang
+          - os: 'macos-15'
+            compiler: 'clang'
             generator: 'Xcode'
             pch: true
             upload-outputs: false
-          - os: 'ubuntu-latest'
+          - os: 'ubuntu-24.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
             pch: true
             upload-outputs: false
 
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             generator: 'Xcode'
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             generator: 'Unix Makefiles'
-          - os: 'macos-latest'
+          - os: 'macos-15'
             generator: 'Visual Studio 17 2022'
-          - os: 'macos-latest'
+          - os: 'macos-15'
             generator: 'MinGW Makefiles'
-          - os: 'ubuntu-latest'
+          - os: 'ubuntu-24.04'
             generator: 'Visual Studio 17 2022'
-          - os: 'ubuntu-latest'
+          - os: 'ubuntu-24.04'
             generator: 'Xcode'
-          - os: 'ubuntu-latest'
+          - os: 'ubuntu-24.04'
             generator: 'MinGW Makefiles'
 
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             generator: 'Visual Studio 17 2022'
             compiler: 'clang'
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             generator: 'Visual Studio 17 2022'
             compiler: 'gcc'
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             generator: 'MinGW Makefiles'
             compiler: 'cl'
-          - os: 'windows-latest'
+          - os: 'windows-2025'
             generator: 'Ninja'
             compiler: 'cl'
-          - os: 'macos-latest'
+          - os: 'macos-15'
             compiler: 'cl'
-          - os: 'macos-latest'
+          - os: 'macos-15'
             generator: 'Xcode'
             compiler: 'gcc'
-          - os: 'ubuntu-latest'
+          - os: 'ubuntu-24.04'
             compiler: 'cl'
 
     name: >
@@ -128,7 +128,7 @@ jobs:
   win-msi:
     name: Build Windows installer
     needs: build-Release
-    runs-on: windows-latest
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
 
@@ -175,7 +175,7 @@ jobs:
   linux-deb:
     name: Build Debian package
     needs: build-Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Download build output
         uses: actions/download-artifact@v4
@@ -256,7 +256,7 @@ jobs:
 
   cleanup:
     name: Cleanup
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ linux-deb, win-msi ]
     permissions:
       contents: write
@@ -330,7 +330,7 @@ jobs:
     permissions:
       contents: write
     needs: cleanup
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Download Windows installer
         uses: actions/download-artifact@v4
