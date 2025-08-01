@@ -24,6 +24,7 @@ if(WIN32)
 	option(INCLUDE_ICON "Includes the taskbar/explorer application icon when on Windows" ON)
 endif()
 option(USE_PRECOMPILED_HEADERS "Specifies whether or not the project headers will be compiled before the source, to optimize build times" ON)
+option(BUILD_PORTABLE_APPLICATION "Makes the application portable by making sure everything will be in one folder" OFF)
 
 if(NOT DONT_USE_CACHING_COMPILER)
 	message(STATUS "Looking for ccache/sccache")
@@ -225,4 +226,13 @@ if(EXISTS ${RESOURCE_DIR})
 	add_custom_target(CopyResources ALL
 		DEPENDS "${STAMP_FILE}"
 	)
+endif()
+
+set(PORTABLE_INDICATOR_FILE ".portable-application")
+target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE_INDICATOR_FILE="${PORTABLE_INDICATOR_FILE}")
+if(BUILD_PORTABLE_APPLICATION)
+	execute_process(
+		COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PORTABLE_INDICATOR_FILE}"
+	)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE)
 endif()

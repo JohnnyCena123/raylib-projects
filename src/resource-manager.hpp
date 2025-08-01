@@ -1,15 +1,21 @@
 #pragma once
+#include <filesystem>
 #include <functional>
 #include <map>
 #include <raylib.h>
 
+namespace fs = std::filesystem;
+
 using LoadImageCallback = std::function<void(Image& image)>;
 void dummyImageManipulator(Image& image);
+
+class Game;
 
 class ResourceManager {
 public:
 
-	ResourceManager();
+	ResourceManager() = delete;
+	ResourceManager(Game& game);
 	ResourceManager(ResourceManager const&) = delete;
 	ResourceManager(ResourceManager&&) = delete;
 	~ResourceManager();
@@ -27,6 +33,8 @@ public:
 	Texture2D const& getEmptyTexture() const;
 
 private:
+
+	Game& m_game;
 
 	bool m_initialized;
 

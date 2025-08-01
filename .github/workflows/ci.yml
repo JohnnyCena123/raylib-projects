@@ -275,14 +275,16 @@ jobs:
           for config in Release RelWithDebInfo; do
 
             cd $config
-              cd build-win-MSVC-$config && zip -r ../Windows.zip * && cd ..
+              cd build-win-MSVC-$config && touch ./.portable-application && zip -r ../Windows.zip * && cd ..
 
               cd build-mac-Xcode-$config
+                touch ./.portable-application
                 ln -sf libraylib-$config.5.5.0.dylib libraylib-$config.550.dylib
                 ln -sf libraylib-$config.550.dylib libraylib-$config.dylib
                 tar -czvf ../MacOS.tar.gz *
               cd ..
               cd build-linux-Makefiles-$config
+                touch ./.portable-application
                 ln -sf libraylib-$config.so.5.5.0 libraylib-$config.so.550
                 ln -sf libraylib-$config.so.550 libraylib-$config.so
                 tar -czvf ../MacOS.tar.gz *

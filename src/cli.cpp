@@ -30,6 +30,7 @@ void Game::handleCli(int argc, char* argv[]) {
 			Option{ 's', "--silent", m_silent },
 			Option{ 'V', "--verbose", verbose },
 			Option{ 'S', "--save-logs", m_shouldSaveLogs },
+			Option{ 'p', "--portable", m_portable },
 			Option{ 'v', "--version", printVersion },
 			Option{ 'h', "--help", printHelp },
 			Option{ 'u', "--usage", printHelp },
@@ -37,15 +38,20 @@ void Game::handleCli(int argc, char* argv[]) {
 			Option{ 'r', "--repo", printRepository },
 		};
 		
+		std::optional<fs::path> altResourceir;
 		std::optional<fs::path> altSaveDir;
 		std::optional<std::string> rawLogLevel;
 		for (size_t i = 1; i < argc; i++) {
 			std::string arg = argv[i];
 			if (arg.starts_with("--")) {
 				bool found = false;
+				static char constexpr ALT_RESOURCE_DIR_ARG[] = "--resource-dir=";
 				static char constexpr ALT_SAVE_DIR_ARG[] = "--save-dir=";
 				static char constexpr LOG_LEVEL_ARG[] = "--log-level=";
-				if (arg.starts_with(ALT_SAVE_DIR_ARG)) {
+				if (arg.starts_with(ALT_RESOURCE_DIR_ARG)) {
+					altResourceir = arg.substr(sizeof(ALT_RESOURCE_DIR_ARG) - 1, std::string::npos);
+					found = true;
+				} else if (arg.starts_with(ALT_SAVE_DIR_ARG)) {
 					altSaveDir = arg.substr(sizeof(ALT_SAVE_DIR_ARG) - 1, std::string::npos);
 					found = true;
 				} else if (arg.starts_with(LOG_LEVEL_ARG)) {
@@ -94,18 +100,20 @@ void Game::handleCli(int argc, char* argv[]) {
 			exit(0);
 		} else if (printHelp) {
 			std::cout << "Usage: \033" << argv[0] << " <options>\n"
-				"    -m, --minimal-output   --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
-				"    -s, --silent           --  disables all logging.\n"
-				"    -V, --verbose          --  sets the log level to LOG_TRACE instead of LOG_INFO.\n"
-				"    -S, --save-logs        --  saves logs to a file. unaffected by --silent.\n"
-				"    -v, --version          --  prints the version and exits.\n"
-				"    -h, --help             --  prints this help message and exits.\n"
-				"    -u, --usage            --  same as --help.\n"
-				"    -d, --description             --  prints a general description of this app.\n"
-				"    -r, --repo             --  provides a link to the GitHub repository of the project.\n"
-				"        --save-dir=DIR     --  sets a custom directory to use for save data. includes log files.\n"
-				"        --log-level=LEVEL  --  sets the log level to the specified input.\n"
-				"                               available log levels: all, trace, debug, info, warning, error, fatal, none\n";
+				"    -m, --minimal-output    --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
+				"    -s, --silent            --  disables all logging.\n"
+				"    -V, --verbose           --  sets the log level to LOG_TRACE instead of LOG_INFO.\n"
+				"    -S, --save-logs         --  saves logs to a file. unaffected by --silent.\n"
+				"    -p, --portable          --  runs the application in portable mode.\n"
+				"    -v, --version           --  prints the version and exits.\n"
+				"    -h, --help              --  prints this help message and exits.\n"
+				"    -u, --usage             --  same as --help.\n"
+				"    -d, --description       --  prints a general description of this app.\n"
+				"    -r, --repo              --  provides a link to the GitHub repository of the project.\n"
+				"        --resource-dir=DIR  --  sets a custom directory to use for save data. includes log files.\n"
+				"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n"
+				"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
+				"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n";
 			exit(0);
 		} else if (printDescription) {
 			if (minimalOutput) std::cout << "Template project for raylib apps";
@@ -128,7 +136,12 @@ void Game::handleCli(int argc, char* argv[]) {
 					exit(2);
 				}
 			}
-			saveDir = *altSaveDir;
+			m_saveDir = *altSaveDir;
+		}
+		if (altResourceir) {
+			if (!DirectoryExists(altResourceir->string().c_str()))
+				std::cerr << ERROR_MSG << "resource dir does not exist: " << altResourceir->string() << ".\n";
+			m_resourceDir = *altResourceir;
 		}
 		if (rawLogLevel) {
 			if (rawLogLevel->empty()) {
@@ -221,7 +234,7 @@ void Game::saveLogs() {
 	std::time_t currentTime = std::time(0);
 	std::tm* localTime = std::localtime(&currentTime);
 
-	fs::path logsDir = saveDir/"logs";
+	fs::path logsDir = m_saveDir/"logs";
 	std::string logFilename = TextFormat("%04d.%02d.%02d-%02d:%02d:%02d.log",
 		localTime->tm_year + 1900,
 		localTime->tm_mon + 1,

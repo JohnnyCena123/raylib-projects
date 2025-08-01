@@ -1,10 +1,10 @@
 #include <raylib.h>
 #include "resource-manager.hpp"
-#include "basics.hpp"
+#include "game.hpp"
 
 void dummyImageManipulator(Image& image) { }
 
-ResourceManager::ResourceManager() : m_initialized(false) { }
+ResourceManager::ResourceManager(Game& game) : m_game(game), m_initialized(false) { }
 ResourceManager::~ResourceManager() { }
 
 void ResourceManager::init() {
@@ -26,7 +26,7 @@ void ResourceManager::deinit() {
 }
 
 bool ResourceManager::loadImage(std::string id, fs::path relativePath, LoadImageCallback manipulator) {
-	fs::path const fullPath = resourceDir / relativePath;
+	fs::path const fullPath = m_game.getrResourceDir()/relativePath;
 	if (!FileExists(fullPath.string().c_str())) {
 		TraceLog(LOG_WARNING, "Image file does not exist [%s]: %s", id.c_str(), fullPath.string().c_str());
 		return false;

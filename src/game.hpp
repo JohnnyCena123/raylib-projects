@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <sstream>
 #include <raylib.h>
 #ifndef IMGUI_OFF
@@ -12,6 +13,10 @@
 #include <libclipboard.h>
 #include "resource-manager.hpp"
 
+#include <raylib.h>
+
+namespace fs = std::filesystem;
+
 class Game {
 public:
 	Game();
@@ -19,14 +24,22 @@ public:
 	Game(Game&&) = delete;
 	~Game();
 
+	fs::path getrResourceDir();
+
 	void handleCli(int argc, char* argv[]);
 	void init();
 	void run();
 	void deinit();
 
+
 private:
 
 	clipboard_c* m_cb;
+
+	fs::path m_resourceDir;
+	fs::path m_saveDir;
+
+	bool m_portable;
 
 	int m_traceLogLevel;
 	bool m_silent;
@@ -42,7 +55,7 @@ private:
 	Texture2D m_dummyResource;
 	float m_dummyResourceRotation;
 
-	ResourceManager m_resourceManager{};
+	ResourceManager m_resourceManager;
 
 	IMGUI_ONLY(
 		void debugGUI();

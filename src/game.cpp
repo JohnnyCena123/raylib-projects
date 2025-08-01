@@ -6,12 +6,20 @@
 #include "libclipboard.h"
 #include "rlImGui.h"
 
-Game::Game() : m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
+Game::Game() :  m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
+	#ifdef PORTABLE
+		true
+	#else
+		FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
+	#endif
+	), m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
 	m_hadWarning(false), m_logs(""), m_screenSize(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y),
-	m_resourceManager(), m_dummyResourceRotation(0.f)
+	m_resourceManager(*this), m_dummyResourceRotation(0.f)
 { /* cant call init() here, handleCli() needs to be called first */ }
 
 Game::~Game() { }
+
+fs::path Game::getrResourceDir() { return m_resourceDir; }
 
 void Game::init() {
 	m_cb = clipboard_new(nullptr);
@@ -19,6 +27,36 @@ void Game::init() {
 	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
 	SetTargetFPS(60);
 	IMGUI_ONLY(rlImGuiSetup(true));
+
+	m_resourceDir = fs::path{GetApplicationDirectory()}/"resources";
+	m_resourceDir = [&] -> fs::path {
+		fs::path ret = fs::path{GetApplicationDirectory()}/"resources";
+		if (!m_portable) {
+		#if defined(__linux__)
+			if (ret.string().starts_with("/usr") &&
+				DirectoryExists("/usr/share/" PROJECT_NAME "/resources")
+			) ret = fs::path{"/usr/share"}/PROJECT_NAME/"resources";
+		#endif
+		}
+		return ret;
+	}();
+	if (!DirectoryExists(m_resourceDir.string().c_str()))
+		TraceLog(LOG_WARNING, "failed to find the resources directory");
+
+	m_saveDir = [&] -> fs::path {
+		fs::path ret = fs::path{GetApplicationDirectory()}/"save";
+		if (!m_portable) {
+			#ifdef _WIN32
+				fs::path appData = std::getenv("APPDATA");
+				ret = appData/PROJECT_NAME;
+			#elif defined(__linux__)
+				fs::path homeDir = std::getenv("HOME");
+				ret = homeDir/".local"/"share"/PROJECT_NAME;
+			#endif
+		}
+		if (!DirectoryExists(ret.string().c_str())) MakeDirectory(ret.string().c_str());
+		return ret;
+	}();
 
 	// i can only get the monitors size after the window is initialized :( this causes annoying problems
 	int const monitorWidth = GetMonitorWidth(GetCurrentMonitor());
