@@ -1,6 +1,7 @@
 name: Continous Integration (build)
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - "**"
