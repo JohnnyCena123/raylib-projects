@@ -8,8 +8,10 @@ to test stuff and/or add stuff to another branches without flooding the commit h
 Current projects I'm working on:
 
 * [Tic Tac Toe](https://github.com/JohnnyCena123/raylib-projects/tree/TicTacToe)
+  * [Latest development build](https://github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-tic-tac-toe)
   * [Built binaries](https://github.com/JohnnyCena123/raylib-projects/releases/tag/TicTacToe-v1.0.0)
 * [Snake](https://github.com/JohnnyCena123/raylib-projects/tree/Snake)
+  * [Latest development build](https://github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-snake)
   * [Built binaries](https://github.com/JohnnyCena123/raylib-projects/releases/tag/Snake-v1.0.0)
 
 More info about each branch can be found in its own `README.md`.
@@ -19,6 +21,33 @@ More info about each branch can be found in its own `README.md`.
 This branch is a template I use whenever I want to start a new project. \
 E.g. I'm starting to work on a new game, so I just copy this branch and
 hop right into coding.
+
+## Installing
+
+There are 4 options for installing the projects in this repository.
+
+1. Downloading from the latest release of each one (currently there are such only for
+  [Tic Tac Toe](https://github.com/JohnnyCena123/raylib-projects/releases/tag/TicTacToe-v1.0.0) and
+  [Snake](https://github.com/JohnnyCena123/raylib-projects/releases/tag/Snake-v1.0.0))
+2. Downloading from the development build of the latest commit, e.g.
+  [snake](github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-snake)
+3. Downloading CI artifacts - practically the same as getting them from nightly releases.
+4. [Building from source](#building)
+
+### Portable mode
+
+If you want the application to run in portable mode, you can either pass the `-DBUILD_PORTABLE_APPLICATION=ON`
+flag to CMake when building, or simply add a `.portable-application` file besides the executable - in the same directory.
+The folder structure should look like this:
+
+```theres-no-language-for-this-really-so-stop-warning-me-markdown-lint
+/path/to/installed/project/
+├── .portable-application   -- if it was not already built with the portable CMake flag
+├── <Executable>            -- the actual application
+├── <libraries...>          -- shared libaries - e.g. libraylib.dll, libimgui.so, ...
+└── resources/              -- resources directory
+   └── <resources...>       -- resource - images, sounds, fonts, etc.
+```
 
 ## Building
 
@@ -52,7 +81,7 @@ completely, and let CMake use the default values for them.
 * `-DINCLUDE_TERMINAL_IN_RELEASE=ON` - Allows you to include the terminal popup when building for Windows in Release mode.
 * `-DINCLUDE_ICON=OFF` - Lets you decide whether or not the application will have a taskbar/explorer icon on Windows.
 * `-DUSE_PRECOMPILED_HEADERS=OFF` - Whether or not project headers will be pre-compiled before the rest of the code.
-* `-DBUILD_PORTABLE_APPLICATION` - Determines whether the application should be built in portable mode, e.g. everything in 1 folder
+* `-DBUILD_PORTABLE_APPLICATION=ON` - Determines whether the application should be built in portable mode, e.g. everything in 1 folder
 
 ### Notes
 
