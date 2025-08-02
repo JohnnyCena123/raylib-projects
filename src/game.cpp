@@ -3,8 +3,6 @@
 #include <raylib.h>
 #include "game.hpp"
 #include "basics.hpp"
-#include "imgui.h"
-#include "rlImGui.h"
 #include "libclipboard.h"
 #include "tinyfiledialogs.h"
 
