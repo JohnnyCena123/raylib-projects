@@ -16,7 +16,7 @@ project(${GIT_BRANCH}
 
 option(USE_CACHING_COMPILER "Enables looking for a caching compiler" ON)
 option(ALL_BUILD_TYPES_TOGETHER "Puts all outputs of all build types in one folder, and separates them with a suffix." ON)
-option(CMAKE_LOCAL_BUILD "Enables separating outputs of different build types")
+option(LOCAL_CMAKE_BUILD "Enables separating outputs of different build types")
 option(CUSTOM_OUTPUT_OPTIONS "Allows specifying a custom binary suffix and output directory" OFF)
 option(DISABLE_WARNINGS "Disables warnings for dependencies" ON)
 if(WIN32)
@@ -64,7 +64,7 @@ if(ALL_BUILD_TYPES_TOGETHER)
 elseif(NOT CUSTOM_OUTPUT_OPTIONS)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/$CONFIGURATION")
 endif()
-if(CMAKE_LOCAL_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
+if(LOCAL_CMAKE_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
 	# separate different projects
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}")
 	# separate different build types
