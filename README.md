@@ -81,7 +81,7 @@ completely, and let CMake use the default values for them.
 * `-DINCLUDE_TERMINAL_IN_RELEASE=ON` - Allows you to include the terminal popup when building for Windows in Release mode.
 * `-DINCLUDE_ICON=OFF` - Lets you decide whether or not the application will have a taskbar/explorer icon on Windows.
 * `-DUSE_PRECOMPILED_HEADERS=OFF` - Whether or not project headers will be pre-compiled before the rest of the code.
-* `-DBUILD_PORTABLE_APPLICATION=ON` - Determines whether the application should be built in portable mode, e.g. everything in 1 folder
+* `-DBUILD_PORTABLE_APPLICATION=ON` - Determines whether the application should be built in portable mode, i.e. everything in 1 folder
 
 ### Notes
 
