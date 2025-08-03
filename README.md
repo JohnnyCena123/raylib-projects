@@ -63,25 +63,26 @@ cmake --build build --config <build type>
 
 Optional flags you can use when building:
 
-* `-DBUILD_SHARED_LIBS=ON` - Built-into CMake, at its core just makes CMake's `add_library()` function default to \
-shared (dynamic) libraries instead of static libraries when none are specified. As a bonus, in this project, it also \
-renames raylib's shared library to `raylib-<build type` (e.g. `libraylib-RelWithDebInfo.so`) on non-Release builds, \
-allowing everything to be in one folder.
+* `-DBUILD_SHARED_LIBS=ON` - Built-into CMake, at its core just makes CMake's `add_library()` function default to
+  shared (dynamic) libraries instead of static libraries when none are specified. In this project, though, it also
+  adds a suffix to dependencies' shared libraries in non-Release builds, e.g.
+  `libraylib.so --> libraylib-RelWithDebInfo.so`, allowing everything to be in one folder.
 * `-DUSE_CACHING_COMPILER=OFF` - Disables looking for ccache/sccache when configuring the project.
 * `-DALL_BUILD_TYPES_TOGETHER=OFF` - Places the output of each build type in its own separate directory.
-* `-DCMAKE_LOCAL_BUILD=ON` - Enables options for building locally. \
+* `-DCMAKE_LOCAL_BUILD=ON` - Enables options for building locally.
   Mainly helps with organizing builds of different build types or different projects.
-* `-DCUSTOM_OUTPUT_OPTIONS` - Allows you to specify the Executable name, and/or build output directory; or disable them \
-completely, and let CMake use the default values for them.
-  * `-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/path/to/output/directory` - Built-into CMake, \
-  allows you to specify where the output Executable will be.
+* `-DCUSTOM_OUTPUT_OPTIONS` - Allows you to specify the Executable name, and/or build output directory; or disable them
+  completely, and let CMake use the default values for them.
+  * `-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/path/to/output/directory` - Built-into CMake,
+    allows you to specify where the output Executable will be.
   * `-DBIN_SUFFIX=-foobar` - Specifies the suffix for the filename of the output Executable
 * `-DDISABLE_WARNINGS=OFF` - Disables disabling warnings for dependencies.
 * `-DIMGUI_IN_RELEASE=ON` - Keep ImGui debug windows in Release mode
 * `-DINCLUDE_TERMINAL_IN_RELEASE=ON` - Allows you to include the terminal popup when building for Windows in Release mode.
 * `-DINCLUDE_ICON=OFF` - Lets you decide whether or not the application will have a taskbar/explorer icon on Windows.
 * `-DUSE_PRECOMPILED_HEADERS=OFF` - Whether or not project headers will be pre-compiled before the rest of the code.
-* `-DBUILD_PORTABLE_APPLICATION=ON` - Determines whether the application should be built in portable mode, i.e. everything in 1 folder
+* `-DBUILD_PORTABLE_APPLICATION=ON` - Determines whether the application should be built in portable mode,
+  i.e. everything in 1 folder
 
 ### Notes
 
