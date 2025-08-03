@@ -103,4 +103,4 @@ Or if you really want, you could open a pull request :)
 
 ## License
 
-There is no license. Use my code in whatever way you want, just credit me
+This project is licensed under the [LGPLv3.0 License](./LICENSE).
