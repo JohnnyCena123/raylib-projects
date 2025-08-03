@@ -151,7 +151,7 @@ jobs:
       - name: Upload output
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/${{ github.ref_name }}.zip
+          path: ${{ github.workspace }}/Web.zip
           name: WebAssembly build
 
   win-msi:
@@ -393,6 +393,34 @@ jobs:
           tag_name: nightly-${{ github.ref_name }}
           delete_release: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy onto itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          curl -L -o butler.zip \
+            https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip -d butler
+          chmod +x butler/butler
+          sudo mv butler/butler /usr/local/bin/
+
+          cp Windows.zip ${{ github.ref_name }}.zip
+          butler push ${{ github.ref_name }}.zip johnnycena123/${{ github.ref_name }}:windows
+          butler push *.msi johnnycena123/${{ github.ref_name }}:windows
+          
+          cp MacOS.zip ${{ github.ref_name }}.zip
+          butler push ${{ github.ref_name }}.zip johnnycena123/${{ github.ref_name }}:mac
+          
+          cp Linux.zip ${{ github.ref_name }}.zip
+          butler push ${{ github.ref_name }}.zip johnnycena123/${{ github.ref_name }}:linux
+          butler push *.deb johnnycena123/${{ github.ref_name }}:linux
+          
+          cp Web.zip ${{ github.ref_name }}.zip
+          butler push ${{ github.ref_name }}.zip johnnycena123/${{ github.ref_name }}:web
+
+          rm -f ${{ github.ref_name }}.zip
+          
+          shell: bash
 
       - name: Create release
         uses: softprops/action-gh-release@v2
