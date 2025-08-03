@@ -9,7 +9,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-Release:
+  build-desktop:
     strategy:
       fail-fast: false
       matrix:
@@ -126,9 +126,37 @@ jobs:
       build-type: ${{ matrix.build-type }}
       upload-outputs: ${{ matrix.upload-outputs }}
 
+  build-web:
+    name: Build WebAssembly application
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.12
+          actions-cache-folder: 'emsdk-cache'
+        
+
+      - name: Build
+        run: |
+          emcmake cmake \
+            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/build" \
+            -DCMAKE_BUILD_TYPE=Release -DPLATFORM=Web -Wno-dev -G Ninja
+          cmake --build "${{ github.workspace }}/build"
+          ./.github/scripts/zip-web-app.sh
+        shell: bash
+
+      - name: Upload output
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/${{ github.ref_name }}.zip
+          name: WebAssembly build
+
   win-msi:
     name: Build Windows installer
-    needs: build-Release
+    needs: build-desktop
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
@@ -175,7 +203,7 @@ jobs:
 
   linux-deb:
     name: Build Debian package
-    needs: build-Release
+    needs: build-desktop
     runs-on: ubuntu-24.04
     steps:
       - name: Download build output
@@ -331,7 +359,7 @@ jobs:
     name: Publish
     permissions:
       contents: write
-    needs: cleanup
+    needs: [ 'cleanup', 'build-web' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download Windows installer
@@ -343,6 +371,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Debian package
+
+      - name: Download WebAssembly build
+        uses: actions/download-artifact@v4
+        with:
+          name: WebAssembly build
 
       - name: Download zips
         uses: actions/download-artifact@v4
