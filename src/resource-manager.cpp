@@ -26,7 +26,8 @@ void ResourceManager::deinit() {
 }
 
 bool ResourceManager::loadImage(std::string id, fs::path relativePath, LoadImageCallback manipulator) {
-	fs::path const fullPath = m_game.getrResourceDir()/relativePath;
+	fs::path const fullPath = m_game.getResourceDir()/relativePath;
+
 	if (!FileExists(fullPath.string().c_str())) {
 		TraceLog(LOG_WARNING, "Image file does not exist [%s]: %s", id.c_str(), fullPath.string().c_str());
 		return false;

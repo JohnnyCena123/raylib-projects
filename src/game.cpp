@@ -3,27 +3,31 @@
 #include <raylib.h>
 #include "game.hpp"
 #include "basics.hpp"
-#include "libclipboard.h"
-#include "tinyfiledialogs.h"
 
-Game::Game() :  m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
+Game::Game() : 
+#ifdef PLATFORM_DESKTOP
+		m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
 	#ifdef PORTABLE
-		true
-	#else
-		FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
-	#endif
-	), m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
-	m_hadWarning(false), m_logs(""), m_screenSize(DEFAULT_SCREEN_SIZE),
-	m_resourceManager(*this), m_dummyResourceRotation(0.f)
+			true
+		#else
+			FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
+		#endif
+		),
+	m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
+	m_hadWarning(false), m_logs(""), 
+#endif 
+	m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f), m_resourceManager(*this)
 { /* cant call init() here, handleCli() needs to be called first */ }
 
 Game::~Game() { }
 
-fs::path Game::getrResourceDir() { return m_resourceDir; }
+fs::path Game::getResourceDir() { return m_resourceDir; }
 
 void Game::init() {
-	m_resourceDir = fs::path{GetApplicationDirectory()}/"resources";
 	m_resourceDir = [&] -> fs::path {
+	#ifdef PLATFORM_WEB
+		fs::path ret = "resources";
+	#else
 		fs::path ret = fs::path{GetApplicationDirectory()}/"resources";
 		if (!m_portable) {
 		#if defined(__linux__)
@@ -32,8 +36,10 @@ void Game::init() {
 			) ret = fs::path{"/usr/share"}/PROJECT_NAME/"resources";
 		#endif
 		}
+	#endif
 		return ret;
 	}();
+DESKTOP_ONLY(
 	if (!DirectoryExists(m_resourceDir.string().c_str())) {
 		tinyfd_messageBox("Failure",
 			"Could not find the resource directory.\n"
@@ -66,10 +72,13 @@ void Game::init() {
 
 	m_cb = clipboard_new(nullptr);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+)
+
 	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
 	SetTargetFPS(60);
 	IMGUI_ONLY(rlImGuiSetup(true));
 
+DESKTOP_ONLY(
 	// i can only get the monitors size after the window is initialized :( this causes annoying problems
 	int const monitorWidth = GetMonitorWidth(GetCurrentMonitor());
 	int const monitorHeight = GetMonitorHeight(GetCurrentMonitor());
@@ -79,13 +88,16 @@ void Game::init() {
 
 	auto const windowPosX = GetWindowPosition().x;
 	SetWindowPosition((monitorWidth - newSize.y) / 2, (monitorHeight - newSize.y) / 2);
+)
 
 	m_screen = LoadRenderTexture(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y);
 
+DESKTOP_ONLY(
 	m_resourceManager.init();
 	if (!m_resourceManager.loadImage("app-icon", "icon.png"))
 		TraceLog(LOG_WARNING, "Failed to load app icon");
 	SetWindowIcon(m_resourceManager.getImage("app-icon"));
+)
 
 	if (!m_resourceManager.loadTexture("image", "image.png"))
 		TraceLog(LOG_WARNING, "Failed to load dummy resource");
@@ -157,7 +169,10 @@ void Game::deinit() {
 	UnloadRenderTexture(m_screen);
 	IMGUI_ONLY(rlImGuiShutdown());
 	CloseWindow();
+
+DESKTOP_ONLY(
 	if (m_shouldSaveLogs || m_hadWarning) saveLogs();
 
 	clipboard_free(m_cb);
+)
 }
