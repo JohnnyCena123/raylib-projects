@@ -131,7 +131,7 @@ jobs:
   name:
     name: Generate name
     needs: [ 'build-desktop' ]
-    runs-on: ubnutu-24.04
+    runs-on: ubuntu-24.04
     outputs:
       branch-name: ${{ steps.main.outputs.branch-name }}
       project-name: ${{ steps.main.outputs.project-name }}
