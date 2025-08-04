@@ -216,6 +216,7 @@ jobs:
             id="$id-portable"
           fi
           echo "cmake-args=$cmake_args" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - uses: actions/checkout@v4
