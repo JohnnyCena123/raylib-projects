@@ -1,6 +1,6 @@
 git_branch="$(git rev-parse --abbrev-ref HEAD)"
 cd "$(dirname "$0")/../../bin/$git_branch/" || cd "$(dirname "$0")/../../bin/" || exit 1
-directory="../../$git_branch-web-app-zip/"
+directory="$git_branch-web-app-zip/"
 mkdir -p "$directory"
 cp "$git_branch".{js,wasm,html,data} "$directory"
 cd "$directory" || exit 1
