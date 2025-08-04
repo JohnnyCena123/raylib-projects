@@ -54,7 +54,9 @@ DESKTOP_ONLY(
 		);
 		exit(1);
 	}
+)
 
+#ifdef PLATFORM_DESKTOP
 	m_saveDir = [&] -> fs::path {
 		fs::path ret = fs::path{GetApplicationDirectory()}/"save";
 		if (!m_portable) {
@@ -72,7 +74,7 @@ DESKTOP_ONLY(
 
 	m_cb = clipboard_new(nullptr);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-)
+#endif
 
 	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
 	SetTargetFPS(60);
