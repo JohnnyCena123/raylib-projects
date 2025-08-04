@@ -260,7 +260,7 @@ jobs:
           PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description)"
           PACKAGE_DESCRIPTION_MINIMAL="$(./$PACKAGE_NAME --description --minimal-output)"
           PACKAGE_REPO="$(./$PACKAGE_NAME --repo --minimal-output)"
-          PACKAGE_DIR="./$PACKAGE_NAME-$PACKAGE_VERSION"
+          PACKAGE_DIR="${{ github.workspace }}/${{ needs.metadata.outputs.full-name }}"
           mkdir -p "$PACKAGE_DIR"/usr/bin
           mv "./$PACKAGE_NAME" "$PACKAGE_DIR/usr/bin/"
           ln -sf libraylib.so.5.5.0 libraylib.so.550
@@ -435,20 +435,20 @@ jobs:
           chmod +x butler/butler
           sudo mv butler/butler /usr/local/bin/
 
+          cp Web.zip ${{ needs.metadata.outputs.full-name }}.zip
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:web
+
           cp Windows.zip ${{ needs.metadata.outputs.full-name }}.zip
           butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows
-          butler push *.msi johnnycena123/${{ needs.metadata.outputs.full-name }}:windows
+          butler push ${{ needs.metadata.outputs.full-name }}.msi johnnycena123/${{ needs.metadata.outputs.full-name }}:windows
           
           cp MacOS.zip ${{ needs.metadata.outputs.full-name }}.zip
           butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:mac
           
           cp Linux.zip ${{ needs.metadata.outputs.full-name }}.zip
           butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux
-          butler push *.deb johnnycena123/${{ needs.metadata.outputs.full-name }}:linux
+          butler push ${{ needs.metadata.outputs.full-name }}.deb johnnycena123/${{ needs.metadata.outputs.full-name }}:linux
           
-          cp Web.zip ${{ needs.metadata.outputs.full-name }}.zip
-          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:web
-
           rm -f ${{ needs.metadata.outputs.full-name }}.zip
           
           shell: bash
