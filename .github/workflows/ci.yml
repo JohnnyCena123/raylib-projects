@@ -148,8 +148,8 @@ jobs:
         id: main
         run: |
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          chmod +x ./$PACKAGE_NAME
-          PROJECT_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
+          chmod +x ./${{ github.ref_name }}
+          PROJECT_VERSION=$(./${{ github.ref_name }} --version --minimal-output)
 
           if [ "${{ github.ref_type }}" == "branch" ]; then
             echo "project-name=${{ github.ref_name }}_$PROJECT_VERSION-dev"
