@@ -2,6 +2,7 @@
 	// holy shit i hate raylib + windows
 	// it compiles so shut up
 	#define _WINGDI_
+	#define LF_FACESIZE 32
 	#define _WINUSER_
 	#define _APISETCONSOLEL3_
 	#define _WINSPOOL_
