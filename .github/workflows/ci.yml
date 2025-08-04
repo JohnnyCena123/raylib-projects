@@ -128,6 +128,41 @@ jobs:
       build-type: ${{ matrix.build-type }}
       upload-outputs: ${{ matrix.upload-outputs }}
 
+  name:
+    name: Generate name
+    needs: [ 'build-desktop' ]
+    runs-on: ubnutu-24.04
+    outputs:
+      branch-name: ${{ steps.main.outputs.branch-name }}
+      project-name: ${{ steps.main.outputs.project-name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux-Makefiles-Release
+          path: ${{ github.workspace }}
+
+      - name: main
+        id: main
+        run: |
+          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
+          chmod +x ./$PACKAGE_NAME
+          PROJECT_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
+
+          if [ "${{ github.ref_type }}" == "branch" ]; then
+            echo "project-name=${{ github.ref_name }}_$PROJECT_VERSION-dev"
+          elif [ "${{ github.ref_type }}" == "tag" ]; then
+            TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
+            BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
+            echo "project-name=$BRANCH_$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown push type"
+            exit 1
+          fi
+          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+      
   build-web:
     name: Build WebAssembly application
     needs: [ 'name' ]
@@ -155,40 +190,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/${{ needs.name.outputs.branch-name }}.zip
           name: WebAssembly build
-
-  name:
-    name: Generate name
-    runs-on: ubnutu-24.04
-    outputs:
-      branch-name: ${{ steps.main.outputs.branch-name }}
-      project-name: ${{ steps.main.outputs.project-name }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: build-linux-Makefiles-Release
-          path: ${{ github.workspace }}
-
-      - name: main
-        id: main
-        run: |
-          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          chmod +x ./$PACKAGE_NAME
-          PROJECT_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
-
-          if [ "${{ github.ref_type }}" == "branch" ]; then
-          	echo "project-name=${{ github.ref_name }}_$PROJECT_VERSION-dev"
-          elif [ "${{ github.ref_type }}" == "tag" ]; then
-            TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
-            BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
-          	echo "project-name=$BRANCH_$PROJECT_VERSION" >> $GITHUB_OUTPUT
-          else
-          	echo "Unknown push type"
-          	exit 1
-          fi
-          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
   win-msi:
     name: Build Windows installer
