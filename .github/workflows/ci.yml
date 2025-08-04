@@ -432,7 +432,7 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          curl -L -o butler.zip \
+          curl -Lo butler.zip \
             https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
           unzip butler.zip -d butler
           chmod +x butler/butler
@@ -455,7 +455,7 @@ jobs:
           rm -rf ./${{ needs.metadata.outputs.branch-name }}/.git*
           zip -r ${{ needs.metadata.outputs.full-name }}.zip ./${{ needs.metadata.outputs.branch-name }}/ 
           butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:source-zip
-          zip -r ${{ needs.metadata.outputs.full-name }}.tar.gz ./${{ needs.metadata.outputs.branch-name }}/ 
+          tar -czvf ${{ needs.metadata.outputs.full-name }}.tar.gz ./${{ needs.metadata.outputs.branch-name }}/ 
           butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:source-gzip
 
           rm -f ${{ needs.metadata.outputs.full-name }}.{zip,tar.gz}
