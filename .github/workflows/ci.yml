@@ -399,6 +399,10 @@ jobs:
     needs: [ 'metadata', 'cleanup', 'build-web' ]
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ${{ needs.metadata.outputs.branch-name }}
+
       - name: Download Windows installer
         uses: actions/download-artifact@v4
         with:
@@ -448,9 +452,15 @@ jobs:
           butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux-portable
           butler push ${{ needs.metadata.outputs.full-name }}.deb johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux-deb
           
-          rm -f ${{ needs.metadata.outputs.full-name }}.zip
+          zip -r ${{ needs.metadata.outputs.full-name }}.zip ./${{ needs.metadata.outputs.branch-name }}/ 
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:source-zip
+
+          zip -r ${{ needs.metadata.outputs.full-name }}.tar.gz ./${{ needs.metadata.outputs.branch-name }}/ 
+          butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:source-gzip
+
+          rm -f ${{ needs.metadata.outputs.full-name }}.{zip,tar.gz}
           
-          shell: bash
+        shell: bash
 
       - name: Delete tag
         uses: dev-drprasad/delete-tag-and-release@v1.1
