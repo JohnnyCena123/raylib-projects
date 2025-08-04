@@ -1,7 +1,5 @@
 #pragma once
 
-#include <filesystem>
-#include <sstream>
 #include <raylib.h>
 #ifndef IMGUI_OFF
 	#include <imgui.h>
@@ -10,12 +8,19 @@
 #else
 	#define IMGUI_ONLY(...)
 #endif
-#include <libclipboard.h>
+#ifdef PLATFORM_DESKTOP
+	#include <libclipboard.h>
+	#include <tinyfiledialogs.h>
+	#include <filesystem>
+	#include <sstream>
+	namespace fs = std::filesystem;
+	#define DESKTOP_ONLY(...) __VA_ARGS__
+#else
+	#define DESKTOP_ONLY(...)
+#endif
 #include "resource-manager.hpp"
 
-#include <raylib.h>
 
-namespace fs = std::filesystem;
 
 class Game {
 public:
@@ -24,9 +29,11 @@ public:
 	Game(Game&&) = delete;
 	~Game();
 
-	fs::path getrResourceDir();
+	fs::path getResourceDir();
 
+DESKTOP_ONLY(
 	void handleCli(int argc, char* argv[]);
+)
 	void init();
 	void run();
 	void deinit();
@@ -34,9 +41,11 @@ public:
 
 private:
 
+	fs::path m_resourceDir;
+
+DESKTOP_ONLY(
 	clipboard_c* m_cb;
 
-	fs::path m_resourceDir;
 	fs::path m_saveDir;
 
 	bool m_portable;
@@ -47,6 +56,7 @@ private:
 	bool m_hadWarning;
 	std::stringstream m_logs;
 	void saveLogs();
+)
 
 	Vector2 m_screenSize;
 
@@ -57,8 +67,8 @@ private:
 
 	ResourceManager m_resourceManager;
 
-	IMGUI_ONLY(
-		void debugGUI();
-	)
+IMGUI_ONLY(
+	void debugGUI();
+)
 
 };

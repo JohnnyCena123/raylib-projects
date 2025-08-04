@@ -1,8 +1,8 @@
-#include <raylib.h>
 #if defined(NO_TERMINAL_WINDOWS)
 	// holy shit i hate raylib + windows
 	// it compiles so shut up
 	#define _WINGDI_
+	#define LF_FACESIZE 32
 	#define _WINUSER_
 	#define _APISETCONSOLEL3_
 	#define _WINSPOOL_
@@ -25,7 +25,9 @@
 int main(int argc, char* argv[]) {
 
 	Game game{};
+DESKTOP_ONLY(
 	game.handleCli(argc, argv);
+)
 
 	game.init();
 	game.run();

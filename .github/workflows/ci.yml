@@ -4,20 +4,22 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - "**"
+      - '**'
+    tags:
+      - '**'
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  build-Release:
+  build-desktop:
     strategy:
       fail-fast: false
       matrix:
         os: [ 'windows-2025', 'macos-15', 'ubuntu-24.04' ]
         compiler: [ 'cl', 'clang', 'gcc' ]
         generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
-        pch: [ false, true ]
-        build-type: [ 'Release', 'RelWithDebInfo' ]
+        pch: [ false ]
+        build-type: [ 'Release' ]
         upload-outputs: [ false ]
         include:
           - os: 'windows-2025'
@@ -126,9 +128,45 @@ jobs:
       build-type: ${{ matrix.build-type }}
       upload-outputs: ${{ matrix.upload-outputs }}
 
+  metadata:
+    name: Generate metadata
+    needs: [ 'build-desktop' ]
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.main.outputs.version }}
+      branch-name: ${{ steps.main.outputs.branch-name }}
+      full-name: ${{ steps.main.outputs.full-name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux-Makefiles-Release
+          path: ${{ github.workspace }}/output
+
+      - name: main
+        id: main
+        run: |
+          cd output
+          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
+          chmod +x ./${{ github.ref_name }}
+          PROJECT_VERSION=$(./${{ github.ref_name }} --version --minimal-output)
+
+          echo "version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
+          if [ "${{ github.ref_type }}" == "branch" ]; then
+            echo "full-name=${{ github.ref_name }}-$PROJECT_VERSION-dev" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_type }}" == "tag" ]; then
+            TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
+            BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
+            echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          fi
+    
   win-msi:
     name: Build Windows installer
-    needs: build-Release
+    needs: [ 'build-desktop', 'metadata' ]
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
@@ -142,20 +180,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-win-MSVC-Release
-          path: ${{ github.ref_name }}
+          path: ${{ needs.metadata.outputs.branch-name }}
 
       - name: Build installer
         id: build
         run: |
-          $packageName = "${{ github.ref_name }}"
-          $version = "1.0.0"
+          $msi = "${{ needs.metadata.outputs.full-name }}.msi"
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
-            -SourceDir .\$packageName `
-            -AppName "$packageName" `
+            -SourceDir .\${{ needs.metadata.outputs.branch-name }} `
+            -AppName "${{ needs.metadata.outputs.branch-name }}" `
             -Manufacturer "Johnny Cena" `
-            -Version "$version" `
-            -OutputMsi "$packageName-$version.msi"
-          echo "installer-path=$packageName-$version.msi" >> $env:GITHUB_OUTPUT
+            -Version "${{ needs.metadata.outputs.version }}" `
+            -OutputMsi "$msi"
+          echo "installer-path=$msi" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Test installer
@@ -165,7 +202,7 @@ jobs:
             -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' `
             -PassThru
           $proc.WaitForExit(30000)
-          dir "C:\Program Files\${{ github.ref_name }}"
+          dir "C:\Program Files\${{ needs.metadata.outputs.branch-name }}"
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
@@ -175,7 +212,7 @@ jobs:
 
   linux-deb:
     name: Build Debian package
-    needs: build-Release
+    needs: [ 'metadata', 'build-desktop' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download build output
@@ -188,13 +225,13 @@ jobs:
         id: build
         run: |
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          PACKAGE_NAME=${{ github.ref_name }}
+          PACKAGE_NAME=${{ needs.metadata.outputs.branch-name }}
           chmod +x ./$PACKAGE_NAME
           PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
           PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description)"
           PACKAGE_DESCRIPTION_MINIMAL="$(./$PACKAGE_NAME --description --minimal-output)"
           PACKAGE_REPO="$(./$PACKAGE_NAME --repo --minimal-output)"
-          PACKAGE_DIR="./$PACKAGE_NAME-$PACKAGE_VERSION"
+          PACKAGE_DIR="${{ github.workspace }}/${{ needs.metadata.outputs.full-name }}"
           mkdir -p "$PACKAGE_DIR"/usr/bin
           mv "./$PACKAGE_NAME" "$PACKAGE_DIR/usr/bin/"
           ln -sf libraylib.so.5.5.0 libraylib.so.550
@@ -269,9 +306,8 @@ jobs:
       - name: Organize
         id: organize
         run: |
-          rm -rf "Debian package" "Windows installer"
+          rm -rf "Debian package" "Windows installer" "WebAssembly build"
           mv build-win-MSVC-Release/resources .
-          rm -rf */resources
           zip -r ./resources.zip ./resources/
 
           mkdir Release
@@ -286,14 +322,14 @@ jobs:
 
               cd build-mac-Xcode-$config
                 touch ./.portable-application
-                ln -sf libraylib-$config.5.5.0.dylib libraylib-$config.550.dylib
-                ln -sf libraylib-$config.550.dylib libraylib-$config.dylib
+                ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
+                ln -sf libraylib.550.dylib libraylib.dylib
                 tar -czvf ../MacOS.tar.gz *
               cd ..
               cd build-linux-Makefiles-$config
                 touch ./.portable-application
-                ln -sf libraylib-$config.so.5.5.0 libraylib-$config.so.550
-                ln -sf libraylib-$config.so.550 libraylib-$config.so
+                ln -sf libraylib.so.5.5.0 libraylib.so.550
+                ln -sf libraylib.so.550 libraylib.so
                 tar -czvf ../Linux.tar.gz *
               cd ..
             cd ..
@@ -326,14 +362,52 @@ jobs:
         uses: geekyeggo/delete-artifact@v5
         with:
           name: build-*
+  
+  build-web:
+    name: Build WebAssembly application
+    needs: [ 'metadata' ]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        imgui: [ 'OFF', 'ON' ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.12
+          actions-cache-folder: 'emsdk-cache'
+        
+      - name: Build
+        run: |
+          emcmake cmake \
+            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
+            -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
+            -DPLATFORM=Web -Wno-dev -G Ninja
+          cmake --build "${{ github.workspace }}/build"
+          ./.github/scripts/zip-web-app.sh
+          mv bin/${{ needs.metadata.outputs.branch-name }}.zip bin/Web.zip
+        shell: bash
+
+      - name: Upload output
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/bin/Web.zip
+          name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' }}
 
   publish:
     name: Publish
     permissions:
       contents: write
-    needs: cleanup
+    needs: [ 'metadata', 'cleanup', 'build-web' ]
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ${{ needs.metadata.outputs.branch-name }}
+
       - name: Download Windows installer
         uses: actions/download-artifact@v4
         with:
@@ -343,6 +417,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Debian package
+
+      - name: Download ImGui-less WebAssembly build
+        uses: actions/download-artifact@v4
+        with:
+          name: WebAssembly build without ImGUi
 
       - name: Download zips
         uses: actions/download-artifact@v4
@@ -354,23 +433,75 @@ jobs:
         with:
           name: resources
 
+      - name: Deploy onto itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          curl -Lo butler.zip \
+            https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip -d butler
+          chmod +x butler/butler
+          sudo mv butler/butler /usr/local/bin/
+
+          cp Web.zip ${{ needs.metadata.outputs.full-name }}.zip
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:web
+
+          cp Windows.zip ${{ needs.metadata.outputs.full-name }}.zip
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows-portable
+          butler push ${{ needs.metadata.outputs.full-name }}.msi johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows-msi
+          
+          cp MacOS.tar.gz ${{ needs.metadata.outputs.full-name }}.tar.gz
+          butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:mac-portable
+          
+          cp Linux.tar.gz ${{ needs.metadata.outputs.full-name }}.tar.gz
+          butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux-portable
+          butler push ${{ needs.metadata.outputs.full-name }}.deb johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux-deb
+          
+          rm -rf ./${{ needs.metadata.outputs.branch-name }}/.git*
+          zip -r ${{ needs.metadata.outputs.full-name }}.zip ./${{ needs.metadata.outputs.branch-name }}/ 
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:source-zip
+          tar -czvf ${{ needs.metadata.outputs.full-name }}.tar.gz ./${{ needs.metadata.outputs.branch-name }}/ 
+          butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:source-gzip
+
+          rm -f ${{ needs.metadata.outputs.full-name }}.{zip,tar.gz}
+          
+        shell: bash
+
       - name: Delete tag
         uses: dev-drprasad/delete-tag-and-release@v1.1
+        if: github.ref_type == 'branch'
         with:
-          tag_name: nightly-${{ github.ref_name }}
+          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
           delete_release: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create release
+      - name: Create nightly release
         uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'branch'
         with:
-          tag_name: nightly-${{ github.ref_name }}
-          name: Development build for ${{ github.ref_name }}
+          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
+          name: Development build for ${{ needs.metadata.outputs.branch-name }}
           body: |
-            Build triggered by commit ${{ github.sha }} on branch ${{ github.ref_name }}.
+            Build triggered by commit ${{ github.sha }} on branch ${{ needs.metadata.outputs.branch-name }}.
             This is a build of the **latest commit**, it is not guaranteed to be stable.
           draft: false
           prerelease: true
+          files: |
+            *.msi
+            *.deb
+            *.zip
+            *.tar.gz
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release build for ${{ needs.metadata.outputs.branch-name }}
+          body: |
+            TODO: Add release body
+          draft: true
+          prerelease: false
           files: |
             *.msi
             *.deb

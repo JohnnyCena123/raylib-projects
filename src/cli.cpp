@@ -96,7 +96,7 @@ void Game::handleCli(int argc, char* argv[]) {
 			if (minimalOutput) std::cout << PROJECT_VERSION "\n";
 			else std::cout << "'" PROJECT_NAME "' is a template - it is not a distributed product.\n"
 				"it does not follow the usual versioning scheme;\n"
-				"but its version could be considered as " PROJECT_VERSION " .\n";
+				"but its version could be considered as " PROJECT_VERSION ".\n";
 			exit(0);
 		} else if (printHelp) {
 			std::cout << "Usage: \033" << argv[0] << " <options>\n"
@@ -111,7 +111,7 @@ void Game::handleCli(int argc, char* argv[]) {
 				"    -d, --description       --  prints a general description of this app.\n"
 				"    -r, --repo              --  provides a link to the GitHub repository of the project.\n"
 				"        --resource-dir=DIR  --  sets a custom directory to use for save data. includes log files.\n"
-				"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n"
+				"        --save-dir=DIR      --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
 				"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
 				"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n";
 			exit(0);

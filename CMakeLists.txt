@@ -53,12 +53,6 @@ endif()
 
 include(cmake/CPM.cmake)
 
-if(DISABLE_WARNINGS)
-	set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
-endif()
-CPMAddPackage("gh:jtanx/libclipboard#master")
-target_include_directories(clipboard PRIVATE "${libclipboard_BINARY_DIR}/include")
-
 if(ALL_BUILD_TYPES_TOGETHER)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 elseif(NOT CUSTOM_OUTPUT_OPTIONS)
@@ -73,23 +67,15 @@ if(LOCAL_CMAKE_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
 	else()
 		set(BIN_SUFFIX "${CONFIGURATION}")
 	endif()
-endif()
-if(BUILD_SHARED_LIBS)
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/..")
-	set_target_properties(clipboard PROPERTIES
-		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
-	)
+elseif(NOT CUSTOM_OUTPUT_OPTIONS)
+	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 endif()
-if((CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode"))
-	foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
+if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
+	foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
 		string(TOUPPER "${CONFIG}" UPPER_CONFIG)
 		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-		if(BUILD_SHARED_LIBS)
-			set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
-			set_target_properties(clipboard PROPERTIES
-				LIBRARY_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
-			)
-		endif()
+		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 	endforeach()
 endif()
 
@@ -103,12 +89,40 @@ if(BUILD_SHARED_LIBS AND DEFINED BIN_SUFFIX)
 	set_target_properties(raylib PROPERTIES OUTPUT_NAME "raylib-${BIN_SUFFIX}")
 endif()
 
-CPMAddPackage(NAME "tinyfd"
-	GIT_REPOSITORY "https://git.code.sf.net/p/tinyfiledialogs/code"
-	GIT_TAG "master"
-)
-set(TINYFD_TARGET "tinyfd")
-add_library(${TINYFD_TARGET} STATIC "${tinyfd_SOURCE_DIR}/tinyfiledialogs.c")
+# helper
+if(PLATFORM STREQUAL "Desktop")
+	set(PLATFORM_DESKTOP ON)
+else()
+	set(PLATFORM_DESKTOP OFF)
+endif()
+
+if(PLATFORM_DESKTOP)
+	CPMAddPackage(NAME "tinyfd"
+		GIT_REPOSITORY "https://git.code.sf.net/p/tinyfiledialogs/code"
+		GIT_TAG "master"
+	)
+	set(TINYFD_TARGET "tinyfd")
+	add_library(${TINYFD_TARGET} STATIC "${tinyfd_SOURCE_DIR}/tinyfiledialogs.c")
+
+	if(DISABLE_WARNINGS)
+		set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
+	endif()
+	CPMAddPackage("gh:jtanx/libclipboard#master")
+	set(LIBCLIPBOARD_TARGET clipboard)
+	target_include_directories(${LIBCLIPBOARD_TARGET} PRIVATE "${libclipboard_BINARY_DIR}/include")
+	set_target_properties(${LIBCLIPBOARD_TARGET} PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+	)
+	
+	if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
+		foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
+			string(TOUPPER "${CONFIG}" UPPER_CONFIG)
+			set_target_properties(clipboard PROPERTIES
+				LIBRARY_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+			)
+		endforeach()
+	endif()
+endif()
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
 	CPMAddPackage("gh:ocornut/imgui#eaac68c") 
@@ -152,6 +166,10 @@ else()
 endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
+message(STATUS "compiling ${SOURCES}")
+if(NOT PLATFORM_DESKTOP)
+	list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/cli.cpp")
+endif()
 
 if(WIN32)
 	set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
@@ -171,7 +189,9 @@ else()
 endif()
 if(USE_PRECOMPILED_HEADERS)
 	file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS src/*.hpp)
-	list(APPEND HEADERS "${tinyfd_SOURCE_DIR}/tinyfiledialogs.h")
+	if(PLATFORM_DESKTOP)
+		list(APPEND HEADERS "${tinyfd_SOURCE_DIR}/tinyfiledialogs.h")
+	endif()
 	target_precompile_headers(${PROJECT_NAME} PRIVATE ${HEADERS})
 endif()
 if(DEFINED BIN_SUFFIX)
@@ -183,8 +203,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT IMGUI_IN_RELEASE)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_OFF)
 	message(STATUS "ImGui: OFF")
-elseif(BUILD_SHARED_LIBS)
-	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_USER_CONFIG="${CMAKE_SOURCE_DIR}/src/imgui-config.hpp")
+else()
+	if(BUILD_SHARED_LIBS)
+		target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_USER_CONFIG="${CMAKE_SOURCE_DIR}/src/imgui-config.hpp")
+	endif()
 	message(STATUS "ImGui: ON")
 endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
@@ -193,25 +215,38 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VE
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"${raylib_SOURCE_DIR}/src"
+	# would be too much effort to remove these 3 for no reason.
+	# ill just let it look for headers in /include and "" (empty path), which most likely doesnt exist, but it doesnt matter
 	"${tinyfd_SOURCE_DIR}"
 	"${libclipboard_SOURCE_DIR}/include"
 	"${libclipboard_BINARY_DIR}/include"
-	${imgui_SOURCE_DIR}
-	${rlImGui_SOURCE_DIR}
+	"${imgui_SOURCE_DIR}"
+	"${rlImGui_SOURCE_DIR}"
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} 
 	raylib
 	${TINYFD_TARGET}
-	clipboard
+	${LIBCLIPBOARD_TARGET}
 	${IMGUI_TARGET}
 )
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
-if(EXISTS ${RESOURCE_DIR})
-	set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
-	set(STAMP_FILE "${CMAKE_BINARY_DIR}/resources_copied.stamp")
-	file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS "${RESOURCE_DIR}/*")
+set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
+set(STAMP_FILE "${CMAKE_BINARY_DIR}/resources_copied.stamp")
+file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS "${RESOURCE_DIR}/*")
 
+if(EMSCRIPTEN)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
+		-sUSE_GLFW=3 \
+		-sASSERTIONS=1 \
+		-sWASM=1 -sASYNCIFY \
+		-sGL_ENABLE_GET_PROC_ADDRESS=1 \
+		-sEXPORTED_RUNTIME_METHODS=ccall \
+		--preload-file ../resources \
+		--shell-file '${raylib_SOURCE_DIR}/src/minshell.html'
+	")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+else()
 	add_custom_command(
 		OUTPUT "${STAMP_FILE}"
 		COMMAND ${CMAKE_COMMAND}
@@ -229,12 +264,16 @@ if(EXISTS ${RESOURCE_DIR})
 	)
 endif()
 
-set(PORTABLE_INDICATOR_FILE ".portable-application")
-target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE_INDICATOR_FILE="${PORTABLE_INDICATOR_FILE}")
-if(BUILD_PORTABLE_APPLICATION)
-	add_custom_command(
-		OUTPUT "${CMAKE_BINARY_DIR}/unused"
-		COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PORTABLE_INDICATOR_FILE}"
-	)
-	target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE)
+if(PLATFORM_DESKTOP)
+	set(PORTABLE_INDICATOR_FILE ".portable-application")
+	target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE_INDICATOR_FILE="${PORTABLE_INDICATOR_FILE}")
+	if(BUILD_PORTABLE_APPLICATION)
+		add_custom_command(
+			OUTPUT "${CMAKE_BINARY_DIR}/unused"
+			COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PORTABLE_INDICATOR_FILE}"
+		)
+		target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE)
+	endif()
 endif()
+
+message(STATUS "output dir: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
