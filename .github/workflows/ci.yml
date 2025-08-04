@@ -140,11 +140,10 @@ jobs:
           version: 4.0.12
           actions-cache-folder: 'emsdk-cache'
         
-
       - name: Build
         run: |
           emcmake cmake \
-            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/build" \
+            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
             -DCMAKE_BUILD_TYPE=Release -DPLATFORM=Web -Wno-dev -G Ninja
           cmake --build "${{ github.workspace }}/build"
           ./.github/scripts/zip-web-app.sh
