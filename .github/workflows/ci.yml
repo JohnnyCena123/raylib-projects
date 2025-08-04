@@ -352,14 +352,14 @@ jobs:
 
               cd build-mac-Xcode-$config
                 touch ./.portable-application
-                ln -sf libraylib-$config.5.5.0.dylib libraylib-$config.550.dylib
-                ln -sf libraylib-$config.550.dylib libraylib-$config.dylib
+                ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
+                ln -sf libraylib.550.dylib libraylib.dylib
                 tar -czvf ../MacOS.tar.gz *
               cd ..
               cd build-linux-Makefiles-$config
                 touch ./.portable-application
-                ln -sf libraylib-$config.so.5.5.0 libraylib-$config.so.550
-                ln -sf libraylib-$config.so.550 libraylib-$config.so
+                ln -sf libraylib.so.5.5.0 libraylib.so.550
+                ln -sf libraylib.so.550 libraylib.so
                 tar -czvf ../Linux.tar.gz *
               cd ..
             cd ..
