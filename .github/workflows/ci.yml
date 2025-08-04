@@ -134,12 +134,12 @@ jobs:
             compiler: 'cl'
 
     name: >
-      ${{ matrix.portable || 'Non-' }}portable
+      ${{ matrix.portable && 'Portable' || 'Non-portable' }}
       ${{ matrix.build-type }} build
       for ${{ matrix.os }}
       with ${{ matrix.generator }}
-      and ${{ matrix.compiler }};
-      pch - ${{ matrix.pch && 'on' || 'off' }}
+      and ${{ matrix.compiler }}
+      ${{ matrix.pch && ' using pch' || '' }} 
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
@@ -440,7 +440,7 @@ jobs:
       - name: Download ImGui-less WebAssembly build
         uses: actions/download-artifact@v4
         with:
-          name: WebAssembly build without ImGUi
+          name: WebAssembly build
 
       - name: Download zips
         uses: actions/download-artifact@v4
