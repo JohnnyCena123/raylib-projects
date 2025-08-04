@@ -1,4 +1,3 @@
-#include <raylib.h>
 #if defined(NO_TERMINAL_WINDOWS)
 	// holy shit i hate raylib + windows
 	// it compiles so shut up
