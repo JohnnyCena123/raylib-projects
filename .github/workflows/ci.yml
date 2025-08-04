@@ -207,7 +207,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-win-MSVC-Release
-          path: ${{ needs.metadata.outputs.full-name }}
+          path: ${{ needs.metadata.outputs.branch-name }}
 
       - name: Build installer
         id: build
