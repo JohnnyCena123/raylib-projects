@@ -156,14 +156,11 @@ jobs:
           echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
           if [ "${{ github.ref_type }}" == "branch" ]; then
-            echo "full-name=${{ github.ref_name }}_$PROJECT_VERSION-dev"
+            echo "full-name=${{ github.ref_name }}-$PROJECT_VERSION-dev"
           elif [ "${{ github.ref_type }}" == "tag" ]; then
             TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
             BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
-            echo "full-name=$BRANCH_$PROJECT_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "Unknown push type"
-            exit 1
+            echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
           fi
       
   build-web:
@@ -215,14 +212,14 @@ jobs:
       - name: Build installer
         id: build
         run: |
-          $packageName = "${{ needs.metadata.outputs.full-name }}"
+          $msi = "${{ needs.metadata.outputs.full-name }}.msi"
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
-            -SourceDir .\$packageName `
+            -SourceDir .\${{ needs.metadata.outputs.branch-name }} `
             -AppName "${{ needs.metadata.outputs.branch-name }}" `
             -Manufacturer "Johnny Cena" `
             -Version "${{ needs.metadata.outputs.version }}" `
-            -OutputMsi "$packageName.msi"
-          echo "installer-path=$packageName-$version.msi" >> $env:GITHUB_OUTPUT
+            -OutputMsi "$msi"
+          echo "installer-path=$msi" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Test installer
