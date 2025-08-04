@@ -138,8 +138,8 @@ jobs:
       ${{ matrix.build-type }} build
       for ${{ matrix.os }}
       with ${{ matrix.generator }}
-      and ${{ matrix.compiler }}
-      ${{ matrix.pch && ' using pch' || '' }} 
+      and ${{ matrix.compiler }},
+      ${{ matrix.pch && 'with' || 'without' }} pch 
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
