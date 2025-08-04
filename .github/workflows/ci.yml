@@ -130,6 +130,7 @@ jobs:
 
   build-web:
     name: Build WebAssembly application
+    needs: [ 'name' ]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -152,7 +153,7 @@ jobs:
       - name: Upload output
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/Web.zip
+          path: ${{ github.workspace }}/${{ needs.name.outputs.branch-name }}.zip
           name: WebAssembly build
 
   name:
