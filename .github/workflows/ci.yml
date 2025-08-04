@@ -21,6 +21,7 @@ jobs:
         pch: [ false ]
         build-type: [ 'Release' ]
         upload-outputs: [ false ]
+        portable: [ true ]
         include:
           - os: 'windows-2025'
             compiler: 'cl'
@@ -28,12 +29,21 @@ jobs:
             pch: true
             build-type: 'Release'
             upload-outputs: true
+            portable: true
+          - os: 'windows-2025'
+            compiler: 'cl'
+            generator: 'Visual Studio 17 2022'
+            pch: true
+            build-type: 'Release'
+            upload-outputs: true
+            portable: false
           - os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
             pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
+            portable: true
 
           - os: 'macos-15'
             compiler: 'clang'
@@ -47,6 +57,7 @@ jobs:
             pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
+            portable: true
 
           - os: 'ubuntu-24.04'
             compiler: 'gcc'
@@ -54,12 +65,21 @@ jobs:
             pch: true
             build-type: 'Release'
             upload-outputs: true
+            portable: true
+          - os: 'ubuntu-24.04'
+            compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            pch: true
+            build-type: 'Release'
+            upload-outputs: true
+            portable: false
           - os: 'ubuntu-24.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
             pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
+            portable: true
 
         exclude:          
           - os: 'windows-2025'
@@ -114,6 +134,7 @@ jobs:
             compiler: 'cl'
 
     name: >
+      ${{ matrix.portable || 'Non-' }}portable
       ${{ matrix.build-type }} build
       for ${{ matrix.os }}
       with ${{ matrix.generator }}
@@ -127,6 +148,7 @@ jobs:
       pch: ${{ matrix.pch }}
       build-type: ${{ matrix.build-type }}
       upload-outputs: ${{ matrix.upload-outputs }}
+      portable: ${{ matrix.portable }}
 
   metadata:
     name: Generate metadata
@@ -307,26 +329,23 @@ jobs:
         id: organize
         run: |
           rm -rf "Debian package" "Windows installer" "WebAssembly build"
-          mv build-win-MSVC-Release/resources .
+          mv build-win-MSVC-portable-Release/resources .
           zip -r ./resources.zip ./resources/
 
-          mkdir Release
-          mkdir RelWithDebInfo
-          mv build-*-RelWithDebInfo RelWithDebInfo/
-          mv build-* Release/
-
           for config in Release RelWithDebInfo; do
+            mkdir $config
+            mv build-*-portable-$config $config/
 
             cd $config
-              cd build-win-MSVC-$config && touch ./.portable-application && zip -r ../Windows.zip * && cd ..
+              cd build-win-MSVC-portable-$config && touch ./.portable-application && zip -r ../Windows.zip * && cd ..
 
-              cd build-mac-Xcode-$config
+              cd build-mac-Xcode-portable-$config
                 touch ./.portable-application
                 ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
                 ln -sf libraylib.550.dylib libraylib.dylib
                 tar -czvf ../MacOS.tar.gz *
               cd ..
-              cd build-linux-Makefiles-$config
+              cd build-linux-Makefiles-portable-$config
                 touch ./.portable-application
                 ln -sf libraylib.so.5.5.0 libraylib.so.550
                 ln -sf libraylib.so.550 libraylib.so
@@ -361,7 +380,7 @@ jobs:
       - name: Delete old artifacts
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: build-*
+          name: build-*-portable-*
   
   build-web:
     name: Build WebAssembly application
