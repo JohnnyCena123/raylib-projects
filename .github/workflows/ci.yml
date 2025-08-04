@@ -128,13 +128,14 @@ jobs:
       build-type: ${{ matrix.build-type }}
       upload-outputs: ${{ matrix.upload-outputs }}
 
-  name:
-    name: Generate name
+  metadata:
+    name: Generate metadata
     needs: [ 'build-desktop' ]
     runs-on: ubuntu-24.04
     outputs:
+      version: ${{ steps.main.outputs.branch-name }}
       branch-name: ${{ steps.main.outputs.branch-name }}
-      project-name: ${{ steps.main.outputs.project-name }}
+      full-name: ${{ steps.main.outputs.full-name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -151,21 +152,23 @@ jobs:
           chmod +x ./${{ github.ref_name }}
           PROJECT_VERSION=$(./${{ github.ref_name }} --version --minimal-output)
 
+          echo "version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
           if [ "${{ github.ref_type }}" == "branch" ]; then
-            echo "project-name=${{ github.ref_name }}_$PROJECT_VERSION-dev"
+            echo "full-name=${{ github.ref_name }}_$PROJECT_VERSION-dev"
           elif [ "${{ github.ref_type }}" == "tag" ]; then
             TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
             BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
-            echo "project-name=$BRANCH_$PROJECT_VERSION" >> $GITHUB_OUTPUT
+            echo "full-name=$BRANCH_$PROJECT_VERSION" >> $GITHUB_OUTPUT
           else
             echo "Unknown push type"
             exit 1
           fi
-          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
       
   build-web:
     name: Build WebAssembly application
-    needs: [ 'name' ]
+    needs: [ 'metadata' ]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -188,12 +191,12 @@ jobs:
       - name: Upload output
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/${{ needs.name.outputs.branch-name }}.zip
+          path: ${{ github.workspace }}/${{ needs.metadata.outputs.branch-name }}.zip
           name: WebAssembly build
 
   win-msi:
     name: Build Windows installer
-    needs: [ 'build-desktop', 'name' ]
+    needs: [ 'build-desktop', 'metadata' ]
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
@@ -207,17 +210,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-win-MSVC-Release
-          path: ${{ needs.name.outputs.project-name }}
+          path: ${{ needs.metadata.outputs.full-name }}
 
       - name: Build installer
         id: build
         run: |
-          $packageName = "${{ needs.name.outputs.project-name }}"
+          $packageName = "${{ needs.metadata.outputs.full-name }}"
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
             -SourceDir .\$packageName `
-            -AppName "${{ needs.name.outputs.branch-name }}" `
+            -AppName "${{ needs.metadata.outputs.branch-name }}" `
             -Manufacturer "Johnny Cena" `
-            -Version "$version" `
+            -Version "${{ needs.metadata.outputs.version }}" `
             -OutputMsi "$packageName.msi"
           echo "installer-path=$packageName-$version.msi" >> $env:GITHUB_OUTPUT
         shell: pwsh
@@ -229,7 +232,7 @@ jobs:
             -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' `
             -PassThru
           $proc.WaitForExit(30000)
-          dir "C:\Program Files\${{ needs.name.outputs.branch-name }}"
+          dir "C:\Program Files\${{ needs.metadata.outputs.branch-name }}"
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
@@ -239,7 +242,7 @@ jobs:
 
   linux-deb:
     name: Build Debian package
-    needs: [ 'name', 'build-desktop' ]
+    needs: [ 'metadata', 'build-desktop' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download build output
@@ -252,7 +255,7 @@ jobs:
         id: build
         run: |
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          PACKAGE_NAME=${{ needs.name.outputs.branch-name }}
+          PACKAGE_NAME=${{ needs.metadata.outputs.branch-name }}
           chmod +x ./$PACKAGE_NAME
           PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
           PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description)"
@@ -395,7 +398,7 @@ jobs:
     name: Publish
     permissions:
       contents: write
-    needs: [ 'name', 'cleanup', 'build-web' ]
+    needs: [ 'metadata', 'cleanup', 'build-web' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download Windows installer
@@ -433,21 +436,21 @@ jobs:
           chmod +x butler/butler
           sudo mv butler/butler /usr/local/bin/
 
-          cp Windows.zip ${{ needs.name.outputs.project-name }}.zip
-          butler push ${{ needs.name.outputs.project-name }}.zip johnnycena123/${{ needs.name.outputs.branch-name }}:windows
-          butler push *.msi johnnycena123/${{ needs.name.outputs.project-name }}:windows
+          cp Windows.zip ${{ needs.metadata.outputs.full-name }}.zip
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows
+          butler push *.msi johnnycena123/${{ needs.metadata.outputs.full-name }}:windows
           
-          cp MacOS.zip ${{ needs.name.outputs.project-name }}.zip
-          butler push ${{ needs.name.outputs.project-name }}.zip johnnycena123/${{ needs.name.outputs.branch-name }}:mac
+          cp MacOS.zip ${{ needs.metadata.outputs.full-name }}.zip
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:mac
           
-          cp Linux.zip ${{ needs.name.outputs.project-name }}.zip
-          butler push ${{ needs.name.outputs.project-name }}.zip johnnycena123/${{ needs.name.outputs.branch-name }}:linux
-          butler push *.deb johnnycena123/${{ needs.name.outputs.project-name }}:linux
+          cp Linux.zip ${{ needs.metadata.outputs.full-name }}.zip
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux
+          butler push *.deb johnnycena123/${{ needs.metadata.outputs.full-name }}:linux
           
-          cp Web.zip ${{ needs.name.outputs.project-name }}.zip
-          butler push ${{ needs.name.outputs.project-name }}.zip johnnycena123/${{ needs.name.outputs.branch-name }}:web
+          cp Web.zip ${{ needs.metadata.outputs.full-name }}.zip
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:web
 
-          rm -f ${{ needs.name.outputs.project-name }}.zip
+          rm -f ${{ needs.metadata.outputs.full-name }}.zip
           
           shell: bash
 
@@ -455,37 +458,37 @@ jobs:
         uses: dev-drprasad/delete-tag-and-release@v1.1
         if: github.ref_type == 'branch'
         with:
-          tag_name: nightly-${{ needs.name.outputs.branch-name }}
+          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
           delete_release: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create release
+      - name: Create nightly release
         uses: softprops/action-gh-release@v2
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'branch'
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Release build for ${{ needs.name.outputs.branch-name }}
+          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
+          name: Development build for ${{ needs.metadata.outputs.branch-name }}
           body: |
-            TODO: Add release body
-          draft: true
-          prerelease: false
+            Build triggered by commit ${{ github.sha }} on branch ${{ needs.metadata.outputs.branch-name }}.
+            This is a build of the **latest commit**, it is not guaranteed to be stable.
+          draft: false
+          prerelease: true
           files: |
             *.msi
             *.deb
             *.zip
             *.tar.gz
 
-      - name: Create nightly release
+      - name: Create release
         uses: softprops/action-gh-release@v2
-        if: github.ref_type == 'branch'
+        if: github.ref_type == 'tag'
         with:
-          tag_name: nightly-${{ needs.name.outputs.branch-name }}
-          name: Development build for ${{ needs.name.outputs.branch-name }}
+          tag_name: ${{ github.ref_name }}
+          name: Release build for ${{ needs.metadata.outputs.branch-name }}
           body: |
-            Build triggered by commit ${{ github.sha }} on branch ${{ needs.name.outputs.branch-name }}.
-            This is a build of the **latest commit**, it is not guaranteed to be stable.
-          draft: false
-          prerelease: true
+            TODO: Add release body
+          draft: true
+          prerelease: false
           files: |
             *.msi
             *.deb
