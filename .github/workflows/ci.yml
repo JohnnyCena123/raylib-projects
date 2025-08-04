@@ -335,7 +335,7 @@ jobs:
       - name: Organize
         id: organize
         run: |
-          rm -rf "Debian package" "Windows installer"
+          rm -rf "Debian package" "Windows installer" "WebAssembly build"
           mv build-win-MSVC-Release/resources .
           rm -rf */resources
           zip -r ./resources.zip ./resources/
@@ -440,14 +440,14 @@ jobs:
 
           cp Windows.zip ${{ needs.metadata.outputs.full-name }}.zip
           butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows
-          butler push ${{ needs.metadata.outputs.full-name }}.msi johnnycena123/${{ needs.metadata.outputs.full-name }}:windows
+          butler push ${{ needs.metadata.outputs.full-name }}.msi johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows
           
           cp MacOS.zip ${{ needs.metadata.outputs.full-name }}.zip
           butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:mac
           
           cp Linux.zip ${{ needs.metadata.outputs.full-name }}.zip
           butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux
-          butler push ${{ needs.metadata.outputs.full-name }}.deb johnnycena123/${{ needs.metadata.outputs.full-name }}:linux
+          butler push ${{ needs.metadata.outputs.full-name }}.deb johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux
           
           rm -f ${{ needs.metadata.outputs.full-name }}.zip
           
