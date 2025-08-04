@@ -439,15 +439,15 @@ jobs:
           butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:web
 
           cp Windows.zip ${{ needs.metadata.outputs.full-name }}.zip
-          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows
-          butler push ${{ needs.metadata.outputs.full-name }}.msi johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows-portable
+          butler push ${{ needs.metadata.outputs.full-name }}.msi johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows-msi
           
           cp MacOS.zip ${{ needs.metadata.outputs.full-name }}.zip
-          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:mac
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:mac-portable
           
           cp Linux.zip ${{ needs.metadata.outputs.full-name }}.zip
-          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux
-          butler push ${{ needs.metadata.outputs.full-name }}.deb johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux
+          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux-portable
+          butler push ${{ needs.metadata.outputs.full-name }}.deb johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux-deb
           
           rm -f ${{ needs.metadata.outputs.full-name }}.zip
           
