@@ -337,7 +337,6 @@ jobs:
         run: |
           rm -rf "Debian package" "Windows installer" "WebAssembly build"
           mv build-win-MSVC-Release/resources .
-          rm -rf */resources
           zip -r ./resources.zip ./resources/
 
           mkdir Release
