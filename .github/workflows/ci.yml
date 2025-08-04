@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - "**"
+      - '**'
+    tags:
+      - '**'
   pull_request:
     branches: [ "main" ]
 
@@ -154,9 +156,43 @@ jobs:
           path: ${{ github.workspace }}/Web.zip
           name: WebAssembly build
 
+  name:
+    name: Generate name
+    runs-on: ubnutu-24.04
+    outputs:
+      branch-name: ${{ steps.main.outputs.branch-name }}
+      project-name: ${{ steps.main.outputs.project-name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux-Makefiles-Release
+          path: ${{ github.workspace }}
+
+      - name: main
+        id: main
+        run: |
+          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
+          chmod +x ./$PACKAGE_NAME
+          PROJECT_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
+
+          if [ "${{ github.ref_type }}" == "branch" ]; then
+          	echo "project-name=${{ github.ref_name }}_$PROJECT_VERSION-dev"
+          elif [ "${{ github.ref_type }}" == "tag" ]; then
+            TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
+            BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
+          	echo "project-name=$BRANCH_$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          else
+          	echo "Unknown push type"
+          	exit 1
+          fi
+          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
   win-msi:
     name: Build Windows installer
-    needs: build-desktop
+    needs: [ 'build-desktop', 'name' ]
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
@@ -170,19 +206,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-win-MSVC-Release
-          path: ${{ github.ref_name }}
+          path: ${{ needs.name.outputs.project-name }}
 
       - name: Build installer
         id: build
         run: |
-          $packageName = "${{ github.ref_name }}"
-          $version = "1.0.0"
+          $packageName = "${{ needs.name.outputs.project-name }}"
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
             -SourceDir .\$packageName `
-            -AppName "$packageName" `
+            -AppName "${{ needs.name.outputs.branch-name }}" `
             -Manufacturer "Johnny Cena" `
             -Version "$version" `
-            -OutputMsi "$packageName-$version.msi"
+            -OutputMsi "$packageName.msi"
           echo "installer-path=$packageName-$version.msi" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
@@ -193,7 +228,7 @@ jobs:
             -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' `
             -PassThru
           $proc.WaitForExit(30000)
-          dir "C:\Program Files\${{ github.ref_name }}"
+          dir "C:\Program Files\${{ needs.name.outputs.branch-name }}"
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
@@ -203,7 +238,7 @@ jobs:
 
   linux-deb:
     name: Build Debian package
-    needs: build-desktop
+    needs: [ 'name', 'build-desktop' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download build output
@@ -216,7 +251,7 @@ jobs:
         id: build
         run: |
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          PACKAGE_NAME=${{ github.ref_name }}
+          PACKAGE_NAME=${{ needs.name.outputs.branch-name }}
           chmod +x ./$PACKAGE_NAME
           PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
           PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description)"
@@ -359,7 +394,7 @@ jobs:
     name: Publish
     permissions:
       contents: write
-    needs: [ 'cleanup', 'build-web' ]
+    needs: [ 'name', 'cleanup', 'build-web' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download Windows installer
@@ -387,13 +422,6 @@ jobs:
         with:
           name: resources
 
-      - name: Delete tag
-        uses: dev-drprasad/delete-tag-and-release@v1.1
-        with:
-          tag_name: nightly-${{ github.ref_name }}
-          delete_release: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Deploy onto itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
@@ -404,31 +432,56 @@ jobs:
           chmod +x butler/butler
           sudo mv butler/butler /usr/local/bin/
 
-          cp Windows.zip ${{ github.ref_name }}.zip
-          butler push ${{ github.ref_name }}.zip johnnycena123/${{ github.ref_name }}:windows
-          butler push *.msi johnnycena123/${{ github.ref_name }}:windows
+          cp Windows.zip ${{ needs.name.outputs.project-name }}.zip
+          butler push ${{ needs.name.outputs.project-name }}.zip johnnycena123/${{ needs.name.outputs.branch-name }}:windows
+          butler push *.msi johnnycena123/${{ needs.name.outputs.project-name }}:windows
           
-          cp MacOS.zip ${{ github.ref_name }}.zip
-          butler push ${{ github.ref_name }}.zip johnnycena123/${{ github.ref_name }}:mac
+          cp MacOS.zip ${{ needs.name.outputs.project-name }}.zip
+          butler push ${{ needs.name.outputs.project-name }}.zip johnnycena123/${{ needs.name.outputs.branch-name }}:mac
           
-          cp Linux.zip ${{ github.ref_name }}.zip
-          butler push ${{ github.ref_name }}.zip johnnycena123/${{ github.ref_name }}:linux
-          butler push *.deb johnnycena123/${{ github.ref_name }}:linux
+          cp Linux.zip ${{ needs.name.outputs.project-name }}.zip
+          butler push ${{ needs.name.outputs.project-name }}.zip johnnycena123/${{ needs.name.outputs.branch-name }}:linux
+          butler push *.deb johnnycena123/${{ needs.name.outputs.project-name }}:linux
           
-          cp Web.zip ${{ github.ref_name }}.zip
-          butler push ${{ github.ref_name }}.zip johnnycena123/${{ github.ref_name }}:web
+          cp Web.zip ${{ needs.name.outputs.project-name }}.zip
+          butler push ${{ needs.name.outputs.project-name }}.zip johnnycena123/${{ needs.name.outputs.branch-name }}:web
 
-          rm -f ${{ github.ref_name }}.zip
+          rm -f ${{ needs.name.outputs.project-name }}.zip
           
           shell: bash
 
+      - name: Delete tag
+        uses: dev-drprasad/delete-tag-and-release@v1.1
+        if: github.ref_type == 'branch'
+        with:
+          tag_name: nightly-${{ needs.name.outputs.branch-name }}
+          delete_release: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create release
         uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
         with:
-          tag_name: nightly-${{ github.ref_name }}
-          name: Development build for ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          name: Release build for ${{ needs.name.outputs.branch-name }}
           body: |
-            Build triggered by commit ${{ github.sha }} on branch ${{ github.ref_name }}.
+            TODO: Add release body
+          draft: true
+          prerelease: false
+          files: |
+            *.msi
+            *.deb
+            *.zip
+            *.tar.gz
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'branch'
+        with:
+          tag_name: nightly-${{ needs.name.outputs.branch-name }}
+          name: Development build for ${{ needs.name.outputs.branch-name }}
+          body: |
+            Build triggered by commit ${{ github.sha }} on branch ${{ needs.name.outputs.branch-name }}.
             This is a build of the **latest commit**, it is not guaranteed to be stable.
           draft: false
           prerelease: true
