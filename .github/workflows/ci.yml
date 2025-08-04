@@ -149,7 +149,6 @@ jobs:
         id: main
         run: |
           cd output
-          ls -aR
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
           chmod +x ./${{ github.ref_name }}
           PROJECT_VERSION=$(./${{ github.ref_name }} --version --minimal-output)
