@@ -207,11 +207,11 @@ jobs:
               ;;
           esac
 
-          if [ "${{ inputs.pch }}" -ne "true" ]; then
+          if [ ! "${{ inputs.pch }}" == "true" ]; then
             cmake_args="$cmake_args -DUSE_PRECOMPILED_HEADERS=OFF"
           fi
 
-          if [ "${{ inputs.portable }}" -eq "true" ]; then
+          if [ "${{ inputs.portable }}" == "true" ]; then
             cmake_args="$cmake_args -DBUILD_PORTABLE_APPLICATION=ON"
             id="$id-portable"
           fi
