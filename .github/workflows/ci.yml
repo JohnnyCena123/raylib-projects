@@ -190,7 +190,7 @@ jobs:
       - name: Upload output
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/${{ needs.metadata.outputs.branch-name }}.zip
+          path: ${{ github.workspace }}/bin/${{ needs.metadata.outputs.branch-name }}.zip
           name: WebAssembly build
 
   win-msi:
