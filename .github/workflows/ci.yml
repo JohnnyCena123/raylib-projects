@@ -392,13 +392,13 @@ jobs:
           name: build-*-portable-*
   
   build-web:
-    name: Build WebAssembly application
-    needs: [ 'metadata' ]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         imgui: [ 'OFF', 'ON' ]
+    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' }}
+    needs: [ 'metadata' ]
     steps:
       - uses: actions/checkout@v4
 
