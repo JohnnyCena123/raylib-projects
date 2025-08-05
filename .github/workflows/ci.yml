@@ -470,6 +470,7 @@ jobs:
           unzip butler.zip -d butler
           chmod +x butler/butler
           sudo mv butler/butler /usr/local/bin/
+          rm -rf butler butler.zip
 
           branch_name="${{ needs.metadata.outputs.branch-name }}"
           full_name="${{ needs.metadata.outputs.full-name }}"
