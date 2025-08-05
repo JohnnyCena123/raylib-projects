@@ -38,6 +38,12 @@ on:
         default: false
         description: Whether or not the build outputs will be uploaded as artifacts
 
+      portable:
+        type: boolean
+        required: true
+        default: false
+        description: Whether or not the result will be a portable application
+
   workflow_dispatch:
     inputs:
       os:
@@ -49,7 +55,7 @@ on:
         type: string
         required: true
         default: clang
-        description: Compiler to use for the build process
+        description: Compiler
 
       generator:
         type: string
@@ -74,6 +80,12 @@ on:
         required: true
         default: false
         description: Upload build outputs
+
+      portable:
+        type: boolean
+        required: true
+        default: false
+        description: Build portable application
 
 jobs:
   build:
@@ -118,7 +130,7 @@ jobs:
                   ;;
               esac
               cmake_args="$cmake_args -G \"$generator\""
-              echo "id=win-MSVC" >> "$GITHUB_OUTPUT"
+              id="win-MSVC"
               ;;
             "Xcode")
               case "$compiler" in
@@ -136,7 +148,7 @@ jobs:
                   ;;
               esac
               cmake_args="$cmake_args -G \"$generator\""
-              echo "id=mac-Xcode" >> "$GITHUB_OUTPUT"
+              id="mac-Xcode"
               ;;
             "Ninja")
               case "$compiler" in
@@ -148,9 +160,9 @@ jobs:
               esac
               cmake_args="$cmake_args -G \"$generator\""
               case "${{ inputs.os }}" in
-                windows-*) echo "id=win-Ninja" >> "$GITHUB_OUTPUT" ;;
-                macos-*) echo "id=mac-Ninja" >> "$GITHUB_OUTPUT" ;;
-                ubuntu-*) echo "id=linux-Ninja" >> "$GITHUB_OUTPUT" ;;
+                windows-*) id="win-Ninja" ;;
+                macos-*) id="mac-Ninja" ;;
+                ubuntu-*) id="linux-Ninja" ;;
               esac
               ;;
             "MinGW Makefiles")
@@ -169,7 +181,7 @@ jobs:
                   ;;
               esac
               cmake_args="$cmake_args -G \"$generator\""
-              echo "id=win-MinGW" >> "$GITHUB_OUTPUT"
+              id="win-MinGW"
               ;;
             "Unix Makefiles")
               case "$compiler" in
@@ -180,8 +192,8 @@ jobs:
                 ;;
               esac
               case "$os" in
-                macos-*) echo "id=mac-Makefiles" >> "$GITHUB_OUTPUT" ;;
-                ubuntu-*) echo "id=linux-Makefiles" >> "$GITHUB_OUTPUT" ;;
+                macos-*) id="mac-Makefiles" ;;
+                ubuntu-*) id="linux-Makefiles" ;;
                 *)
                   echo "Expected Linux or MacOS for Unix Makefiles." >&2
                   exit 2
@@ -195,10 +207,16 @@ jobs:
               ;;
           esac
 
-          if [ "${{ inputs.pch }}" -ne "true" ]; then
+          if [ ! "${{ inputs.pch }}" == "true" ]; then
             cmake_args="$cmake_args -DUSE_PRECOMPILED_HEADERS=OFF"
           fi
+
+          if [ "${{ inputs.portable }}" == "true" ]; then
+            cmake_args="$cmake_args -DBUILD_PORTABLE_APPLICATION=ON"
+            id="$id-portable"
+          fi
           echo "cmake-args=$cmake_args" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - uses: actions/checkout@v4
