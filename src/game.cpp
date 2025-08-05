@@ -73,8 +73,8 @@ DESKTOP_ONLY(
 	}();
 
 	m_cb = clipboard_new(nullptr);
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 #endif
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
 	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
 	SetTargetFPS(60);
