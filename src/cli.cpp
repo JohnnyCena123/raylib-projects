@@ -263,7 +263,8 @@ void Game::saveLogs() {
 				"logs can be found in " + logFilepath.string() + "."
 			).c_str(), "ok", "warning", 1
 		);
-		if (!saved) tinyfd_messageBox("Failed", (
+		if (saved) return;
+		else tinyfd_messageBox("Failed", (
 			"Failed to save logs to " + logFilepath.string() + ".\n"
 			"Falling back to default save directory"
 		).c_str(), "ok", "warning", 1);
