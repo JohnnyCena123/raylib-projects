@@ -23,6 +23,7 @@ jobs:
         upload-outputs: [ false ]
         portable: [ true ]
         include:
+          
           - os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
@@ -30,6 +31,7 @@ jobs:
             build-type: 'Release'
             upload-outputs: true
             portable: true
+
           - os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
@@ -37,6 +39,7 @@ jobs:
             build-type: 'Release'
             upload-outputs: true
             portable: false
+
           - os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
@@ -44,6 +47,7 @@ jobs:
             build-type: 'RelWithDebInfo'
             upload-outputs: true
             portable: true
+            
 
           - os: 'macos-15'
             compiler: 'clang'
@@ -51,11 +55,22 @@ jobs:
             pch: true
             build-type: 'Release'
             upload-outputs: true
+            portable: true
+
           - os: 'macos-15'
             compiler: 'clang'
             generator: 'Xcode'
             pch: true
             build-type: 'RelWithDebInfo'
+            upload-outputs: true
+            portable: true
+
+
+          - os: 'ubuntu-24.04'
+            compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            pch: true
+            build-type: 'Release'
             upload-outputs: true
             portable: true
 
@@ -65,14 +80,8 @@ jobs:
             pch: true
             build-type: 'Release'
             upload-outputs: true
-            portable: true
-          - os: 'ubuntu-24.04'
-            compiler: 'gcc'
-            generator: 'Unix Makefiles'
-            pch: true
-            build-type: 'Release'
-            upload-outputs: true
             portable: false
+
           - os: 'ubuntu-24.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
