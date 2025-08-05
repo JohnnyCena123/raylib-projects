@@ -117,6 +117,7 @@ if(PLATFORM_DESKTOP)
 	if(DISABLE_WARNINGS)
 		set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
 	endif()
+	set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 	CPMAddPackage("gh:jtanx/libclipboard#master")
 	set(LIBCLIPBOARD_TARGET clipboard)
 	target_include_directories(${LIBCLIPBOARD_TARGET} PRIVATE "${libclipboard_BINARY_DIR}/include")
@@ -176,7 +177,6 @@ else()
 endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
-message(STATUS "compiling ${SOURCES}")
 if(NOT PLATFORM_DESKTOP)
 	list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/cli.cpp")
 endif()
@@ -197,6 +197,7 @@ if(WIN32)
 else()
 	add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
+
 if(USE_PRECOMPILED_HEADERS)
 	file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS src/*.hpp)
 	if(PLATFORM_DESKTOP)
@@ -204,12 +205,15 @@ if(USE_PRECOMPILED_HEADERS)
 	endif()
 	target_precompile_headers(${PROJECT_NAME} PRIVATE ${HEADERS})
 endif()
+
 if(DEFINED BIN_SUFFIX)
 	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-${BIN_SUFFIX}")
 endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	BUILD_RPATH "$ORIGIN:$ORIGIN/..:$ORIGIN/../lib/${PROJECT_NAME}:/usr/lib/${PROJECT_NAME}"
 )
+
 if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT IMGUI_IN_RELEASE)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_OFF)
 	message(STATUS "ImGui: OFF")
@@ -242,11 +246,11 @@ target_link_libraries(${PROJECT_NAME}
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
 set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
-set(STAMP_FILE "${CMAKE_BINARY_DIR}/resources_copied.stamp")
+set(RESOURCES_STAMP_FILE "${CMAKE_BINARY_DIR}/dummy3.stamp")
 file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS "${RESOURCE_DIR}/*")
 
 if(EMSCRIPTEN)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 		-sUSE_GLFW=3 \
 		-sASSERTIONS=1 \
 		-sWASM=1 -sASYNCIFY \
@@ -255,14 +259,14 @@ if(EMSCRIPTEN)
 		--preload-file ../resources \
 		--shell-file '${raylib_SOURCE_DIR}/src/minshell.html'
 	")
-    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+	set(CMAKE_EXECUTABLE_SUFFIX ".html")
 else()
 	add_custom_command(
-		OUTPUT "${STAMP_FILE}"
+		OUTPUT "${RESOURCES_STAMP_FILE}"
 		COMMAND ${CMAKE_COMMAND}
 			-DSOURCE_DIR=${RESOURCE_DIR}
 			-DDESTINATION_DIR=${OUTPUT_RESOURCE_DIR}
-			-DSTAMP_FILE=${STAMP_FILE}
+			-DSTAMP_FILE=${RESOURCES_STAMP_FILE}
 			-P "${CMAKE_SOURCE_DIR}/cmake/CopyResources.cmake"
 		DEPENDS ${RESOURCE_FILES}
 		COMMENT "Copying resources to output directory..."
@@ -270,7 +274,7 @@ else()
 	)
 	add_dependencies(${PROJECT_NAME} CopyResources)
 	add_custom_target(CopyResources ALL
-		DEPENDS "${STAMP_FILE}"
+		DEPENDS "${RESOURCES_STAMP_FILE}"
 	)
 endif()
 
@@ -286,4 +290,21 @@ if(PLATFORM_DESKTOP)
 	endif()
 endif()
 
-message(STATUS "output dir: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+set(BUILD_METADATA_FILE "src/build-metadata.cpp")
+add_custom_command(
+	TARGET ${PROJECT_NAME} PRE_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_SOURCE_DIR}/${BUILD_METADATA_FILE}"
+	VERBATIM
+)
+add_custom_target(GenerateBuildMetadata DEPENDS "${CMAKE_SOURCE_DIR}/${BUILD_METADATA_FILE}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SYSTEM="${CMAKE_SYSTEM}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_VERSION="${CMAKE_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE C_COMPILER="${CMAKE_C_COMPILER_ID}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE C_COMPILER_VERSION="${CMAKE_C_COMPILER_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CXX_COMPILER="${CMAKE_CXX_COMPILER_ID}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE C_LINKER="${CMAKE_C_COMPILER_LINKER_ID}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE C_LINKER_VERSION="${CMAKE_C_COMPILER_LINKER_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CXX_LINKER="${CMAKE_CXX_COMPILER_LINKER_ID}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CXX_LINKER_VERSION="${CMAKE_CXX_COMPILER_LINKER_VERSION}")

@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <tinyfiledialogs.h>
+#include "build-metadata.hpp"
 #include "game.hpp"
 
 #define ERROR_MSG argv[0] << ": \033[1;31merror:\033[0m "
@@ -92,14 +93,32 @@ void Game::handleCli(int argc, char* argv[]) {
 
 		if (hasError) exit(2);
 
-		if (printVersion) {
-			if (minimalOutput) std::cout << PROJECT_VERSION "\n";
-			else std::cout << "'" PROJECT_NAME "' is a template - it is not a distributed product.\n"
-				"it does not follow the usual versioning scheme;\n"
-				"but its version could be considered as " PROJECT_VERSION ".\n";
+		if (printRepository || printDescription || printVersion) {
+			if (!printRepository) {
+				if (minimalOutput) {
+					if (printVersion) std::cout << PROJECT_VERSION "\n";
+					else if ( printDescription) std::cout << "Template project for raylib apps\n";
+					exit(0);
+				}
+				std::cout << PROJECT_NAME " version " PROJECT_VERSION ".\n" << buildMetadata << "\n";
+				if (printDescription) {
+					std::cout <<
+						"'" PROJECT_NAME "' is a template project. it is used to easily create\n"
+						"and start new projects using raylib. it is not a full game or app.\n";
+				}
+			}
+			if (minimalOutput) {
+				std::cout << PROJECT_HOMEPAGE_URL << '\n';
+				exit(0);
+			}
+			std::cout << "The source code for '" PROJECT_NAME "' can be found in \033[1;33m"
+				<< PROJECT_HOMEPAGE_URL << "\033[0m.\n";
+			std::cout <<
+				"This project is licensed under the LGPLv3.0 license - "
+				"see \033[1;33m" << PROJECT_HOMEPAGE_URL << "/LICENSE\033[0m for more details.\n";
 			exit(0);
 		} else if (printHelp) {
-			std::cout << "Usage: \033" << argv[0] << " <options>\n"
+			std::cout << "Usage: \033[1;33m" << argv[0] << "\033[0m <options>\n"
 				"    -m, --minimal-output    --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
 				"    -s, --silent            --  disables all logging.\n"
 				"    -V, --verbose           --  sets the log level to LOG_TRACE instead of LOG_INFO.\n"
@@ -114,18 +133,6 @@ void Game::handleCli(int argc, char* argv[]) {
 				"        --save-dir=DIR      --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
 				"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
 				"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n";
-			exit(0);
-		} else if (printDescription) {
-			if (minimalOutput) std::cout << "Template project for raylib apps";
-			else std::cout <<
-				"'" PROJECT_NAME "' is a template project. it is used to easily create\n"
-				"and start new projects using raylib. it is not a full game or app.\n";
-			exit(0);
-		} else if (printRepository) {
-			if (!minimalOutput) std::cout << "The repository for the project " PROJECT_NAME " can be found in \033[1;33m";
-			std::cout << PROJECT_HOMEPAGE_URL;
-			if (!minimalOutput) std::cout << "\033[0m.";
-			std::cout << std::endl;
 			exit(0);
 		}
 
