@@ -397,7 +397,7 @@ jobs:
       fail-fast: false
       matrix:
         imgui: [ 'OFF', 'ON' ]
-    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' }}
+    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
     needs: [ 'metadata' ]
     steps:
       - uses: actions/checkout@v4
@@ -423,7 +423,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: ${{ github.workspace }}/bin/Web.zip
-          name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' }}
+          name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
 
   publish:
     name: Publish
