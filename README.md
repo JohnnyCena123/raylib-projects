@@ -102,6 +102,10 @@ Feel free to contact me - either by opening an issue on this repository,
 or messaging me on Discord (`@johnnycena123`). \
 Or if you really want, you could open a pull request :)
 
+## Credits
+
+The music used in this project is provided by <https://sunixdev.itch.io/casual-music-pack> under the CC BY 4.0 license.
+
 ## License
 
 This project is licensed under the [LGPLv3.0 License](./LICENSE).

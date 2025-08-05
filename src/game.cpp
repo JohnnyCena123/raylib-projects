@@ -80,6 +80,9 @@ DESKTOP_ONLY(
 	SetTargetFPS(60);
 	IMGUI_ONLY(rlImGuiSetup(true));
 
+	InitAudioDevice();
+	SetMasterVolume(.5f);
+
 DESKTOP_ONLY(
 	// i can only get the monitors size after the window is initialized :( this causes annoying problems
 	int const monitorWidth = GetMonitorWidth(GetCurrentMonitor());
@@ -102,13 +105,22 @@ DESKTOP_ONLY(
 )
 
 	if (!m_resourceManager.loadTexture("image", "image.png"))
-		TraceLog(LOG_WARNING, "Failed to load dummy resource");
+		TraceLog(LOG_WARNING, "Failed to load dummy image");
 	m_dummyResource = m_resourceManager.getTexture("image");
+
+	// credit: https://sunixdev.itch.io/casual-music-pack
+	if (!m_resourceManager.loadMusic("bg-music", "music-loop.mp3", [](Music& music) { music.looping = true; }))
+		TraceLog(LOG_WARNING, "Failed to load background music");
+	m_bgMusic = m_resourceManager.getMusic("bg-music");
 }
 
 void Game::run() {
 
+	PlayMusicStream(m_bgMusic);
+
 	while (!WindowShouldClose()) {
+
+		UpdateMusicStream(m_bgMusic);
 
 		if (IsWindowMaximized()) m_screenSize = {
 			static_cast<float>(GetMonitorWidth(GetCurrentMonitor())),
@@ -169,6 +181,7 @@ IMGUI_ONLY(void Game::debugGUI() {
 void Game::deinit() {
 	m_resourceManager.deinit();
 	UnloadRenderTexture(m_screen);
+	CloseAudioDevice();
 	IMGUI_ONLY(rlImGuiShutdown());
 	CloseWindow();
 
