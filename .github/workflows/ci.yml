@@ -415,7 +415,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
             -DPLATFORM=Web -Wno-dev -G Ninja
           cmake --build "${{ github.workspace }}/build"
-          ./.github/scripts/zip-web-app.sh
+          ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.metadata.outputs.branch-name }}"
           mv bin/${{ needs.metadata.outputs.branch-name }}.zip bin/Web.zip
         shell: bash
 
@@ -434,7 +434,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: ${{ needs.metadata.outputs.branch-name }}
+          path: ${{ github.workspace }}/${{ needs.metadata.outputs.branch-name }}/
 
       - name: Download Windows installer
         uses: actions/download-artifact@v4
@@ -471,27 +471,31 @@ jobs:
           chmod +x butler/butler
           sudo mv butler/butler /usr/local/bin/
 
-          cp Web.zip ${{ needs.metadata.outputs.full-name }}.zip
-          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:web
+          branch_name="${{ needs.metadata.outputs.branch-name }}"
+          full_name="${{ needs.metadata.outputs.full-name }}"
 
-          cp Windows.zip ${{ needs.metadata.outputs.full-name }}.zip
-          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows-portable
-          butler push ${{ needs.metadata.outputs.full-name }}.msi johnnycena123/${{ needs.metadata.outputs.branch-name }}:windows-msi
-          
-          cp MacOS.tar.gz ${{ needs.metadata.outputs.full-name }}.tar.gz
-          butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:mac-portable
-          
-          cp Linux.tar.gz ${{ needs.metadata.outputs.full-name }}.tar.gz
-          butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux-portable
-          butler push ${{ needs.metadata.outputs.full-name }}.deb johnnycena123/${{ needs.metadata.outputs.branch-name }}:linux-deb
-          
-          rm -rf ./${{ needs.metadata.outputs.branch-name }}/.git*
-          zip -r ${{ needs.metadata.outputs.full-name }}.zip ./${{ needs.metadata.outputs.branch-name }}/ 
-          butler push ${{ needs.metadata.outputs.full-name }}.zip johnnycena123/${{ needs.metadata.outputs.branch-name }}:source-zip
-          tar -czvf ${{ needs.metadata.outputs.full-name }}.tar.gz ./${{ needs.metadata.outputs.branch-name }}/ 
-          butler push ${{ needs.metadata.outputs.full-name }}.tar.gz johnnycena123/${{ needs.metadata.outputs.branch-name }}:source-gzip
+          cp Web.zip $full_name.zip
+          butler push $full_name.zip johnnycena123/$branch_name:web
 
-          rm -f ${{ needs.metadata.outputs.full-name }}.{zip,tar.gz}
+          cp Windows.zip $full_name.zip
+          butler push $full_name.zip johnnycena123/$branch_name:windows-portable
+          butler push $full_name.msi johnnycena123/$branch_name:windows-msi
+          
+          cp MacOS.tar.gz $full_name.tar.gz
+          butler push $full_name.tar.gz johnnycena123/$branch_name:mac-portable
+          
+          cp Linux.tar.gz $full_name.tar.gz
+          butler push $full_name.tar.gz johnnycena123/$branch_name:linux-portable
+          butler push $full_name.deb johnnycena123/$branch_name:linux-deb
+          
+          echo "$branch_name" > ./$branch_name/.git-branch*
+          rm -rf ./$branch_name/.git*
+          zip -r $full_name.zip ./$branch_name/ 
+          butler push $full_name.zip johnnycena123/$branch_name:source-zip
+          tar -czvf $full_name.tar.gz ./$branch_name/ 
+          butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip
+
+          rm -f $full_name.{zip,tar.gz}
           
         shell: bash
 

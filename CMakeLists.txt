@@ -2,12 +2,27 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_STANDARD 23)
 
-execute_process(
-	COMMAND git rev-parse --abbrev-ref HEAD
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	OUTPUT_VARIABLE GIT_BRANCH
-	OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+if(NOT DEFINED GIT_BRANCH)
+	if(EXISTS "${CMAKE_SOURCE_DIR}/.git-branch")
+		file(READ "${CMAKE_SOURCE_DIR}/.git-branch" GIT_BRANCH)
+		string(REPLACE " " "" GIT_BRANCH "${GIT_BRANCH}")
+		string(REPLACE "\n" "" GIT_BRANCH "${GIT_BRANCH}")
+	else()
+		execute_process(
+			COMMAND git rev-parse --abbrev-ref HEAD
+			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+			OUTPUT_VARIABLE GIT_BRANCH
+			RESULT_VARIABLE GIT_RESULT
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+		)
+		if(NOT GIT_RESULT STREQUAL "0")
+			message(FATAL_ERROR "Unable to determine the git branch!\n"
+			"Please specify it via the command-line using -DGIT_BRANCH=example,\n"
+			"or by adding a .git-branch file containing the git branch to the root of this project ."
+		)
+		endif()
+	endif()
+endif()
 project(${GIT_BRANCH}
 	LANGUAGES CXX C
 	VERSION 1.0.0
