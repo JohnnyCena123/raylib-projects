@@ -1,5 +1,6 @@
 #include <array>
 #include <raylib.h>
+#include <regex>
 #include <sstream>
 #include <iostream>
 #include <optional>
@@ -253,6 +254,7 @@ void Game::saveLogs() {
 	fs::path logFilepath = logsDir/logFilename;
 	if (!DirectoryExists(logsDir.string().c_str()))
 		MakeDirectory(logsDir.string().c_str());
+	m_logs = std::stringstream{std::regex_replace(m_logs.str(), std::regex{"\033\\[(\\d+|;)+m"}, "")};
 	bool saved = SaveFileText(logFilepath.string().c_str(), m_logs.str().c_str());
 	if (m_hadWarning) {
 		tinyfd_messageBox("Warning",
