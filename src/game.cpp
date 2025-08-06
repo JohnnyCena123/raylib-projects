@@ -92,7 +92,7 @@ DESKTOP_ONLY(
 	SetWindowSize(newSize.x, newSize.y);
 
 	auto const windowPosX = GetWindowPosition().x;
-	SetWindowPosition((monitorWidth - newSize.y) / 2, (monitorHeight - newSize.y) / 2);
+	SetWindowPosition((monitorWidth - newSize.x) / 2, (monitorHeight - newSize.y) / 2);
 )
 
 	m_screen = LoadRenderTexture(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y);
