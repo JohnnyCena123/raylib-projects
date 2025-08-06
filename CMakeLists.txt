@@ -132,9 +132,20 @@ if(PLATFORM_DESKTOP)
 		set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
 	endif()
 	set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-	CPMAddPackage("gh:jtanx/libclipboard#master")
+	CPMAddPackage(NAME lcb
+		GITHUB_REPOSITORY "jtanx/libclipboard"
+		GIT_TAG master
+	)
+	if(EXISTS "${lcb_SOURCE_DIR}/third_party/googletest")
+		execute_process(
+			WORKING_DIRECTORY ${lcb_SOURCE_DIR}
+			COMMAND git submodule deinit "third_party/googletest"
+			COMMAND_ERROR_IS_FATAL ANY
+		)
+	endif()
+
 	set(LIBCLIPBOARD_TARGET clipboard)
-	target_include_directories(${LIBCLIPBOARD_TARGET} PRIVATE "${libclipboard_BINARY_DIR}/include")
+	target_include_directories(${LIBCLIPBOARD_TARGET} PRIVATE "${lcb_BINARY_DIR}/include")
 	set_target_properties(${LIBCLIPBOARD_TARGET} PROPERTIES
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
 	)
@@ -249,8 +260,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	# would be too much effort to remove these 3 for no reason.
 	# ill just let it look for headers in /include and "" (empty path), which most likely doesnt exist, but it doesnt matter
 	"${tinyfd_SOURCE_DIR}"
-	"${libclipboard_SOURCE_DIR}/include"
-	"${libclipboard_BINARY_DIR}/include"
+	"${lcb_SOURCE_DIR}/include"
+	"${lcb_BINARY_DIR}/include"
 	"${imgui_SOURCE_DIR}"
 	"${rlImGui_SOURCE_DIR}"
 )
