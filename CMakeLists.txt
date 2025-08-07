@@ -238,9 +238,12 @@ if(DEFINED BIN_SUFFIX)
 	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-${BIN_SUFFIX}")
 endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-	BUILD_RPATH "$ORIGIN:$ORIGIN/..:$ORIGIN/../lib/${PROJECT_NAME}:/usr/lib/${PROJECT_NAME}"
-)
+set(APP_RPATH "$ORIGIN:$ORIGIN/lib:$ORIGIN/..:$ORIGIN/../lib:$ORIGIN/../lib/${PROJECT_NAME}")
+if(UNIX)
+	string(APPEND APP_RPATH ":/usr/lib:/usr/lib/${PROJECT_NAME}")
+endif()
+
+set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH "${APP_RPATH}")
 
 if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT IMGUI_IN_RELEASE)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_OFF)
