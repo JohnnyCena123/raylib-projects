@@ -7,3 +7,5 @@
 **/.vscode
 
 *.clangd
+
+**/.git-branch

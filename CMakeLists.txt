@@ -16,10 +16,11 @@ if(NOT DEFINED GIT_BRANCH)
 		)
 		if(NOT GIT_RESULT STREQUAL "0")
 			message(FATAL_ERROR "Unable to determine the git branch!\n"
-			"Please specify it via the command-line using -DGIT_BRANCH=example,\n"
-			"or by adding a .git-branch file containing the git branch to the root of this project ."
-		)
+				"Please specify it via the command-line using -DGIT_BRANCH=example,\n"
+				"or by adding a .git-branch file containing the git branch to the root of this project ."
+			)
 		endif()
+		file(WRITE "${CMAKE_SOURCE_DIR}/.git-branch" "${GIT_BRANCH}")
 	endif()
 endif()
 project(${GIT_BRANCH}
