@@ -14,9 +14,15 @@ execute_process(
 	OUTPUT_VARIABLE MIN_DESCRIPTION
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+execute_process(
+	COMMAND "${EXE_PATH}" --repo --minimal-output
+	OUTPUT_VARIABLE REPO
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 string(STRIP "${DESCRIPTION}" DESCRIPTION)                                  # strip out leading/trailing whitespace
 string(STRIP "${MIN_DESCRIPTION}" MIN_DESCRIPTION)                          # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+string(STRIP "${REPO}" REPO)                                                # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 string(REPLACE "\n" "\\n\n" DESCRIPTION "${DESCRIPTION}")                   # add the newline characters to the description, dont let them decay into spaces (thanks cmake parser)
 string(REPLACE "\n" "\\n\n" MIN_DESCRIPTION "${MIN_DESCRIPTION}")           # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 string(REPLACE "\"" "\\\"" DESCRIPTION "${DESCRIPTION}")                    # properly escape quote characters if exist
@@ -29,3 +35,12 @@ file(WRITE "${CPACK_PROPERTIES_FILEPATH}"                                   # wr
     "set(CPACK_PACKAGE_DESCRIPTION \"${DESCRIPTION}\")\n"                   # write the description
     "set(CPACK_PACKAGE_DESCRIPTION_SUMMARY \"${MIN_DESCRIPTION}\")\n"       # write the summary
 )
+
+if(UNIX AND NOT APPLE)
+	if(NOT DEFINED DESKTOP_FILE)
+		message(WARNING "Please provide the desktop filepath via -DDESKTOP_FILE=<FILEPATH>")
+	else()
+		file(APPEND "${DESKTOP_FILE}" 
+		"\nComment=${MIN_DESCRIPTION}. Source code: ${REPO}.")
+	endif()
+endif()

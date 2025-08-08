@@ -327,7 +327,7 @@ set(BUILD_METADATA_LIB BuildMetadata)
 add_library(${BUILD_METADATA_LIB} STATIC "${CMAKE_SOURCE_DIR}/src/build-metadata.cpp")
 add_custom_command(
 	TARGET ${BUILD_METADATA_LIB} PRE_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E touch "${BUILD_METADATA_FILE}"
+	COMMAND "${CMAKE_COMMAND}" -E touch "${BUILD_METADATA_FILE}"
 	VERBATIM
 )
 add_custom_target(GenerateBuildMetadata DEPENDS "${CMAKE_SOURCE_DIR}/${BUILD_METADATA_FILE}")
@@ -354,30 +354,91 @@ install(
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 )
-install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" 
-              "${CMAKE_SOURCE_DIR}/README.md" 
+install(FILES
+	"${CMAKE_SOURCE_DIR}/LICENSE" 
+	"${CMAKE_SOURCE_DIR}/README.md" 
 	DESTINATION "share/${PROJECT_NAME}"
 )
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources"
 	DESTINATION "share/${PROJECT_NAME}")
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "${APP_RPATH}")
 
+if(UNIX)
+	if(APPLE)
+		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DragNDrop;Bundle;ProductBuild")
+	else()
+		set(_CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DEB;RPM")
+		set(DESKTOP_FILE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop")
+		file(WRITE "${DESKTOP_FILE}" 
+			"[Desktop Entry]\n"
+			"Version=1.0\n"
+			"Name=${PROJECT_NAME}\n"
+			"GenericName=${PROJECT_NAME}\n"
+			"Exec=${_CPACK_PACKAGING_INSTALL_PREFIX}/bin/${PROJECT_NAME}\n"
+			"TryExec=${_CPACK_PACKAGING_INSTALL_PREFIX}/bin/${PROJECT_NAME}\n"
+			"Terminal=false\n"
+			"Icon=${PROJECT_NAME}\n"
+			"Type=Application\n"
+			"Categories=Utility;Game;\n"
+			"Keywords=Game;${PROJECT_NAME};Raylib;C;CPP;"
+		)
+		install(FILES "${DESKTOP_FILE}" DESTINATION share/applications
+			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE 
+				GROUP_READ GROUP_EXECUTE 
+				WORLD_READ WORLD_EXECUTE
+		)
+		file(COPY "${CMAKE_SOURCE_DIR}/resources/icon.png" DESTINATION "${CMAKE_BINARY_DIR}")
+		file(RENAME "${CMAKE_BINARY_DIR}/icon.png" "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png")
+		install(FILES "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png" DESTINATION share/icons/hicolor/64x64/apps/)
+		if(NOT DEFINED CPACK_PACKAGING_INSTALL_PREFIX)
+			set(CPACK_PACKAGING_INSTALL_PREFIX "${_CPACK_PACKAGING_INSTALL_PREFIX}")
+		endif()
+	endif()
+elseif(WIN32)
+	set(CPACK_GENERATOR "TGZ;ZIP;7Z;NSIS;WIX")
+endif()
+set(CPACK_SOURCE_GENERATOR "TGZ;ZIP;7Z")
+
+set(CPACK_SOURCE_IGNORE_FILES
+	"/\\\\.gitignore"
+	"/\\\\.clangd$"
+	"/\\\\.git/"
+	"/\\\\.github/"
+	"/git-ignore/"
+	"/\\\\.vscode/"
+	"/\\\\.cache/"
+	"/build/"
+	"/bin/"
+)
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Johnny Cena")
 set(CPACK_PACKAGE_CONTACT "iamahuman1395@gmail.com")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}")
 set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/icon.png")
-if(WIN32)
-	set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
-endif()
 set(CPACK_PACKAGE_DOCUMENTATION_FILES "${CMAKE_SOURCE_DIR}/README.md")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "${PROJECT_NAME}")
+set(CPACK_CREATE_DESKTOP_LINKS "$<TARGET_FILE:${PROJECT_NAME}>")
+
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
-set(CPACK_DEBIAN_PACKAGE_SECTION "games")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Johnny Cena")
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+else()
+  set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES")
+endif()
+set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
+set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
+
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libopengl0, libglx0, libglu1-mesa, libstdc++6, libgcc-s1, libx11-6, libxcb1")
-set(CPACK_SOURCE_IGNORE_FILES "/\\\\.github/;/\\\\.git/;/\\\\.gitignore;/git-ignore;/\\\\.clangd;/\\\\.vscode;/\\\\.cache/;/build/;/bin/")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Johnny Cena <${CPACK_PACKAGE_CONTACT}>")
+set(CPACK_DEBIAN_PACKAGE_SECTION "games")
+
+set(CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
+set(CPACK_RPM_PACKAGE_GROUP "Games")
 
 set(CPACK_MONOLITHIC_INSTALL ON)
 include(CPack)
@@ -388,5 +449,6 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND}
 		-DEXE_PATH="$<TARGET_FILE:${PROJECT_NAME}>"
 		-DCPACK_PROPERTIES_FILEPATH="${CMAKE_BINARY_DIR}/CPackProperties.cmake"
-	    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/InjectPackageInfo.cmake"
+		-DDESKTOP_FILE="${DESKTOP_FILE}"
+		-P "${CMAKE_SOURCE_DIR}/cmake/InjectPackageInfo.cmake"
 )
