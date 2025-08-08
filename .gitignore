@@ -9,3 +9,5 @@
 *.clangd
 
 **/.git-branch
+
+**/.DS_Store
