@@ -1,13 +1,7 @@
 **/build
-
 **/bin
-
 **/.cache
-
 **/.vscode
-
 *.clangd
-
 **/.git-branch
-
 **/.DS_Store
