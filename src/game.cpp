@@ -61,7 +61,7 @@ void Game::init() {
 				if (finalPath) break;
 				testedDir = testedDir.parent_path();
 			}
-			ret = *finalPath/"resources";
+			ret = *finalPath;
 		#endif
 		}
 		if (!isValidResourceDirPath(ret)) {
