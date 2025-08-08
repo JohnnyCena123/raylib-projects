@@ -95,22 +95,23 @@ endif()
 
 include(CheckCCompilerFlag)
 CPMAddPackage("gh:raysan5/raylib#master")
+set(RAYLIB_TARGET raylib)
 if(DISABLE_WARNINGS)
 	check_c_compiler_flag("-Wno-tautological-compare" HAS_W_NO_TAUTOLOGICAL_COMPARE)
 	check_c_compiler_flag("-Wno-unused-result" HAS_W_NO_UNUSED_RESULT)
 	check_c_compiler_flag("-Wno-stringop-overflow" HAS_W_NO_STRINGOP_OVERFLOW)
 	if (HAS_W_NO_TAUTOLOGICAL_COMPARE)
-		target_compile_options(raylib PRIVATE "-Wno-tautological-compare")
+		target_compile_options(${RAYLIB_TARGET} PRIVATE "-Wno-tautological-compare")
 	endif()
 	if (HAS_W_NO_UNUSED_RESULT)
-		target_compile_options(raylib PRIVATE "-Wno-unused-result")
+		target_compile_options(${RAYLIB_TARGET} PRIVATE "-Wno-unused-result")
 	endif()
 	if (HAS_W_NO_STRINGOP_OVERFLOW)
-		target_compile_options(raylib PRIVATE "-Wno-stringop-overflow")
+		target_compile_options(${RAYLIB_TARGET} PRIVATE "-Wno-stringop-overflow")
 	endif()
 endif()
 if(BUILD_SHARED_LIBS AND DEFINED BIN_SUFFIX)
-	set_target_properties(raylib PROPERTIES OUTPUT_NAME "raylib-${BIN_SUFFIX}")
+	set_target_properties(${RAYLIB_TARGET} PROPERTIES OUTPUT_NAME "${RAYLIB_TARGET}-${BIN_SUFFIX}")
 endif()
 
 # helper
@@ -179,7 +180,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
 		${imgui_SOURCE_DIR}
 		${rlImGui_SOURCE_DIR}
 	)
-	target_link_libraries(${IMGUI_TARGET} PRIVATE raylib)
+	target_link_libraries(${IMGUI_TARGET} PRIVATE ${RAYLIB_TARGET})
 
 	if(BUILD_SHARED_LIBS)
 		if(DEFINED BIN_SUFFIX)
@@ -197,8 +198,6 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
 	elseif(HAS_W_NONTRIVIAL_MEMACCESS)
 		target_compile_options(${IMGUI_TARGET} PRIVATE "-Wno-nontrivial-memaccess")
 	endif()
-else()
-	set(IMGUI_TARGET)
 endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
@@ -234,9 +233,11 @@ if(USE_PRECOMPILED_HEADERS)
 	target_precompile_headers(${PROJECT_NAME} PRIVATE ${HEADERS})
 endif()
 
+set(EXE_NAME ${PROJECT_NAME})
 if(DEFINED BIN_SUFFIX)
-	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-${BIN_SUFFIX}")
+	string(APPEND EXE_NAME "-${BIN_SUFFIX}")
 endif()
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${EXE_NAME}")
 
 set(APP_RPATH "$ORIGIN:$ORIGIN/lib:$ORIGIN/..:$ORIGIN/../lib:$ORIGIN/../lib/${PROJECT_NAME}")
 if(UNIX)
@@ -269,7 +270,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"${rlImGui_SOURCE_DIR}"
 )
 target_link_libraries(${PROJECT_NAME} 
-	raylib
+	${RAYLIB_TARGET}
 	${TINYFD_TARGET}
 	${LIBCLIPBOARD_TARGET}
 	${IMGUI_TARGET}
@@ -341,3 +342,48 @@ target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE C_LINKER_VERSION="${CMA
 target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CXX_LINKER="${CMAKE_CXX_COMPILER_LINKER_ID}")
 target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CXX_LINKER_VERSION="${CMAKE_CXX_COMPILER_LINKER_VERSION}")
 target_link_libraries(${PROJECT_NAME} ${BUILD_METADATA_LIB})
+
+
+set(INSTALL_TARGETS ${PROJECT_NAME})
+if(BUILD_SHARED_LIBS)
+	list(APPEND INSTALL_TARGETS ${RAYLIB_TARGET} ${LIBCLIPBOARD_TARGET} ${IMGUI_TARGET})
+endif()
+install(
+	TARGETS ${INSTALL_TARGETS}
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+)
+install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" 
+              "${CMAKE_SOURCE_DIR}/README.md" 
+	DESTINATION "share/${PROJECT_NAME}"
+)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources"
+	DESTINATION "share/${PROJECT_NAME}")
+set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "${APP_RPATH}")
+
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_VENDOR "Johnny Cena")
+set(CPACK_PACKAGE_CONTACT "iamahuman1395@gmail.com")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}")
+set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/icon.png")
+if(WIN32)
+	set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
+endif()
+set(CPACK_PACKAGE_DOCUMENTATION_FILES "${CMAKE_SOURCE_DIR}/README.md")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+set(CPACK_DEBIAN_PACKAGE_SECTION "games")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Johnny Cena")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libopengl0, libglx0, libglu1-mesa, libstdc++6, libgcc-s1, libx11-6, libxcb1")
+set(CPACK_MONOLITHIC_INSTALL ON)
+include(CPack)
+
+file(REMOVE "${CMAKE_BINARY_DIR}/CPackProperties.cmake")
+add_custom_command(
+	TARGET ${PROJECT_NAME} POST_BUILD
+	COMMAND ${CMAKE_COMMAND}
+		-DEXE_PATH="$<TARGET_FILE:${PROJECT_NAME}>"
+		-DCPACK_PROPERTIES_FILEPATH="${CMAKE_BINARY_DIR}/CPackProperties.cmake"
+	    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/InjectPackageInfo.cmake"
+)
