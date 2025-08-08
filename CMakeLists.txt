@@ -377,10 +377,12 @@ set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 set(CPACK_DEBIAN_PACKAGE_SECTION "games")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Johnny Cena")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libopengl0, libglx0, libglu1-mesa, libstdc++6, libgcc-s1, libx11-6, libxcb1")
+set(CPACK_SOURCE_IGNORE_FILES "/\\\\.github/;/\\\\.git/;/\\\\.gitignore;/git-ignore;/\\\\.clangd;/\\\\.vscode;/\\\\.cache/;/build/;/bin/")
+
 set(CPACK_MONOLITHIC_INSTALL ON)
 include(CPack)
 
-file(REMOVE "${CMAKE_BINARY_DIR}/CPackProperties.cmake")
+file(WRITE "${CMAKE_BINARY_DIR}/CPackProperties.cmake" "")
 add_custom_command(
 	TARGET ${PROJECT_NAME} POST_BUILD
 	COMMAND ${CMAKE_COMMAND}
