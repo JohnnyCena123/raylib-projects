@@ -4,7 +4,7 @@ if(NOT PLATFORM_DESKTOP)
 	list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/cli.cpp")
 endif()
 
-set(BUILD_METADATA_FILE "${CMAKE_SOURCE_DIR}/src/build-metadata.cpp")
+set(BUILD_METADATA_FILE "${CMAKE_SOURCE_DIR}/src/metadata/build-metadata.cpp")
 list(REMOVE_ITEM SOURCES "${BUILD_METADATA_FILE}")
 
 if(WIN32)
@@ -76,24 +76,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 set(BUILD_METADATA_LIB BuildMetadata)
-add_library(${BUILD_METADATA_LIB} STATIC "${CMAKE_SOURCE_DIR}/src/build-metadata.cpp")
-add_custom_command(
-	TARGET ${BUILD_METADATA_LIB} PRE_BUILD
-	COMMAND "${CMAKE_COMMAND}" -E touch "${BUILD_METADATA_FILE}"
-	VERBATIM
-)
-add_custom_target(GenerateBuildMetadata DEPENDS "${CMAKE_SOURCE_DIR}/${BUILD_METADATA_FILE}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CMAKE_SYSTEM="${CMAKE_SYSTEM}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CMAKE_VERSION="${CMAKE_VERSION}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE C_COMPILER="${CMAKE_C_COMPILER_ID}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE C_COMPILER_VERSION="${CMAKE_C_COMPILER_VERSION}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CXX_COMPILER="${CMAKE_CXX_COMPILER_ID}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE C_LINKER="${CMAKE_C_COMPILER_LINKER_ID}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE C_LINKER_VERSION="${CMAKE_C_COMPILER_LINKER_VERSION}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CXX_LINKER="${CMAKE_CXX_COMPILER_LINKER_ID}")
-target_compile_definitions(${BUILD_METADATA_LIB} PRIVATE CXX_LINKER_VERSION="${CMAKE_CXX_COMPILER_LINKER_VERSION}")
+add_subdirectory(metadata)
 target_link_libraries(${PROJECT_NAME} ${BUILD_METADATA_LIB})
 
 if(PLATFORM_DESKTOP)

@@ -6,7 +6,7 @@
 #include <optional>
 #include <string>
 #include <tinyfiledialogs.h>
-#include "build-metadata.hpp"
+#include "metadata/build-metadata.hpp"
 #include "game.hpp"
 
 #define ERROR_MSG argv[0] << ": \033[1;31merror:\033[0m "
