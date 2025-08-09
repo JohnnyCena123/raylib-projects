@@ -20,9 +20,6 @@ execute_process(
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-string(STRIP "${DESCRIPTION}" DESCRIPTION)                                  # strip out leading/trailing whitespace
-string(STRIP "${MIN_DESCRIPTION}" MIN_DESCRIPTION)                          # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-string(STRIP "${REPO}" REPO)                                                # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 string(REPLACE "\n" "\\n\n" DESCRIPTION "${DESCRIPTION}")                   # add the newline characters to the description, dont let them decay into spaces (thanks cmake parser)
 string(REPLACE "\n" "\\n\n" MIN_DESCRIPTION "${MIN_DESCRIPTION}")           # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 string(REPLACE "\"" "\\\"" DESCRIPTION "${DESCRIPTION}")                    # properly escape quote characters if exist
