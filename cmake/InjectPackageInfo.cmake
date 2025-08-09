@@ -5,12 +5,12 @@ elseif(NOT DEFINED CPACK_PROPERTIES_FILEPATH)
 endif()
 
 execute_process(
-	COMMAND "${EXE_PATH}" --description
+	COMMAND "${EXE_PATH}" --description --no-metadata
 	OUTPUT_VARIABLE DESCRIPTION
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
-	COMMAND "${EXE_PATH}" --description --minimal-output
+	COMMAND "${EXE_PATH}" --description --minimal-output --no-metadata
 	OUTPUT_VARIABLE MIN_DESCRIPTION
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )

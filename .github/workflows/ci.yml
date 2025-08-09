@@ -258,9 +258,9 @@ jobs:
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
           PACKAGE_NAME=${{ needs.metadata.outputs.branch-name }}
           chmod +x ./$PACKAGE_NAME
-          PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output)
-          PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description)"
-          PACKAGE_DESCRIPTION_MINIMAL="$(./$PACKAGE_NAME --description --minimal-output)"
+          PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output --no-metadata)
+          PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description --no-metadata)"
+          PACKAGE_DESCRIPTION_MINIMAL="$(./$PACKAGE_NAME --description --minimal-output --no-metadata)"
           PACKAGE_REPO="$(./$PACKAGE_NAME --repo --minimal-output)"
           PACKAGE_DIR="${{ github.workspace }}/${{ needs.metadata.outputs.full-name }}"
           mkdir -p "$PACKAGE_DIR"/usr/bin
