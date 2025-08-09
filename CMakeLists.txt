@@ -20,7 +20,8 @@ if(NOT DEFINED GIT_BRANCH)
 				"or by adding a .git-branch file containing the git branch to the root of this project ."
 			)
 		endif()
-		file(WRITE "${CMAKE_SOURCE_DIR}/.git-branch" "${GIT_BRANCH}")
+		configure_file("${CMAKE_SOURCE_DIR}/cmake/.git-branch.in"
+			"${CMAKE_SOURCE_DIR}/.git-branch")
 	endif()
 endif()
 project(${GIT_BRANCH}
@@ -367,33 +368,22 @@ if(UNIX)
 	if(APPLE)
 		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DragNDrop;Bundle;ProductBuild")
 	else()
-		set(_CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DEB;RPM")
 		set(DESKTOP_FILE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop")
-		file(WRITE "${DESKTOP_FILE}" 
-			"[Desktop Entry]\n"
-			"Version=1.0\n"
-			"Name=${PROJECT_NAME}\n"
-			"GenericName=${PROJECT_NAME}\n"
-			"Exec=${_CPACK_PACKAGING_INSTALL_PREFIX}/bin/${PROJECT_NAME}\n"
-			"TryExec=${_CPACK_PACKAGING_INSTALL_PREFIX}/bin/${PROJECT_NAME}\n"
-			"Terminal=false\n"
-			"Icon=${PROJECT_NAME}\n"
-			"Type=Application\n"
-			"Categories=Utility;Game;\n"
-			"Keywords=Game;${PROJECT_NAME};Raylib;C;CPP;"
-		)
 		install(FILES "${DESKTOP_FILE}" DESTINATION share/applications
 			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE 
 				GROUP_READ GROUP_EXECUTE 
 				WORLD_READ WORLD_EXECUTE
 		)
-		file(COPY "${CMAKE_SOURCE_DIR}/resources/icon.png" DESTINATION "${CMAKE_BINARY_DIR}")
-		file(RENAME "${CMAKE_BINARY_DIR}/icon.png" "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png")
 		install(FILES "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png" DESTINATION share/icons/hicolor/64x64/apps/)
 		if(NOT DEFINED CPACK_PACKAGING_INSTALL_PREFIX)
-			set(CPACK_PACKAGING_INSTALL_PREFIX "${_CPACK_PACKAGING_INSTALL_PREFIX}")
+			set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 		endif()
+		set(COMMENT "@MIN_DESCRIPTION@. Source code: @REPO@.")
+		configure_file("${CMAKE_SOURCE_DIR}/cmake/project.desktop.in" 
+			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop.in")
+		configure_file("${CMAKE_SOURCE_DIR}/resources/icon.png"
+			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png" COPYONLY)
 	endif()
 elseif(WIN32)
 	set(CPACK_GENERATOR "TGZ;ZIP;7Z;NSIS;WIX")
@@ -443,11 +433,11 @@ set(CPACK_RPM_PACKAGE_GROUP "Games")
 set(CPACK_MONOLITHIC_INSTALL ON)
 include(CPack)
 
-file(WRITE "${CMAKE_BINARY_DIR}/CPackProperties.cmake" "")
 add_custom_command(
 	TARGET ${PROJECT_NAME} POST_BUILD
 	COMMAND ${CMAKE_COMMAND}
 		-DEXE_PATH="$<TARGET_FILE:${PROJECT_NAME}>"
+		-DSOURCE_CPACK_PROPERTIES_FILEPATH="${CMAKE_SOURCE_DIR}/cmake/CPackProperties.cmake.in"
 		-DCPACK_PROPERTIES_FILEPATH="${CMAKE_BINARY_DIR}/CPackProperties.cmake"
 		-DDESKTOP_FILE="${DESKTOP_FILE}"
 		-P "${CMAKE_SOURCE_DIR}/cmake/InjectPackageInfo.cmake"
