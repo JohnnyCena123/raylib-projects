@@ -391,8 +391,9 @@ endif()
 set(CPACK_SOURCE_GENERATOR "TGZ;ZIP;7Z")
 
 set(CPACK_SOURCE_IGNORE_FILES
-	"/\\\\.gitignore"
+	"/\\\\.gitignore$"
 	"/\\\\.clangd$"
+	"/\\\\.DS_Store$"
 	"/\\\\.git/"
 	"/\\\\.github/"
 	"/git-ignore/"
