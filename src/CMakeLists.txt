@@ -4,9 +4,6 @@ if(NOT PLATFORM_DESKTOP)
 	list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/cli.cpp")
 endif()
 
-set(BUILD_METADATA_FILE "${CMAKE_SOURCE_DIR}/src/metadata/build-metadata.cpp")
-list(REMOVE_ITEM SOURCES "${BUILD_METADATA_FILE}")
-
 if(WIN32)
 	set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
 	if(EXISTS ${ICON_FILE} AND INCLUDE_ICON)
