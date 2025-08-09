@@ -102,16 +102,4 @@ else()
 	add_custom_target(CopyResources ALL DEPENDS "${RESOURCES_STAMP_FILE}")
 endif()
 
-if(PLATFORM_DESKTOP)
-	set(PORTABLE_INDICATOR_FILE ".portable-application")
-	target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE_INDICATOR_FILE="${PORTABLE_INDICATOR_FILE}")
-	if(BUILD_PORTABLE_APPLICATION)
-		add_custom_command(
-			OUTPUT "${CMAKE_BINARY_DIR}/unused"
-			COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PORTABLE_INDICATOR_FILE}"
-		)
-		target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE)
-	endif()
-endif()
-
 include("${CMAKE_SOURCE_DIR}/cmake/InstallConfig.cmake")
