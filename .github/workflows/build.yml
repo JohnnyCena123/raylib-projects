@@ -253,10 +253,14 @@ jobs:
         shell: bash
 
       - name: Configure CMake
-        run: cmake -B $REPO_PATH/build ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+        run: |
+          cd $REPO_PATH
+          cmake -S. -Bbuild ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
         shell: bash
       - name: Build
-        run: cmake --build $REPO_PATH/build --config ${{ inputs.build-type }}
+        run: |
+          cd $REPO_PATH
+          cmake --build build --config ${{ inputs.build-type }}
         shell: bash
 
       - name: Install NSIS for Windows
