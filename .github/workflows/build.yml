@@ -274,6 +274,7 @@ jobs:
         shell: bash
 
       - name: Build packages with CPack
+        continue-on-error: true
         if: inputs.package
         run: |
           cd $REPO_PATH
@@ -285,7 +286,13 @@ jobs:
           cd ..
         shell: bash
 
-      - name: Upload
+      - name: Upload nsis log
+        uses: actions/upload-artifact@v4
+        if: inputs.upload-outputs
+        with:
+          path: ${{ github.workspace }}/packages/_CPack_Packages/win64/NSIS/NSISOutput.log
+
+      - name: Upload Build outputs
         uses: actions/upload-artifact@v4
         if: inputs.upload-outputs
         with:
