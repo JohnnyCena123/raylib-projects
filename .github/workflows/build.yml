@@ -275,11 +275,12 @@ jobs:
       - name: Build packages with CPack
         if: inputs.package
         run: |
-          mkdir $REPO_PATH/packages
-          cp $REPO_PATH/build/{CPackConfig,CPackSourceConfig}.cmake $REPO_PATH/packages
-          cd $REPO_PATH/packages
+          cd $REPO_PATH
+          mkdir packages
+          cp build/{CPackConfig,CPackSourceConfig}.cmake packages
+          cd packages
           cpack
-          rm -rf ./_CPack_Packages ./{CPackConfig,CPackSourceConfig}.cmake
+          rm -rf _CPack_Packages {CPackConfig,CPackSourceConfig}.cmake
           cd ..
         shell: bash
 
