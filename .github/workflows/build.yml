@@ -239,7 +239,7 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe" -OutFile llvm.exe
           7z x llvm.exe -o"C:\Program Files\Latest LLVM"
           echo "C:\Program Files\Latest LLVM\bin" >> $env:GITHUB_PATH
-        shell: bash
+        shell: pwsh
 
       - name: Install Linux dependencies
         if: startsWith(inputs.os, 'ubuntu-')
