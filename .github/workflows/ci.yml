@@ -462,6 +462,7 @@ jobs:
           name: resources
 
       - name: Deploy onto itch.io
+        continue-on-error: true
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
