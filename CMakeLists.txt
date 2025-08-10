@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 23)
 if(NOT DEFINED GIT_BRANCH)
 	if(EXISTS "${CMAKE_SOURCE_DIR}/.git-branch")
 		file(READ "${CMAKE_SOURCE_DIR}/.git-branch" GIT_BRANCH)
-		string(REGEX REPLACE "\\s" "" GIT_BRANCH "${GIT_BRANCH}")
+		string(REGEX REPLACE "[ \t\n]" "" GIT_BRANCH "${GIT_BRANCH}")
 	else()
 		execute_process(
 			COMMAND git rev-parse --abbrev-ref HEAD
