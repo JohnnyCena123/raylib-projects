@@ -270,6 +270,14 @@ jobs:
           cd ..
         shell: bash
 
+      - name: Install NSIS for Windows
+        if: inputs.package && startsWith(inputs.os, 'windows-')
+        run: |
+          Invoke-WebRequest -Uri "https://prdownloads.sourceforge.net/nsis/nsis-3.09-setup.exe" -OutFile nsis.exe
+          7z x nsis.exe -o"C:\Program Files\NSIS"
+          echo "C:\Program Files\NSIS\" >> $env:GITHUB_PATH
+        shell: pwsh
+
       - name: Upload
         uses: actions/upload-artifact@v4
         if: inputs.upload-outputs
@@ -279,7 +287,7 @@ jobs:
 
       - name: Upload Packages
         uses: actions/upload-artifact@v4
-        if: inputs.upload-outputs
+        if: inputs.upload-outputs && inputs.package
         with:
           name: packages-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
           path: ${{ github.workspace }}/packages/*

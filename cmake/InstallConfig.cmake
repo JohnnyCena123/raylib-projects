@@ -76,6 +76,8 @@ endif()
 set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
 set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
 
+set(CPACK_BUNDLE_NAME ${CPACK_PACKAGE_NAME})
+
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libopengl0, libglx0, libglu1-mesa, libstdc++6, libgcc-s1, libx11-6, libxcb1")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Johnny Cena <${CPACK_PACKAGE_CONTACT}>")
