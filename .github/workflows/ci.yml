@@ -22,6 +22,7 @@ jobs:
         build-type: [ 'Release' ]
         upload-outputs: [ false ]
         portable: [ true ]
+        package: [ false ]
         include:
           
           - os: 'windows-2025'
@@ -31,6 +32,7 @@ jobs:
             build-type: 'Release'
             upload-outputs: true
             portable: true
+            package: false
 
           - os: 'windows-2025'
             compiler: 'cl'
@@ -39,6 +41,7 @@ jobs:
             build-type: 'Release'
             upload-outputs: true
             portable: false
+            package: true
 
           - os: 'windows-2025'
             compiler: 'cl'
@@ -47,6 +50,7 @@ jobs:
             build-type: 'RelWithDebInfo'
             upload-outputs: true
             portable: true
+            package: false
             
 
           - os: 'macos-15'
@@ -56,6 +60,7 @@ jobs:
             build-type: 'Release'
             upload-outputs: true
             portable: true
+            package: false
 
           - os: 'macos-15'
             compiler: 'clang'
@@ -64,6 +69,7 @@ jobs:
             build-type: 'RelWithDebInfo'
             upload-outputs: true
             portable: true
+            package: false
 
 
           - os: 'ubuntu-24.04'
@@ -73,6 +79,7 @@ jobs:
             build-type: 'Release'
             upload-outputs: true
             portable: true
+            package: false
 
           - os: 'ubuntu-24.04'
             compiler: 'gcc'
@@ -81,6 +88,7 @@ jobs:
             build-type: 'Release'
             upload-outputs: true
             portable: false
+            package: true
 
           - os: 'ubuntu-24.04'
             compiler: 'gcc'
@@ -89,6 +97,7 @@ jobs:
             build-type: 'RelWithDebInfo'
             upload-outputs: true
             portable: true
+            package: false
 
         exclude:          
           - os: 'windows-2025'
@@ -158,6 +167,7 @@ jobs:
       build-type: ${{ matrix.build-type }}
       upload-outputs: ${{ matrix.upload-outputs }}
       portable: ${{ matrix.portable }}
+      package: ${{ matrix.package }}
 
   metadata:
     name: Generate metadata

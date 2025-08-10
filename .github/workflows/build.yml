@@ -44,6 +44,12 @@ on:
         default: false
         description: Whether or not the result will be a portable application
 
+      package:
+        type: boolean
+        required: true
+        default: false
+        description: Whether or not packaged binaries will be uploaded
+
   workflow_dispatch:
     inputs:
       os:
@@ -86,6 +92,12 @@ on:
         required: true
         default: false
         description: Build portable application
+
+      package:
+        type: boolean
+        required: true
+        default: false
+        description: Build and upload packages
 
 jobs:
   build:
@@ -241,9 +253,27 @@ jobs:
         run: cmake --build ${{ github.workspace }}/build --config ${{ inputs.build-type }}
         shell: bash
 
+      - name: Build packages with CPack
+        if: inputs.package
+        run: |
+          mkdir ${{ github.workspace }}/packages
+          cp ${{ github.workspace }}/build/{CPackConfig,CPackSourceConfig}.cmake ${{ github.workspace }}/packages
+          cd ${{ github.workspace }}/packages
+          cpack
+          rm -f ./{CPackConfig,CPackSourceConfig}.cmake
+          cd ..
+        shell: bash
+
       - name: Upload
         uses: actions/upload-artifact@v4
         if: inputs.upload-outputs
         with:
           name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
           path: ${{ github.workspace }}/bin/*
+
+      - name: Upload Packages
+        uses: actions/upload-artifact@v4
+        if: inputs.upload-outputs
+        with:
+          name: packages-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
+          path: ${{ github.workspace }}/packages/*
