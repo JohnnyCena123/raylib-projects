@@ -242,10 +242,10 @@ jobs:
       - name: Install Latest LLVM on Windows
         if: inputs.compiler == 'clang' && startsWith(inputs.os, 'windows-')
         run: |
-          Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe" -OutFile llvm.exe
-          7z x llvm.exe -o"C:\Program Files\Latest LLVM"
-          echo "C:\Program Files\Latest LLVM\bin" >> $env:GITHUB_PATH
-        shell: pwsh
+          curl -Lo llvm.exe "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe"
+          7z x llvm.exe -o"C:/Program Files/Latest LLVM"
+          echo "C:/Program Files/Latest LLVM/bin" >> $env:GITHUB_PATH
+        shell: bash
 
       - name: Install Linux dependencies
         if: startsWith(inputs.os, 'ubuntu-')
@@ -262,10 +262,10 @@ jobs:
       - name: Install NSIS for Windows
         if: inputs.package && startsWith(inputs.os, 'windows-')
         run: |
-          Invoke-WebRequest -Uri "https://prdownloads.sourceforge.net/nsis/nsis-3.09-setup.exe" -OutFile nsis.exe
-          7z x nsis.exe -o"C:\Program Files\NSIS"
-          echo "C:\Program Files\NSIS\" >> $env:GITHUB_PATH
-        shell: pwsh
+          curl -Lo nsis.exe "https://prdownloads.sourceforge.net/nsis/nsis-3.09-setup.exe"
+          7z x nsis.exe -o"C:/Program Files/NSIS"
+          echo "C:/Program Files/NSIS/" >> $GITHUB_PATH
+        shell: bash
 
       - name: Build packages with CPack
         if: inputs.package
