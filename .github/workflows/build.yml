@@ -288,16 +288,20 @@ jobs:
           mkdir packages
           cp build/{CPackConfig,CPackSourceConfig}.cmake packages
           cd packages
-          cpack
+          onFail() {
+            echo -e "\n\n\nNSIS Log:"
+            cat $REPO_PATH/packages/_CPack_Packages/win64/NSIS/NSISOutput.log || echo "Not found"
+
+            echo -e "\n\n\nNSIS Script:"
+            cat $REPO_PATH/packages/_CPack_Packages/win64/NSIS/project.nsi || echo "Not found"
+
+            echo -e "\n\n\nRepo contents:"
+            ls -R
+          }
+          cpack || onFail
           rm -rf _CPack_Packages {CPackConfig,CPackSourceConfig}.cmake
           cd ..
         shell: bash
-
-      - name: Upload nsis log
-        uses: actions/upload-artifact@v4
-        with:
-          name: NSIS Log
-          path: ${{ github.workspace }}/packages/_CPack_Packages/win64/NSIS/NSISOutput.log
 
       - name: Upload Packages
         uses: actions/upload-artifact@v4
