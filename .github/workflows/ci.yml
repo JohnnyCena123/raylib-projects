@@ -66,6 +66,15 @@ jobs:
             compiler: 'clang'
             generator: 'Xcode'
             pch: true
+            build-type: 'Release'
+            upload-outputs: true
+            portable: false
+            package: true
+
+          - os: 'macos-15'
+            compiler: 'clang'
+            generator: 'Xcode'
+            pch: true
             build-type: 'RelWithDebInfo'
             upload-outputs: true
             portable: true
