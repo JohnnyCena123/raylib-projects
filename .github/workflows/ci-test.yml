@@ -89,7 +89,7 @@ jobs:
       matrix:
         imgui: [ 'OFF', 'ON' ]
         build-type: [ 'RelWithDebInfo', 'Release' ]
-    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
+    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }} - ${{ matrix.build-type }}
     steps:
       - uses: actions/checkout@v4
 
