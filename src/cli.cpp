@@ -6,7 +6,7 @@
 #include <optional>
 #include <string>
 #include <tinyfiledialogs.h>
-#include "build-metadata.hpp"
+#include "metadata/build-metadata.hpp"
 #include "game.hpp"
 
 #define ERROR_MSG argv[0] << ": \033[1;31merror:\033[0m "
@@ -17,10 +17,11 @@ void Game::handleCli(int argc, char* argv[]) {
 	if (argc > 1) {
 		bool hasError = false;
 		struct Option {
-			char singleChar;
+			std::optional<char> singleChar;
 			std::string full;
 			bool& v;
 		};
+		bool noMetadata = false;
 		bool minimalOutput = false;
 		bool verbose = false;
 		bool printVersion = false;
@@ -28,6 +29,7 @@ void Game::handleCli(int argc, char* argv[]) {
 		bool printDescription = false;
 		bool printRepository = false;
 		std::array options{
+			Option{ std::nullopt, "--no-metadata", noMetadata },
 			Option{ 'm', "--minimal-output", minimalOutput },
 			Option{ 's', "--silent", m_silent },
 			Option{ 'V', "--verbose", verbose },
@@ -74,7 +76,7 @@ void Game::handleCli(int argc, char* argv[]) {
 				for (size_t i = 1; i < arg.size(); i++) {
 					bool found = false;
 					for (auto& option : options)  {
-						if (arg[i] == option.singleChar) {
+						if (option.singleChar && arg[i] == option.singleChar) {
 							option.v = found = true;
 							break;
 						}
@@ -101,7 +103,8 @@ void Game::handleCli(int argc, char* argv[]) {
 					else if ( printDescription) std::cout << "Template project for raylib apps\n";
 					exit(0);
 				}
-				std::cout << PROJECT_NAME " version " PROJECT_VERSION ".\n" << buildMetadata << "\n";
+				std::cout << PROJECT_NAME " version " PROJECT_VERSION ".\n";
+				if (!noMetadata) std::cout << buildMetadata << "\n";
 				if (printDescription) {
 					std::cout <<
 						"'" PROJECT_NAME "' is a template project. it is used to easily create\n"
@@ -120,6 +123,7 @@ void Game::handleCli(int argc, char* argv[]) {
 			exit(0);
 		} else if (printHelp) {
 			std::cout << "Usage: \033[1;33m" << argv[0] << "\033[0m <options>\n"
+				"        --no-metadata       --  dont print build metadata (build date & time, compiler, etc.)\n"
 				"    -m, --minimal-output    --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
 				"    -s, --silent            --  disables all logging.\n"
 				"    -V, --verbose           --  sets the log level to LOG_TRACE instead of LOG_INFO.\n"
