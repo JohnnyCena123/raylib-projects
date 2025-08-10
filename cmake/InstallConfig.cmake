@@ -19,7 +19,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "${APP_RPATH}")
 
 if(UNIX)
 	if(APPLE)
-		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DragNDrop;productbuild")
+		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DragNDrop")
 	else()
 		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DEB;RPM")
 		set(DESKTOP_FILE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop")
