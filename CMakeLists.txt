@@ -69,37 +69,3 @@ include("${CMAKE_SOURCE_DIR}/cmake/Deps.cmake")
 set(IMGUI_TARGET ${IMGUI_TARGET})
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/src")
-
-set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
-set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
-set(RESOURCES_STAMP_FILE "${CMAKE_BINARY_DIR}/dummy3.stamp")
-file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS "${RESOURCE_DIR}/*")
-
-if(EMSCRIPTEN)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
-		-sUSE_GLFW=3 \
-		-sASSERTIONS=1 \
-		-sWASM=1 -sASYNCIFY \
-		-sGL_ENABLE_GET_PROC_ADDRESS=1 \
-		-sEXPORTED_RUNTIME_METHODS=ccall \
-		--preload-file ../resources \
-		--shell-file '${raylib_SOURCE_DIR}/src/minshell.html'
-	")
-	set(CMAKE_EXECUTABLE_SUFFIX ".html")
-else()
-	add_custom_command(
-		OUTPUT "${RESOURCES_STAMP_FILE}"
-		COMMAND ${CMAKE_COMMAND}
-			-DSOURCE_DIR=${RESOURCE_DIR}
-			-DDESTINATION_DIR=${OUTPUT_RESOURCE_DIR}
-			-DSTAMP_FILE=${RESOURCES_STAMP_FILE}
-			-P "${CMAKE_SOURCE_DIR}/cmake/CopyResources.cmake"
-		DEPENDS ${RESOURCE_FILES}
-		COMMENT "Copying resources to output directory..."
-		VERBATIM
-	)
-	add_dependencies(${PROJECT_NAME} CopyResources)
-	add_custom_target(CopyResources ALL DEPENDS "${RESOURCES_STAMP_FILE}")
-endif()
-
-include("${CMAKE_SOURCE_DIR}/cmake/InstallConfig.cmake")
