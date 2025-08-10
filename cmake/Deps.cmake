@@ -44,6 +44,7 @@ if(PLATFORM_DESKTOP)
 	CPMAddPackage(NAME lcb
 		GITHUB_REPOSITORY "jtanx/libclipboard"
 		GIT_TAG master
+		DOWNLOAD_ONLY ON
 	)
 	if(EXISTS "${lcb_SOURCE_DIR}/third_party/googletest")
 		execute_process(
@@ -52,6 +53,7 @@ if(PLATFORM_DESKTOP)
 			COMMAND_ERROR_IS_FATAL ANY
 		)
 	endif()
+	add_subdirectory("${lcb_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/_deps/lcb-build")
 
     set(LCB_TARGET clipboard CACHE STRING "Name of libclipboard's target." FORCE)
 	set(LCB_TARGET ${LCB_TARGET} PARENT_SCOPE)
