@@ -171,7 +171,7 @@ jobs:
                 ;;
               esac
               cmake_args="$cmake_args -G \"$generator\""
-              case "${{ inputs.os }}" in
+              case "$os" in
                 windows-*) id="win-Ninja" ;;
                 macos-*) id="mac-Ninja" ;;
                 ubuntu-*) id="linux-Ninja" ;;
@@ -233,6 +233,12 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: windows
+        env:
+          REPO_PATH: ${{ github.workspace }}
+        run: |
+          echo "REPO_PATH=$REPO_PATH" >> $GITHUB_ENV
+
       - name: Install Latest LLVM on Windows
         if: inputs.compiler == 'clang' && startsWith(inputs.os, 'windows-')
         run: |
@@ -247,18 +253,18 @@ jobs:
         shell: bash
 
       - name: Configure CMake
-        run: cmake -B ${{ github.workspace }}/build ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+        run: cmake -B $REPO_PATH/build ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
         shell: bash
       - name: Build
-        run: cmake --build ${{ github.workspace }}/build --config ${{ inputs.build-type }}
+        run: cmake --build $REPO_PATH/build --config ${{ inputs.build-type }}
         shell: bash
 
       - name: Build packages with CPack
         if: inputs.package
         run: |
-          mkdir ${{ github.workspace }}/packages
-          cp ${{ github.workspace }}/build/{CPackConfig,CPackSourceConfig}.cmake ${{ github.workspace }}/packages
-          cd ${{ github.workspace }}/packages
+          mkdir $REPO_PATH/packages
+          cp $REPO_PATH/build/{CPackConfig,CPackSourceConfig}.cmake $REPO_PATH/packages
+          cd $REPO_PATH/packages
           cpack
           rm -f ./{CPackConfig,CPackSourceConfig}.cmake
           cd ..
