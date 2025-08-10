@@ -12,14 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ 'windows-2025', 'macos-15', 'ubuntu-24.04' ]
-        compiler: [ 'cl', 'clang', 'gcc' ]
-        generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
-        pch: [ false ]
-        build-type: [ 'Release' ]
-        upload-outputs: [ false ]
-        portable: [ true ]
-        package: [ false ]
+        pch: [ true ]
+        upload-outputs: [ true ]
         include:
           
           - os: 'windows-2025'
@@ -93,7 +87,6 @@ jobs:
       for ${{ matrix.os }}
       with ${{ matrix.generator }}
       and ${{ matrix.compiler }},
-      ${{ matrix.pch && 'with' || 'without' }} pch 
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
