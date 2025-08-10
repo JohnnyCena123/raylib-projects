@@ -270,6 +270,7 @@ jobs:
           curl -Lo nsis.exe "https://prdownloads.sourceforge.net/nsis/nsis-3.09-setup.exe"
           7z x nsis.exe -o"C:/Program Files/NSIS"
           echo "C:/Program Files/NSIS/" >> $GITHUB_PATH
+          "C:/Program Files/NSIS/makensis.exe" -version
         shell: bash
 
       - name: Build packages with CPack
