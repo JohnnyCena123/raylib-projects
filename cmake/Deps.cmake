@@ -42,18 +42,9 @@ if(PLATFORM_DESKTOP)
 	endif()
 	set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 	CPMAddPackage(NAME lcb
-		GITHUB_REPOSITORY "jtanx/libclipboard"
+		GITHUB_REPOSITORY "JohnnyCena123/libclipboard"
 		GIT_TAG master
-		DOWNLOAD_ONLY ON
 	)
-	if(EXISTS "${lcb_SOURCE_DIR}/third_party/googletest")
-		execute_process(
-			WORKING_DIRECTORY ${lcb_SOURCE_DIR}
-			COMMAND git submodule deinit "third_party/googletest"
-			COMMAND_ERROR_IS_FATAL ANY
-		)
-	endif()
-	add_subdirectory("${lcb_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/_deps/lcb-build")
 
     set(LCB_TARGET clipboard CACHE STRING "Name of libclipboard's target." FORCE)
 	set(LCB_TARGET ${LCB_TARGET} PARENT_SCOPE)
