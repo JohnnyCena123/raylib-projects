@@ -264,6 +264,13 @@ jobs:
           cmake --build $REPO_PATH/build --config ${{ inputs.build-type }}
         shell: bash
 
+      - name: Upload Build outputs
+        uses: actions/upload-artifact@v4
+        if: inputs.upload-outputs
+        with:
+          name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
+          path: ${{ github.workspace }}/bin/*
+
       - name: Install NSIS for Windows
         if: inputs.package && startsWith(inputs.os, 'windows-')
         run: |
@@ -272,13 +279,6 @@ jobs:
           echo "C:/Program Files/NSIS/" >> $GITHUB_PATH
           "C:/Program Files/NSIS/makensis.exe" -version
         shell: bash
-
-      - name: Upload Build outputs
-        uses: actions/upload-artifact@v4
-        if: inputs.upload-outputs
-        with:
-          name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
-          path: ${{ github.workspace }}/bin/*
 
       - name: Build packages with CPack
         continue-on-error: true
