@@ -44,6 +44,12 @@ on:
         default: false
         description: Whether or not the result will be a portable application
 
+      package:
+        type: boolean
+        required: true
+        default: false
+        description: Whether or not packaged binaries will be uploaded
+
   workflow_dispatch:
     inputs:
       os:
@@ -86,6 +92,12 @@ on:
         required: true
         default: false
         description: Build portable application
+
+      package:
+        type: boolean
+        required: true
+        default: false
+        description: Build and upload packages
 
 jobs:
   build:
@@ -227,15 +239,30 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe" -OutFile llvm.exe
           7z x llvm.exe -o"C:\Program Files\Latest LLVM"
           echo "C:\Program Files\Latest LLVM\bin" >> $env:GITHUB_PATH
+        shell: bash
 
       - name: Install Linux dependencies
         if: startsWith(inputs.os, 'ubuntu-')
-        run: sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
+        shell: bash
 
       - name: Configure CMake
         run: cmake -B ${{ github.workspace }}/build ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+        shell: bash
       - name: Build
         run: cmake --build ${{ github.workspace }}/build --config ${{ inputs.build-type }}
+        shell: bash
+
+      - name: Build packages with CPack
+        if: inputs.package
+        run: |
+          mkdir ${{ github.workspace }}/packages
+          cp ${{ github.workspace }}/build/{CPackConfig,CPackSourceConfig}.cmake ${{ github.workspace }}/packages
+          cd ${{ github.workspace }}/packages
+          cpack
+          rm -f ./{CPackConfig,CPackSourceConfig}.cmake
+          cd ..
+        shell: bash
 
       - name: Upload
         uses: actions/upload-artifact@v4
@@ -243,3 +270,10 @@ jobs:
         with:
           name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
           path: ${{ github.workspace }}/bin/*
+
+      - name: Upload Packages
+        uses: actions/upload-artifact@v4
+        if: inputs.upload-outputs
+        with:
+          name: packages-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
+          path: ${{ github.workspace }}/packages/*

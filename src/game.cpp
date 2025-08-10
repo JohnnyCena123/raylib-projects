@@ -1,5 +1,7 @@
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
+#include <optional>
 #include <raylib.h>
 #include "game.hpp"
 #include "basics.hpp"
@@ -23,38 +25,64 @@ Game::~Game() { }
 
 fs::path Game::getResourceDir() { return m_resourceDir; }
 
+static inline bool isValidResourceDirPath(fs::path dir) {
+	fs::path resourceDir = dir/"resources";
+	return DirectoryExists(resourceDir.string().c_str()) &&
+		FileExists((resourceDir/"icon.png").string().c_str());
+};
+
 void Game::init() {
 	m_resourceDir = [&] -> fs::path {
 	#ifdef PLATFORM_WEB
 		fs::path ret = "resources";
 	#else
-		fs::path ret = fs::path{GetApplicationDirectory()}/"resources";
+		fs::path exeDir = GetApplicationDirectory();
+		fs::path ret = exeDir;
 		if (!m_portable) {
-		#if defined(__linux__)
-			if (ret.string().starts_with("/usr") &&
-				DirectoryExists("/usr/share/" PROJECT_NAME "/resources")
-			) ret = fs::path{"/usr/share"}/PROJECT_NAME/"resources";
+		#ifdef __linux__
+			fs::path testedDir = exeDir;
+			std::optional<fs::path> finalPath;
+			while (testedDir.has_parent_path()) {
+				std::array subdirOptions{
+					fs::path{"."},
+					fs::path{"share"},
+					fs::path{"share"}/PROJECT_NAME,
+					fs::path{"usr"}/"share"/PROJECT_NAME
+				};
+				for (fs::path option : subdirOptions) {
+					fs::path fullpath = testedDir/option;
+					TraceLog(LOG_TRACE, "Testing %s", fullpath.string().c_str());
+					if (isValidResourceDirPath(fullpath)) {
+						TraceLog(LOG_INFO, "Detected %s as the parent for the resources directory", fullpath.string().c_str());
+						finalPath = fullpath;
+						break;
+					}
+				}
+				if (finalPath) break;
+				testedDir = testedDir.parent_path();
+			}
+			ret = *finalPath;
 		#endif
 		}
+		if (!isValidResourceDirPath(ret)) {
+			DESKTOP_ONLY(tinyfd_messageBox("Failure", (
+				"Could not find the resource directory.\n"
+				"Are you sure you downloaded the resources and extracted them to the right place?\n"
+				"NOTE: the folder structure should look like this:\n"
+				"/path/to/" PROJECT_NAME "/\n"
+				"    |-- " PROJECT_NAME "\n"
+				"    |-- libraries...\n"
+				"    |-- resources/\n"
+				"         |-- resources...\n"
+				"additional info:\n" +
+				ret.string() + " is not a valid parent directory for the resources."
+				).c_str(), "ok", "error", 0
+			));
+			TraceLog(LOG_ERROR, "Failed to locate resource dir; %s is not a valid parent directory.", ret.string().c_str());
+		}
 	#endif
-		return ret;
+		return ret/"resources";
 	}();
-DESKTOP_ONLY(
-	if (!DirectoryExists(m_resourceDir.string().c_str())) {
-		tinyfd_messageBox("Failure",
-			"Could not find the resource directory.\n"
-			"Are you sure you downloaded the resources and extracted them to the right place?\n"
-			"NOTE: the folder structure should look like this:\n"
-			"/path/to/" PROJECT_NAME "/\n"
-			"    |-- " PROJECT_NAME "\n"
-			"    |-- libraries...\n"
-			"    |-- resources/\n"
-			"         |-- resources...",
-			"ok", "error", 0
-		);
-		exit(1);
-	}
-)
 
 #ifdef PLATFORM_DESKTOP
 	m_saveDir = [&] -> fs::path {
@@ -73,12 +101,15 @@ DESKTOP_ONLY(
 	}();
 
 	m_cb = clipboard_new(nullptr);
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 #endif
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
 	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
 	SetTargetFPS(60);
 	IMGUI_ONLY(rlImGuiSetup(true));
+
+	InitAudioDevice();
+	SetMasterVolume(.5f);
 
 DESKTOP_ONLY(
 	// i can only get the monitors size after the window is initialized :( this causes annoying problems
@@ -89,7 +120,7 @@ DESKTOP_ONLY(
 	SetWindowSize(newSize.x, newSize.y);
 
 	auto const windowPosX = GetWindowPosition().x;
-	SetWindowPosition((monitorWidth - newSize.y) / 2, (monitorHeight - newSize.y) / 2);
+	SetWindowPosition((monitorWidth - newSize.x) / 2, (monitorHeight - newSize.y) / 2);
 )
 
 	m_screen = LoadRenderTexture(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y);
@@ -102,13 +133,22 @@ DESKTOP_ONLY(
 )
 
 	if (!m_resourceManager.loadTexture("image", "image.png"))
-		TraceLog(LOG_WARNING, "Failed to load dummy resource");
+		TraceLog(LOG_WARNING, "Failed to load dummy image");
 	m_dummyResource = m_resourceManager.getTexture("image");
+
+	// credit: https://sunixdev.itch.io/casual-music-pack
+	if (!m_resourceManager.loadMusic("bg-music", "music-loop.mp3", [](Music& music) { music.looping = true; }))
+		TraceLog(LOG_WARNING, "Failed to load background music");
+	m_bgMusic = m_resourceManager.getMusic("bg-music");
 }
 
 void Game::run() {
 
+	PlayMusicStream(m_bgMusic);
+
 	while (!WindowShouldClose()) {
+
+		UpdateMusicStream(m_bgMusic);
 
 		if (IsWindowMaximized()) m_screenSize = {
 			static_cast<float>(GetMonitorWidth(GetCurrentMonitor())),
@@ -169,6 +209,7 @@ IMGUI_ONLY(void Game::debugGUI() {
 void Game::deinit() {
 	m_resourceManager.deinit();
 	UnloadRenderTexture(m_screen);
+	CloseAudioDevice();
 	IMGUI_ONLY(rlImGuiShutdown());
 	CloseWindow();
 

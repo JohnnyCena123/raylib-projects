@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=@PROJECT_NAME@
+GenericName=@PROJECT_NAME@
+Exec=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/@PROJECT_NAME@
+TryExec=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/@PROJECT_NAME@
+Terminal=false
+Icon=@PROJECT_NAME@
+Type=Application
+Categories=Utility;Game;
+Keywords=Game;@PROJECT_NAME@;Raylib;C;CPP;
+Comment=@COMMENT@

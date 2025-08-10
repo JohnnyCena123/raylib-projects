@@ -65,6 +65,8 @@ DESKTOP_ONLY(
 	Texture2D m_dummyResource;
 	float m_dummyResourceRotation;
 
+	Music m_bgMusic;
+
 	ResourceManager m_resourceManager;
 
 IMGUI_ONLY(
