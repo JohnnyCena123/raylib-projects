@@ -289,13 +289,13 @@ jobs:
           cp build/{CPackConfig,CPackSourceConfig}.cmake packages
           cd packages
           onFail() {
-            echo -e "\n\n\nNSIS Log:"
+            echo;echo;echo;echo "NSIS Log:"
             cat $REPO_PATH/packages/_CPack_Packages/win64/NSIS/NSISOutput.log || echo "Not found"
 
-            echo -e "\n\n\nNSIS Script:"
+            echo;echo;echo;echo "NSIS Script:"
             cat $REPO_PATH/packages/_CPack_Packages/win64/NSIS/project.nsi || echo "Not found"
 
-            echo -e "\n\n\nRepo contents:"
+            echo;echo;echo;echo "Repo contents:"
             ls -R
           }
           cpack || onFail
