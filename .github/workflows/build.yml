@@ -273,6 +273,13 @@ jobs:
           "C:/Program Files/NSIS/makensis.exe" -version
         shell: bash
 
+      - name: Upload Build outputs
+        uses: actions/upload-artifact@v4
+        if: inputs.upload-outputs
+        with:
+          name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
+          path: ${{ github.workspace }}/bin/*
+
       - name: Build packages with CPack
         continue-on-error: true
         if: inputs.package
@@ -291,13 +298,6 @@ jobs:
         if: inputs.upload-outputs
         with:
           path: ${{ github.workspace }}/packages/_CPack_Packages/win64/NSIS/NSISOutput.log
-
-      - name: Upload Build outputs
-        uses: actions/upload-artifact@v4
-        if: inputs.upload-outputs
-        with:
-          name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
-          path: ${{ github.workspace }}/bin/*
 
       - name: Upload Packages
         uses: actions/upload-artifact@v4
