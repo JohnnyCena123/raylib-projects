@@ -259,6 +259,14 @@ jobs:
         run: cmake --build $REPO_PATH/build --config ${{ inputs.build-type }}
         shell: bash
 
+      - name: Install NSIS for Windows
+        if: inputs.package && startsWith(inputs.os, 'windows-')
+        run: |
+          Invoke-WebRequest -Uri "https://prdownloads.sourceforge.net/nsis/nsis-3.09-setup.exe" -OutFile nsis.exe
+          7z x nsis.exe -o"C:\Program Files\NSIS"
+          echo "C:\Program Files\NSIS\" >> $env:GITHUB_PATH
+        shell: pwsh
+
       - name: Build packages with CPack
         if: inputs.package
         run: |
@@ -269,14 +277,6 @@ jobs:
           rm -f ./{CPackConfig,CPackSourceConfig}.cmake
           cd ..
         shell: bash
-
-      - name: Install NSIS for Windows
-        if: inputs.package && startsWith(inputs.os, 'windows-')
-        run: |
-          Invoke-WebRequest -Uri "https://prdownloads.sourceforge.net/nsis/nsis-3.09-setup.exe" -OutFile nsis.exe
-          7z x nsis.exe -o"C:\Program Files\NSIS"
-          echo "C:\Program Files\NSIS\" >> $env:GITHUB_PATH
-        shell: pwsh
 
       - name: Upload
         uses: actions/upload-artifact@v4
