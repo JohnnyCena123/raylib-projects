@@ -307,5 +307,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: inputs.package
         with:
-          name: packages-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
+          name: packages-${{ inputs.os }}
           path: ${{ github.workspace }}/packages/*
