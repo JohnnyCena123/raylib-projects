@@ -205,7 +205,8 @@ jobs:
       - name: Install WiX toolset
         run: |
           curl.exe -LO https://github.com/wixtoolset/wix/releases/download/v6.0.1/wix-cli-x64.msi
-          msiexec /i wix-cli-x64.msi /quiet
+          msiexec.exe /i wix-cli-x64.msi /quiet
+        shell: bash
 
       - name: Download zip
         uses: actions/download-artifact@v4
@@ -234,6 +235,7 @@ jobs:
             -PassThru
           $proc.WaitForExit(30000)
           dir "C:\Program Files\${{ needs.metadata.outputs.branch-name }}"
+        shell: pwsh
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
@@ -316,6 +318,7 @@ jobs:
       - name: Test package
         run: |
           sudo dpkg -i ${{ steps.build.outputs.package-path }}
+        shell: bash
 
       - name: Upload
         uses: actions/upload-artifact@v4
@@ -498,7 +501,6 @@ jobs:
           butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip
 
           rm -f $full_name.{zip,tar.gz}
-          
         shell: bash
 
       - name: Delete tag

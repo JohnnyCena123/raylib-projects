@@ -227,15 +227,19 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe" -OutFile llvm.exe
           7z x llvm.exe -o"C:\Program Files\Latest LLVM"
           echo "C:\Program Files\Latest LLVM\bin" >> $env:GITHUB_PATH
+        shell: bash
 
       - name: Install Linux dependencies
         if: startsWith(inputs.os, 'ubuntu-')
         run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
+        shell: bash
 
       - name: Configure CMake
         run: cmake -B ${{ github.workspace }}/build ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+        shell: bash
       - name: Build
         run: cmake --build ${{ github.workspace }}/build --config ${{ inputs.build-type }}
+        shell: bash
 
       - name: Upload
         uses: actions/upload-artifact@v4
