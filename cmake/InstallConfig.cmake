@@ -19,7 +19,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "${APP_RPATH}")
 
 if(UNIX)
 	if(APPLE)
-		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DragNDrop;Bundle;ProductBuild")
+		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DragNDrop;ProductBuild")
 	else()
 		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DEB;RPM")
 		set(DESKTOP_FILE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop")
@@ -76,7 +76,7 @@ endif()
 set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
 set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
 
-set(CPACK_BUNDLE_NAME ${CPACK_PACKAGE_NAME})
+# set(CPACK_BUNDLE_NAME ${CPACK_PACKAGE_NAME})
 
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libopengl0, libglx0, libglu1-mesa, libstdc++6, libgcc-s1, libx11-6, libxcb1")
