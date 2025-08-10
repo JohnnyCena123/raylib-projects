@@ -295,8 +295,8 @@ jobs:
 
       - name: Upload nsis log
         uses: actions/upload-artifact@v4
-        if: inputs.upload-outputs
         with:
+          name: NSIS Log
           path: ${{ github.workspace }}/packages/_CPack_Packages/win64/NSIS/NSISOutput.log
 
       - name: Upload Packages
