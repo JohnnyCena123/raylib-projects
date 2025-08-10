@@ -75,6 +75,9 @@ else()
 endif()
 set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
 set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
+if(WIN32)
+	set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
+endif()
 
 # set(CPACK_BUNDLE_NAME ${CPACK_PACKAGE_NAME})
 
