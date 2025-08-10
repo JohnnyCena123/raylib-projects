@@ -22,6 +22,20 @@ This branch is a template I use whenever I want to start a new project. \
 E.g. I'm starting to work on a new game, so I just copy this branch and
 hop right into coding.
 
+Some media:
+
+<!-- thanks chatgpt, i wouldntve wanted to learn html myself -->
+<!-- and its not me who knows how to make comments - its ctrl+/ in vscode -->
+<table border=0 cellspacing=0 cellpadding=0 style="border-collapse:collapse;">
+  <tr>
+    <td rowspan=2 valign="top"><img src="./readme/showcase.gif" width=600 alt="gif failed to load"></td>
+    <td valign="top"><img src="./readme/screenshot-001.png" width=300 alt="image failed to load"></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="./readme/screenshot-002.png" width=240 alt="image failed to load"></td>
+  </tr>
+</table>
+
 ## Installing
 
 There are 4 options for installing the projects in this repository.
