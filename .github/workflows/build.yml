@@ -296,7 +296,7 @@ jobs:
             cat $REPO_PATH/packages/_CPack_Packages/win64/NSIS/project.nsi || echo "Not found"
 
             echo;echo;echo;echo "Repo contents:"
-            ls -R
+            ls -R "$REPO_PATH"
           }
           cpack || onFail
           rm -rf _CPack_Packages {CPackConfig,CPackSourceConfig}.cmake
