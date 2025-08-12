@@ -16,8 +16,13 @@ void ResourceManager::init() {
 	if (!m_initialized) {
 		m_dummyImage = GenImageColor(1, 1, BLANK);
 		m_dummyTexture = LoadTextureFromImage(m_dummyImage);
-		m_dummySound = LoadSound("resources/dummy.wav");
-		m_dummyMusic = LoadMusicStream("resources/dummy-stream.wav");
+		m_images["dummy"] = m_dummyImage;
+		m_textures["dummy"] = m_dummyTexture;
+
+		loadSound("dummy", "dummy.wav");
+		loadMusic("dummy", "dummy-stream.wav");
+		m_dummySound = getSound("dummy");
+		m_dummyMusic = getMusic("dummy");
 		m_initialized = true;
 	}
 }
