@@ -13,14 +13,13 @@
 	#include <tinyfiledialogs.h>
 	#include <filesystem>
 	#include <sstream>
+	#include <optional>
 	namespace fs = std::filesystem;
 	#define DESKTOP_ONLY(...) __VA_ARGS__
 #else
 	#define DESKTOP_ONLY(...)
 #endif
 #include "resource-manager.hpp"
-
-
 
 class Game {
 public:
