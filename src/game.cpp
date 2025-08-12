@@ -34,7 +34,7 @@ static inline bool isValidResourceDirPath(fs::path dir) {
 void Game::init() {
 	m_resourceDir = [&] -> fs::path {
 	#ifdef PLATFORM_WEB
-		fs::path ret = "resources";
+		fs::path ret = ".";
 	#else
 		fs::path exeDir = GetApplicationDirectory();
 		fs::path ret = exeDir;

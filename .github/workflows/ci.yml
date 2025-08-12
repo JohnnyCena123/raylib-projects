@@ -7,140 +7,99 @@ on:
       - '**'
     tags:
       - '**'
-  pull_request:
-    branches: [ "main" ]
-
 jobs:
   build-desktop:
     strategy:
       fail-fast: false
       matrix:
-        os: [ 'windows-2025', 'macos-15', 'ubuntu-24.04' ]
-        compiler: [ 'cl', 'clang', 'gcc' ]
-        generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
-        pch: [ false ]
-        build-type: [ 'Release' ]
-        upload-outputs: [ false ]
-        portable: [ true ]
+        id: 
+          - 'win-portable-Release'
+          - 'win-nonportable-Release'
+          - 'win-portable-RelWithDebInfo'
+
+          - 'mac-portable-Release'
+          - 'mac-nonportable-Release'
+          - 'mac-portable-RelWithDebInfo'
+
+          - 'linux-portable-Release'
+          - 'linux-nonportable-Release'
+          - 'linux-portable-RelWithDebInfo'
+        pch: [ true ]
+        upload-outputs: [ true ]
         include:
-          
-          - os: 'windows-2025'
+          - id: 'win-portable-Release'
+            os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
-            pch: true
             build-type: 'Release'
-            upload-outputs: true
             portable: true
+            package: false
 
-          - os: 'windows-2025'
+          - id: 'win-nonportable-Release'
+            os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
-            pch: true
             build-type: 'Release'
-            upload-outputs: true
             portable: false
+            package: true
 
-          - os: 'windows-2025'
+          - id: 'win-portable-RelWithDebInfo'
+            os: 'windows-2025'
             compiler: 'cl'
             generator: 'Visual Studio 17 2022'
-            pch: true
             build-type: 'RelWithDebInfo'
-            upload-outputs: true
             portable: true
+            package: false
             
 
-          - os: 'macos-15'
+          - id: 'mac-portable-Release'
+            os: 'macos-15'
             compiler: 'clang'
             generator: 'Xcode'
-            pch: true
             build-type: 'Release'
-            upload-outputs: true
             portable: true
+            package: false
 
-          - os: 'macos-15'
+          - id: 'mac-nonportable-Release'
+            os: 'macos-15'
             compiler: 'clang'
             generator: 'Xcode'
-            pch: true
-            build-type: 'RelWithDebInfo'
-            upload-outputs: true
-            portable: true
-
-
-          - os: 'ubuntu-24.04'
-            compiler: 'gcc'
-            generator: 'Unix Makefiles'
-            pch: true
             build-type: 'Release'
-            upload-outputs: true
-            portable: true
-
-          - os: 'ubuntu-24.04'
-            compiler: 'gcc'
-            generator: 'Unix Makefiles'
-            pch: true
-            build-type: 'Release'
-            upload-outputs: true
             portable: false
+            package: true
 
-          - os: 'ubuntu-24.04'
-            compiler: 'gcc'
-            generator: 'Unix Makefiles'
-            pch: true
+          - id: 'mac-portable-RelWithDebInfo'
+            os: 'macos-15'
+            compiler: 'clang'
+            generator: 'Xcode'
             build-type: 'RelWithDebInfo'
-            upload-outputs: true
             portable: true
+            package: false
 
-        exclude:          
-          - os: 'windows-2025'
-            compiler: 'cl'
-            generator: 'Visual Studio 17 2022'
-            pch: true
-            upload-outputs: false
-          - os: 'macos-15'
-            compiler: 'clang'
-            generator: 'Xcode'
-            pch: true
-            upload-outputs: false
-          - os: 'ubuntu-24.04'
+
+          - id: 'linux-portable-Release'
+            os: 'ubuntu-24.04'
             compiler: 'gcc'
             generator: 'Unix Makefiles'
-            pch: true
-            upload-outputs: false
+            build-type: 'Release'
+            portable: true
+            package: false
 
-          - os: 'windows-2025'
-            generator: 'Xcode'
-          - os: 'windows-2025'
+          - id: 'linux-nonportable-Release'
+            os: 'ubuntu-24.04'
+            compiler: 'gcc'
             generator: 'Unix Makefiles'
-          - os: 'macos-15'
-            generator: 'Visual Studio 17 2022'
-          - os: 'macos-15'
-            generator: 'MinGW Makefiles'
-          - os: 'ubuntu-24.04'
-            generator: 'Visual Studio 17 2022'
-          - os: 'ubuntu-24.04'
-            generator: 'Xcode'
-          - os: 'ubuntu-24.04'
-            generator: 'MinGW Makefiles'
+            build-type: 'Release'
+            portable: false
+            package: true
 
-          - os: 'windows-2025'
-            generator: 'Visual Studio 17 2022'
-            compiler: 'clang'
-          - os: 'windows-2025'
-            generator: 'Visual Studio 17 2022'
+          - id: 'linux-portable-RelWithDebInfo'
+            os: 'ubuntu-24.04'
             compiler: 'gcc'
-          - os: 'windows-2025'
-            generator: 'MinGW Makefiles'
-            compiler: 'cl'
-          - os: 'windows-2025'
-            generator: 'Ninja'
-            compiler: 'cl'
-          - os: 'macos-15'
-            compiler: 'cl'
-          - os: 'macos-15'
-            generator: 'Xcode'
-            compiler: 'gcc'
-          - os: 'ubuntu-24.04'
-            compiler: 'cl'
+            generator: 'Unix Makefiles'
+            build-type: 'RelWithDebInfo'
+            portable: true
+            package: false
 
     name: >
       ${{ matrix.portable && 'Portable' || 'Non-portable' }}
@@ -148,7 +107,6 @@ jobs:
       for ${{ matrix.os }}
       with ${{ matrix.generator }}
       and ${{ matrix.compiler }},
-      ${{ matrix.pch && 'with' || 'without' }} pch 
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
@@ -158,6 +116,7 @@ jobs:
       build-type: ${{ matrix.build-type }}
       upload-outputs: ${{ matrix.upload-outputs }}
       portable: ${{ matrix.portable }}
+      package: ${{ matrix.package }}
 
   metadata:
     name: Generate metadata
@@ -194,6 +153,7 @@ jobs:
             BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
             echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
           fi
+        shell: bash
     
   win-msi:
     name: Build Windows installer
@@ -205,7 +165,8 @@ jobs:
       - name: Install WiX toolset
         run: |
           curl.exe -LO https://github.com/wixtoolset/wix/releases/download/v6.0.1/wix-cli-x64.msi
-          msiexec /i wix-cli-x64.msi /quiet
+          msiexec.exe /i wix-cli-x64.msi /quiet
+        shell: pwsh
 
       - name: Download zip
         uses: actions/download-artifact@v4
@@ -234,6 +195,7 @@ jobs:
             -PassThru
           $proc.WaitForExit(30000)
           dir "C:\Program Files\${{ needs.metadata.outputs.branch-name }}"
+        shell: pwsh
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
@@ -316,6 +278,7 @@ jobs:
       - name: Test package
         run: |
           sudo dpkg -i ${{ steps.build.outputs.package-path }}
+        shell: bash
 
       - name: Upload
         uses: actions/upload-artifact@v4
@@ -498,7 +461,6 @@ jobs:
           butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip
 
           rm -f $full_name.{zip,tar.gz}
-          
         shell: bash
 
       - name: Delete tag

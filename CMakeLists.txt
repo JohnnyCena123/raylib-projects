@@ -3,7 +3,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_STANDARD 23)
 
 if(NOT DEFINED GIT_BRANCH)
-	if(EXISTS "${CMAKE_SOURCE_DIR}/.git-branch")
+	if(EXISTS "${CMAKE_SOURCE_DIR}/.git-branch" AND NOT LOCAL_CMAKE_BUILD)
 		file(READ "${CMAKE_SOURCE_DIR}/.git-branch" GIT_BRANCH)
 		string(REGEX REPLACE "[ \t\n]" "" GIT_BRANCH "${GIT_BRANCH}")
 	else()
@@ -20,9 +20,9 @@ if(NOT DEFINED GIT_BRANCH)
 				"or by adding a .git-branch file containing the git branch to the root of this project ."
 			)
 		endif()
-		configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/.git-branch.in"
-			"${CMAKE_SOURCE_DIR}/.git-branch")
 	endif()
+	configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/.git-branch.in"
+		"${CMAKE_SOURCE_DIR}/.git-branch")
 endif()
 project(${GIT_BRANCH}
 	LANGUAGES CXX C
