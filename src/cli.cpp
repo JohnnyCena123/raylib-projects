@@ -134,8 +134,8 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 				"    -u, --usage             --  same as --help.\n"
 				"    -d, --description       --  prints a general description of this app.\n"
 				"    -r, --repo              --  provides a link to the GitHub repository of the project.\n"
-				"        --resource-dir=DIR  --  sets a custom directory to use for save data. includes log files.\n"
-				"        --save-dir=DIR      --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
+				"        --resource-dir=DIR  --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
+				"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n"
 				"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
 				"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n";
 			return 0;
