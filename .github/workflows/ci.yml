@@ -359,7 +359,7 @@ jobs:
           path: |
             Release/*.zip
             Release/*.tar.gz
-          name: Release Builds
+          name: Release builds
 
       - name: Upload RelWithDebInfo zips
         uses: actions/upload-artifact@v4
@@ -367,7 +367,7 @@ jobs:
           path: |
             RelWithDebInfo/*.zip
             RelWithDebInfo/*.tar.gz
-          name: RelWithDebInfo Builds
+          name: RelWithDebInfo builds
 
       - name: Upload non-portable zips
         uses: actions/upload-artifact@v4
@@ -459,7 +459,7 @@ jobs:
       - name: Download zips
         uses: actions/download-artifact@v4
         with:
-          name: Release Builds
+          name: Release builds
 
       - name: Download non-portable zips
         uses: actions/download-artifact@v4
