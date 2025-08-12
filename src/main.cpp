@@ -4,7 +4,8 @@ int main(int argc, char* argv[]) {
 
 	Game game{};
 DESKTOP_ONLY(
-	game.handleCli(argc, argv);
+	std::optional<int> result = game.handleCli(argc, argv);
+	if (result) return *result;
 )
 
 	game.init();

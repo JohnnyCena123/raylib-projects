@@ -32,7 +32,7 @@ public:
 	fs::path getResourceDir();
 
 DESKTOP_ONLY(
-	void handleCli(int argc, char* argv[]);
+	std::optional<int> handleCli(int argc, char* argv[]);
 )
 	void init();
 	void run();
