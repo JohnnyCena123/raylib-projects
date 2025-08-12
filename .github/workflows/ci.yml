@@ -7,6 +7,14 @@ on:
       - '**'
     tags:
       - '**'
+    paths:
+      - '.github/workflows/ci.yml'
+      - '.github/scripts'
+      - 'src/'
+      - 'cmake/'
+      - 'CMakeLists.txt'
+      - 'resources'
+      - 'icon.rc'
 jobs:
   build-desktop:
     strategy:
