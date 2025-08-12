@@ -309,7 +309,10 @@ jobs:
             mv build-*-portable-$config $config/
 
             cd $config
-              cd build-win-MSVC-portable-$config && touch ./.portable-application && zip -r ../Windows.zip * && cd ..
+              cd build-win-MSVC-portable-$config
+                touch ./.portable-application
+                zip -r ../Windows.zip *
+              cd ..
 
               cd build-mac-Xcode-portable-$config
                 touch ./.portable-application
@@ -325,9 +328,32 @@ jobs:
               cd ..
             cd ..
           done
+
+          mkdir non-portable
+          mv build-*-Release non-portable/
+          cd non-portable
+            cd build-win-MSVC-Release && zip -r ../Windows-non-portable.zip * && cd .. && rm -rf build-win-MSVC-Release
+            
+            cd build-mac-Xcode-Release
+              ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
+              ln -sf libraylib.550.dylib libraylib.dylib
+              tar -czvf ../MacOS-non-portable.tar.gz *
+            cd .. && rm -rf build-mac-Xcode-Release
+
+            cd build-linux-Makefiles-Release
+              ln -sf libraylib.so.5.5.0 libraylib.so.550
+              ln -sf libraylib.so.550 libraylib.so
+              tar -czvf ../Linux-non-portable.tar.gz *
+            cd .. && rm -rf build-linux-Makefiles-Release
+          cd ..
+
+          mkdir packages
+          for id in windows-2025 macos-15 ubuntu-24.04; do
+            cp packages-$id/* packages/
+          done
         shell: bash
 
-      - name: Upload Release zip
+      - name: Upload Release zips
         uses: actions/upload-artifact@v4
         with:
           path: |
@@ -335,13 +361,27 @@ jobs:
             Release/*.tar.gz
           name: Release Builds
 
-      - name: Upload RelWithDebInfo zip
+      - name: Upload RelWithDebInfo zips
         uses: actions/upload-artifact@v4
         with:
           path: |
             RelWithDebInfo/*.zip
             RelWithDebInfo/*.tar.gz
           name: RelWithDebInfo Builds
+
+      - name: Upload non-portable zips
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            non-portable/*.zip
+            non-portable/*.tar.gz
+          name: Packages
+
+      - name: Upload Packages
+        uses: actions/upload-artifact@v4
+        with:
+          path: Packages/*
+          name: Packages
 
       - name: Upload resources zip
         uses: actions/upload-artifact@v4
@@ -352,7 +392,9 @@ jobs:
       - name: Delete old artifacts
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: build-*-portable-*
+          name: |
+            build-*-portable-*
+            packages-*
   
   build-web:
     runs-on: ubuntu-24.04
@@ -419,6 +461,18 @@ jobs:
         with:
           name: Release Builds
 
+      - name: Download non-portable zips
+        uses: actions/download-artifact@v4
+        with:
+          name: non-portable
+          path: non-portable/
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: packages/
+
       - name: Download resources
         uses: actions/download-artifact@v4
         with:
@@ -483,10 +537,14 @@ jobs:
           draft: false
           prerelease: true
           files: |
-            *.msi
-            *.deb
-            *.zip
-            *.tar.gz
+            ${{ needs.metadata.outputs.full-name }}.msi
+            ${{ needs.metadata.outputs.full-name }}.deb
+            Windows.zip
+            MacOS.tar.gz
+            Linux.tar.gz
+            non-portable/*.zip
+            non-portable/*.tar.gz
+            packages/*
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -499,7 +557,11 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            *.msi
-            *.deb
-            *.zip
-            *.tar.gz
+            ${{ needs.metadata.outputs.full-name }}.msi
+            ${{ needs.metadata.outputs.full-name }}.deb
+            Windows.zip
+            MacOS.tar.gz
+            Linux.tar.gz
+            non-portable/*.zip
+            non-portable/*.tar.gz
+            packages/*
