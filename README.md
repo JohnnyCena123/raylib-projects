@@ -63,6 +63,11 @@ The folder structure should look like this:
    └── <resources...>       -- resource - images, sounds, fonts, etc.
 ```
 
+### Notes
+
+On windows, the app will not spawn a terminal by default, unless you pass a flag to it that implies it needs to do that,
+or simply pass `-` as an argument. don't ask why, but yeah
+
 ## Building
 
 The project can be built as usual like any other CMake project:
