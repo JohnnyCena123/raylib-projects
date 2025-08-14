@@ -2,6 +2,7 @@
 #include <raylib.h>
 #include <string>
 #include "game.hpp"
+#include "imgui.h"
 #include "resource-manager.hpp"
 #include "utils.hpp"
 #include "save-data.hpp"
@@ -22,9 +23,8 @@ Game::Game() :
 	m_screenSize(DEFAULT_SCREEN_SIZE), m_resourceManager(*this), m_muted(false),
 	m_masterVolume(.5f), m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED),
 	m_speed(m_startSpeed), m_timeSinceStep(0.f), m_hasLost(false), m_isPaused(false),
-	m_shouldRestart(false), m_restartButtonHeld(false), m_isSaveDirty(false),
-	m_inputQueue(), m_snake(SNAKE_START_LENGTH, *this), m_apples(),
-	m_saveData(0)
+	m_shouldRestart(false), m_restartButtonHeld(false), m_isSaveDirty(false), m_inputQueue(),
+	m_snake(SNAKE_START_LENGTH, *this), m_apples(), m_saveData(0)
 { /* cant call init() here, handleCli() needs to be called first */ }
 Game::~Game() { }
 fs::path Game::getResourceDir() { return m_resourceDir; }
@@ -192,7 +192,7 @@ void Game::saveData(fs::path saveFile) {
 		"# Any change made to this file will be discarded on the next time you start the game.\n"
 		"# Although if you're already here you might deserve that little bit of extra score.\n"
 		"# (reading the code doesn't count, you lame cheater)\n"
-		"%i", m_saveData
+		"%d", m_saveData
 	);
 	std::string xored; // xored as in something that had gone through the xor process. https://en.wikipedia.org/wiki/Bitwise_operation#XOR
 	for (char const _char : raw) xored.push_back(_char ^ SAVE_DATA_XOR_KEY);
@@ -262,7 +262,6 @@ bool Game::run() {
 				rlImGuiEnd();
 			)
 		EndDrawing();
-		if (IsKeyPressed(KEY_M)) m_muted ^= true;
 		if (IsKeyPressed(KEY_Q)) return false;
 		if (IsKeyPressed(KEY_R) || m_shouldRestart) return true;
 	}
@@ -340,7 +339,14 @@ void Game::update() {
 				case KEY_D:
 				case KEY_RIGHT: processInput(Right); break;
 			}
-			if (IsKeyPressed(KEY_SPACE)) m_isPaused = !m_isPaused;
+			switch (GetGestureDetected()) {
+				case GESTURE_SWIPE_UP:    processInput(Up);    break;
+				case GESTURE_SWIPE_DOWN:  processInput(Down);  break;
+				case GESTURE_SWIPE_LEFT:  processInput(Left);  break;
+				case GESTURE_SWIPE_RIGHT: processInput(Right); break;
+			}
+			if (IsKeyPressed(KEY_M)) m_muted ^= true;
+			if (IsKeyPressed(KEY_SPACE)) m_isPaused ^= true;
 			if (m_score >= m_apples.size() * NEW_APPLE_INTERVAL) {
 				Apple newApple;
 				do newApple = getRandomTile();
@@ -381,10 +387,11 @@ IMGUI_ONLY(void Game::debugGUI() {
 	ImGui::Begin("Debug Window");
 	std::string currentDirection = directionToString(m_snake.m_direction);
 	ImGui::Text("Current direction: %s", currentDirection.c_str());
-	ImGui::Text("Step count: %i", m_stepCount);
+	ImGui::Text("Step count: %d", m_stepCount);
 	ImGui::Text("Time since step: %f", m_timeSinceStep);
 	ImGui::Text("screen size: %f, %f", m_screenSize.x, m_screenSize.y);
 	ImGui::Text("mouse pos: %f, %f", GetMousePosition().x, GetMousePosition().y);
+	ImGui::Text("Gesture: %d", GetGestureDetected());
 	if (m_isSaveDirty) ImGui::Text("Save is dirty.");
 	if (m_restartButtonHeld) ImGui::Text("Restart button is held.");
 	ImGui::NewLine();
@@ -537,7 +544,7 @@ void Game::drawOverlay() const {
 			(FREE_SPACE - apple.height) / 2,
 		}, WHITE);
 		DrawTextEx(GetFontDefault(),
-			TextFormat("%i", m_score),
+			TextFormat("%d", m_score),
 			{ DEFAULT_SCREEN_SIZE.x - 60.f, 15.f }, 25.f, 2.5f, BLACK
 		);
 		Texture2D const trophy = m_resourceManager.getTexture("trophy");
@@ -546,7 +553,7 @@ void Game::drawOverlay() const {
 			(FREE_SPACE - trophy.height) / 2,
 		}, WHITE);
 		DrawTextEx(GetFontDefault(),
-			TextFormat("%i", m_saveData.highScore),
+			TextFormat("%d", m_saveData.highScore),
 			{ DEFAULT_SCREEN_SIZE.x - 160.f, 15.f },
 			25.f, 2.5f, BLACK
 		);
