@@ -1,18 +1,14 @@
 #pragma once
-
 #include <random>
 #include <string>
 #include <raylib.h>
-
 #include "basics.hpp"
-
 static inline Rectangle constexpr& recFromIndices(Tile const& indices, Grid& grid) {
 	return grid[indices[0]][indices[1]];
 }
 static inline Rectangle const constexpr& recFromIndices(Tile const& indices, Grid const& grid) {
 	return grid[indices[0]][indices[1]];
 }
-
 static inline std::string constexpr directionToString(Direction direction) {
 	switch (direction) {
 		case Up:    return "up";
@@ -23,7 +19,6 @@ static inline std::string constexpr directionToString(Direction direction) {
 	}
 	return std::to_string(direction) + " (error)";
 }
-
 static inline std::array<int, 2> constexpr directionToVec(Direction direction) {
 	switch (direction) {
 		case Up:    return { 0, -1 };
@@ -48,7 +43,6 @@ static inline Direction constexpr vecToDirection(std::array<int, 2> vec) {
 	}
 	return None;
 }
-
 extern std::random_device rd;
 extern std::mt19937 mt;
 Tile getRandomTile();

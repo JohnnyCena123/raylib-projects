@@ -1,0 +1,502 @@
+name: Continous Integration (build)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+    tags:
+      - '**'
+    paths:
+      - '.github/workflows/ci.yml'
+      - '.github/scripts'
+      - 'src/'
+      - 'cmake/'
+      - 'CMakeLists.txt'
+      - 'resources'
+      - 'icon.rc'
+jobs:
+  build-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        id:
+          - 'win-portable-Release'
+          - 'win-nonportable-Release'
+          - 'win-portable-RelWithDebInfo'
+          - 'mac-portable-Release'
+          - 'mac-nonportable-Release'
+          - 'mac-portable-RelWithDebInfo'
+          - 'linux-portable-Release'
+          - 'linux-nonportable-Release'
+          - 'linux-portable-RelWithDebInfo'
+        pch: [ true ]
+        upload-outputs: [ true ]
+        include:
+          - id: 'win-portable-Release'
+            os: 'windows-2025'
+            compiler: 'cl'
+            generator: 'Visual Studio 17 2022'
+            build-type: 'Release'
+            portable: true
+            package: false
+          - id: 'win-nonportable-Release'
+            os: 'windows-2025'
+            compiler: 'cl'
+            generator: 'Visual Studio 17 2022'
+            build-type: 'Release'
+            portable: false
+            package: true
+          - id: 'win-portable-RelWithDebInfo'
+            os: 'windows-2025'
+            compiler: 'cl'
+            generator: 'Visual Studio 17 2022'
+            build-type: 'RelWithDebInfo'
+            portable: true
+            package: false
+          - id: 'mac-portable-Release'
+            os: 'macos-15'
+            compiler: 'clang'
+            generator: 'Xcode'
+            build-type: 'Release'
+            portable: true
+            package: false
+          - id: 'mac-nonportable-Release'
+            os: 'macos-15'
+            compiler: 'clang'
+            generator: 'Xcode'
+            build-type: 'Release'
+            portable: false
+            package: true
+          - id: 'mac-portable-RelWithDebInfo'
+            os: 'macos-15'
+            compiler: 'clang'
+            generator: 'Xcode'
+            build-type: 'RelWithDebInfo'
+            portable: true
+            package: false
+          - id: 'linux-portable-Release'
+            os: 'ubuntu-24.04'
+            compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            build-type: 'Release'
+            portable: true
+            package: false
+          - id: 'linux-nonportable-Release'
+            os: 'ubuntu-24.04'
+            compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            build-type: 'Release'
+            portable: false
+            package: true
+          - id: 'linux-portable-RelWithDebInfo'
+            os: 'ubuntu-24.04'
+            compiler: 'gcc'
+            generator: 'Unix Makefiles'
+            build-type: 'RelWithDebInfo'
+            portable: true
+            package: false
+    name: >
+      ${{ matrix.portable && 'Portable' || 'Non-portable' }}
+      ${{ matrix.build-type }} build
+      for ${{ matrix.os }}
+      with ${{ matrix.generator }}
+      and ${{ matrix.compiler }},
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ${{ matrix.os }}
+      compiler: ${{ matrix.compiler }}
+      generator: ${{ matrix.generator }}
+      pch: ${{ matrix.pch }}
+      build-type: ${{ matrix.build-type }}
+      upload-outputs: ${{ matrix.upload-outputs }}
+      portable: ${{ matrix.portable }}
+      package: ${{ matrix.package }}
+  metadata:
+    name: Generate metadata
+    needs: [ 'build-desktop' ]
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.main.outputs.version }}
+      branch-name: ${{ steps.main.outputs.branch-name }}
+      full-name: ${{ steps.main.outputs.full-name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux-Makefiles-Release
+          path: ${{ github.workspace }}/output
+      - name: main
+        id: main
+        run: |
+          cd output
+          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
+          chmod +x ./${{ github.ref_name }}
+          PROJECT_VERSION=$(./${{ github.ref_name }} --version --minimal-output)
+          echo "version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          if [ "${{ github.ref_type }}" == "branch" ]; then
+            echo "full-name=${{ github.ref_name }}-$PROJECT_VERSION-dev" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_type }}" == "tag" ]; then
+            TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
+            BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
+            echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+  win-msi:
+    name: Build Windows installer
+    needs: [ 'build-desktop', 'metadata' ]
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install WiX toolset
+        run: |
+          curl.exe -LO https://github.com/wixtoolset/wix/releases/download/v6.0.1/wix-cli-x64.msi
+          msiexec.exe /i wix-cli-x64.msi /quiet
+        shell: pwsh
+      - name: Download zip
+        uses: actions/download-artifact@v4
+        with:
+          name: build-win-MSVC-Release
+          path: ${{ needs.metadata.outputs.branch-name }}
+      - name: Build installer
+        id: build
+        run: |
+          $msi = "${{ needs.metadata.outputs.full-name }}.msi"
+          powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
+            -SourceDir .\${{ needs.metadata.outputs.branch-name }} `
+            -AppName "${{ needs.metadata.outputs.branch-name }}" `
+            -Manufacturer "Johnny Cena" `
+            -Version "${{ needs.metadata.outputs.version }}" `
+            -OutputMsi "$msi"
+          echo "installer-path=$msi" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+      - name: Test installer
+        id: test
+        run: |
+          $proc = Start-Process -FilePath msiexec.exe `
+            -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' `
+            -PassThru
+          $proc.WaitForExit(30000)
+          dir "C:\Program Files\${{ needs.metadata.outputs.branch-name }}"
+        shell: pwsh
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ steps.build.outputs.installer-path }}
+          name: Windows installer
+  linux-deb:
+    name: Build Debian package
+    needs: [ 'metadata', 'build-desktop' ]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux-Makefiles-Release
+          path: ${{ github.workspace }}
+      - name: Build
+        id: build
+        run: |
+          sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
+          PACKAGE_NAME=${{ needs.metadata.outputs.branch-name }}
+          chmod +x ./$PACKAGE_NAME
+          PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output --no-metadata)
+          PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description --no-metadata)"
+          PACKAGE_DESCRIPTION_MINIMAL="$(./$PACKAGE_NAME --description --minimal-output --no-metadata)"
+          PACKAGE_REPO="$(./$PACKAGE_NAME --repo --minimal-output)"
+          PACKAGE_DIR="${{ github.workspace }}/${{ needs.metadata.outputs.full-name }}"
+          mkdir -p "$PACKAGE_DIR"/usr/bin
+          mv "./$PACKAGE_NAME" "$PACKAGE_DIR/usr/bin/"
+          ln -sf libraylib.so.5.5.0 libraylib.so.550
+          ln -sf libraylib.so.5.5.0 libraylib.so
+          mkdir -p "$PACKAGE_DIR"/usr/lib/$PACKAGE_NAME
+          mv ./*.so* "$PACKAGE_DIR/usr/lib/$PACKAGE_NAME/"
+          mkdir -p "$PACKAGE_DIR/usr/share/$PACKAGE_NAME/"
+          cp -r ./resources "$PACKAGE_DIR/usr/share/$PACKAGE_NAME/"
+          ICON_DIR="usr/share/icons"
+          mkdir -p "$PACKAGE_DIR/$ICON_DIR"
+          ICON_PATH="$ICON_DIR/$PACKAGE_NAME.png"
+          cp ./resources/icon.png "$PACKAGE_DIR/$ICON_PATH"
+          rm -rf resources
+          mkdir -p "$PACKAGE_DIR/usr/share/applications/"
+          cat <<EOF > "$PACKAGE_DIR/usr/share/applications/$PACKAGE_NAME.desktop"
+          [Desktop Entry]
+          Version=1.0
+          Name=$PACKAGE_NAME
+          GenericName=$PACKAGE_NAME
+          Icon=/$ICON_PATH
+          Comment=$PACKAGE_DESCRIPTION_MINIMAL. Source code: $PACKAGE_REPO.
+          Exec=/usr/bin/$PACKAGE_NAME
+          TryExec=/usr/bin/$PACKAGE_NAME
+          Terminal=false
+          Type=Application
+          Categories=Utility;Game;
+          Keywords=Game;$PACKAGE_NAME;Raylib;C;CPP;
+          EOF
+          mkdir -p $PACKAGE_DIR/DEBIAN
+          cat <<EOF > "$PACKAGE_DIR/DEBIAN/control"
+          Package: $PACKAGE_NAME
+          Version: $PACKAGE_VERSION
+          Section: utils
+          Depends: libc6, libopengl0, libglx0, libglu1-mesa, libstdc++6, libgcc-s1, libx11-6, libxcb1
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Johnny Cena <iamahuman1395@gmail.com>
+          Description: $PACKAGE_DESCRIPTION_MINIMAL
+          $(echo "$PACKAGE_DESCRIPTION" | sed 's/^/  /')
+            Source code is in $PACKAGE_REPO.
+          EOF
+          dpkg-deb --build "$PACKAGE_DIR" "$PACKAGE_DIR".deb
+          echo "package-path=$PACKAGE_DIR.deb" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Test package
+        run: |
+          sudo dpkg -i ${{ steps.build.outputs.package-path }}
+        shell: bash
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ steps.build.outputs.package-path }}
+          name: Debian package
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-24.04
+    needs: [ linux-deb, win-msi ]
+    permissions:
+      contents: write
+    steps:
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+      - name: Organize
+        id: organize
+        run: |
+          rm -rf "Debian package" "Windows installer" "WebAssembly build"
+          cp build-win-MSVC-portable-Release/resources .
+          zip -r ./resources.zip ./resources/
+          for config in Release RelWithDebInfo; do
+            mkdir $config
+            mv build-*-portable-$config $config/
+            cd $config
+              cd build-win-MSVC-portable-$config
+                touch ./.portable-application
+                zip -r ../Windows.zip *
+              cd ..
+              cd build-mac-Xcode-portable-$config
+                touch ./.portable-application
+                ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
+                ln -sf libraylib.550.dylib libraylib.dylib
+                tar -czvf ../MacOS.tar.gz *
+              cd ..
+              cd build-linux-Makefiles-portable-$config
+                touch ./.portable-application
+                ln -sf libraylib.so.5.5.0 libraylib.so.550
+                ln -sf libraylib.so.550 libraylib.so
+                tar -czvf ../Linux.tar.gz *
+              cd ..
+            cd ..
+          done
+          mkdir non-portable
+          mv build-*-Release non-portable/
+          cd non-portable
+            cd build-win-MSVC-Release && zip -r ../Windows-non-portable.zip * && cd .. && rm -rf build-win-MSVC-Release
+            cd build-mac-Xcode-Release
+              ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
+              ln -sf libraylib.550.dylib libraylib.dylib
+              tar -czvf ../MacOS-non-portable.tar.gz *
+            cd .. && rm -rf build-mac-Xcode-Release
+            cd build-linux-Makefiles-Release
+              ln -sf libraylib.so.5.5.0 libraylib.so.550
+              ln -sf libraylib.so.550 libraylib.so
+              tar -czvf ../Linux-non-portable.tar.gz *
+            cd .. && rm -rf build-linux-Makefiles-Release
+          cd ..
+          mkdir packages
+          for id in windows-2025 macos-15 ubuntu-24.04; do
+            cp packages-$id/* packages/
+          done
+        shell: bash
+      - name: Upload Release zips
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            Release/*.zip
+            Release/*.tar.gz
+          name: Release builds
+      - name: Upload RelWithDebInfo zips
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            RelWithDebInfo/*.zip
+            RelWithDebInfo/*.tar.gz
+          name: RelWithDebInfo builds
+      - name: Upload non-portable zips
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            non-portable/*.zip
+            non-portable/*.tar.gz
+          name: Non-portable builds
+      - name: Upload Packages
+        uses: actions/upload-artifact@v4
+        with:
+          path: packages/*
+          name: Packages
+      - name: Upload resources zip
+        uses: actions/upload-artifact@v4
+        with:
+          path: resources/*
+          name: resources
+      - name: Delete old artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            build-*
+            packages-*
+  build-web:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        imgui: [ 'OFF', 'ON' ]
+    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
+    needs: [ 'metadata' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.12
+          actions-cache-folder: 'emsdk-cache'
+      - name: Build
+        run: |
+          emcmake cmake \
+            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
+            -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
+            -DPLATFORM=Web -Wno-dev -G Ninja
+          cmake --build "${{ github.workspace }}/build"
+          ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.metadata.outputs.branch-name }}"
+          mv bin/${{ needs.metadata.outputs.branch-name }}.zip bin/Web.zip
+        shell: bash
+      - name: Upload output
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/bin/Web.zip
+          name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
+  publish:
+    name: Publish
+    permissions:
+      contents: write
+    needs: [ 'metadata', 'cleanup', 'build-web' ]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ${{ github.workspace }}/${{ needs.metadata.outputs.branch-name }}/
+      - name: Download Windows installer
+        uses: actions/download-artifact@v4
+        with:
+          name: Windows installer
+      - name: Download Debian package
+        uses: actions/download-artifact@v4
+        with:
+          name: Debian package
+      - name: Download ImGui-less WebAssembly build
+        uses: actions/download-artifact@v4
+        with:
+          name: WebAssembly build
+      - name: Download zips
+        uses: actions/download-artifact@v4
+        with:
+          name: Release builds
+      - name: Download non-portable zips
+        uses: actions/download-artifact@v4
+        with:
+          name: Non-portable builds
+          path: non-portable/
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: packages/
+      - name: Download resources
+        uses: actions/download-artifact@v4
+        with:
+          name: resources
+      - name: Deploy onto itch.io
+        continue-on-error: true
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          curl -Lo butler.zip \
+            https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip -d butler
+          chmod +x butler/butler
+          sudo mv butler/butler /usr/local/bin/
+          rm -rf butler butler.zip
+          branch_name="${{ needs.metadata.outputs.branch-name }}"
+          full_name="${{ needs.metadata.outputs.full-name }}"
+          cp Web.zip $full_name.zip
+          butler push $full_name.zip johnnycena123/$branch_name:web
+          cp Windows.zip $full_name.zip
+          butler push $full_name.zip johnnycena123/$branch_name:windows-portable
+          butler push $full_name.msi johnnycena123/$branch_name:windows-msi
+          cp MacOS.tar.gz $full_name.tar.gz
+          butler push $full_name.tar.gz johnnycena123/$branch_name:mac-portable
+          cp Linux.tar.gz $full_name.tar.gz
+          butler push $full_name.tar.gz johnnycena123/$branch_name:linux-portable
+          butler push $full_name.deb johnnycena123/$branch_name:linux-deb
+          echo "$branch_name" > ./$branch_name/.git-branch*
+          rm -rf ./$branch_name/.git*
+          zip -r $full_name.zip ./$branch_name/
+          butler push $full_name.zip johnnycena123/$branch_name:source-zip
+          tar -czvf $full_name.tar.gz ./$branch_name/
+          butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip
+          rm -f $full_name.{zip,tar.gz}
+        shell: bash
+      - name: Delete tag
+        uses: dev-drprasad/delete-tag-and-release@v1.1
+        if: github.ref_type == 'branch'
+        with:
+          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
+          delete_release: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'branch'
+        with:
+          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
+          name: Development build for ${{ needs.metadata.outputs.branch-name }}
+          body: |
+            Build triggered by commit ${{ github.sha }} on branch ${{ needs.metadata.outputs.branch-name }}.
+            This is a build of the **latest commit**, it is not guaranteed to be stable.
+          draft: false
+          prerelease: true
+          files: |
+            ${{ needs.metadata.outputs.full-name }}.msi
+            ${{ needs.metadata.outputs.full-name }}.deb
+            Windows.zip
+            MacOS.tar.gz
+            Linux.tar.gz
+            non-portable/*.zip
+            non-portable/*.tar.gz
+            packages/*
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release build for ${{ needs.metadata.outputs.branch-name }}
+          body: |
+            TODO: Add release body
+          draft: true
+          prerelease: false
+          files: |
+            ${{ needs.metadata.outputs.full-name }}.msi
+            ${{ needs.metadata.outputs.full-name }}.deb
+            Windows.zip
+            MacOS.tar.gz
+            Linux.tar.gz
+            non-portable/*.zip
+            non-portable/*.tar.gz
+            packages/*

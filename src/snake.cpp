@@ -18,7 +18,7 @@ void Snake::reset() {
 }
 
 Tile Snake::getNextTile() const {
-	auto ret = m_tiles.back();
+	Tile ret = m_tiles.back();
 	switch (m_direction) {
 		case Up:    ret[1]--; break;
 		case Down:  ret[1]++; break;
@@ -35,30 +35,29 @@ Tile Snake::getNextTile() const {
 }
 
 Rectangle Snake::drawTile(int id) const {
-	auto const& tile = m_tiles[id];
-	auto const& originalRec = recFromIndices(tile, GRID);
+	Tile const& tile = m_tiles[id];
+	Rectangle const& originalRec = recFromIndices(tile, GRID);
 	bool willWraparound = false;
 	bool didWraparound = false;
-	auto drawRec = Rectangle{
+	Rectangle drawRec = {
 		originalRec.x + TILE_EDGE_SIZE, originalRec.y + TILE_EDGE_SIZE,
 		USED_TILE_SPACE, USED_TILE_SPACE,
 	}; // just a square in the middle of the tile unless changed later
 	{
 		Direction forwardsDirection = None;
 		if (id < m_tiles.size() - 1) {
-			auto const& nextTile = m_tiles[id + 1];
-			auto const nextDiff = std::array{ nextTile[0] - tile[0], nextTile[1] - tile[1] };
+			Tile const& nextTile = m_tiles[id + 1];
+			Tile const nextDiff = { nextTile[0] - tile[0], nextTile[1] - tile[1] };
 			if (abs(nextDiff[0]) > 1 || abs(nextDiff[1]) > 1) willWraparound = true;
 			forwardsDirection = vecToDirection(nextDiff);
 		}
 		Direction backwardsDirection = None;
 		if (id > 0) { // only the first tile doesnt connect backwards
-			auto const& prevTile = m_tiles[id - 1];
-			auto const prevDiff = std::array{ tile[0] - prevTile[0], tile[1] - prevTile[1] };
+			Tile const& prevTile = m_tiles[id - 1];
+			Tile const prevDiff = { tile[0] - prevTile[0], tile[1] - prevTile[1] };
 			if (abs(prevDiff[0]) > 1 || abs(prevDiff[1]) > 1) didWraparound = true;
 			backwardsDirection = vecToDirection(prevDiff);
 		}
-
 		if (didWraparound) { // it should connect to the border backwards
 			switch (backwardsDirection) {
 				case Down:  drawRec.y      -= TILE_EDGE_SIZE;
@@ -76,16 +75,13 @@ Rectangle Snake::drawTile(int id) const {
 				default: break;
 			}
 		}
-
 		static Color constexpr MAIN_SNAKE_COLOR = { 0, 70, 145, 255 };
 		DrawRectangleRec(drawRec, MAIN_SNAKE_COLOR);
-
 		TraceLog(LOG_DEBUG, "");
 		TraceLog(LOG_DEBUG, "Tile %i: (%i, %i)", id, tile[0], tile[1]);
 		TraceLog(LOG_DEBUG, "\t\tForwards direction:   %s", id < m_tiles.size() - 1 ? directionToString(forwardsDirection).c_str() : "undefined");
 		TraceLog(LOG_DEBUG, "\t\tBackwards direction:  %s", id > 0 ? directionToString(backwardsDirection).c_str() : "undefined");
 		TraceLog(LOG_DEBUG, "\t\tDraw rec: %f, %f, %f, %f", drawRec.x, drawRec.y, drawRec.width, drawRec.height);
-
 		if (willWraparound) { // it should connect to the border forwards
 			Rectangle forwardsRec;
 			switch (forwardsDirection) {
@@ -126,9 +122,9 @@ Rectangle Snake::drawTile(int id) const {
 	return drawRec;
 }
 void Snake::drawHead(int id) const {
-	auto const& head = m_tiles.back();
-	auto gradientRec = drawTile(id);
-	auto const& thirdToLast = m_tiles[id - 2];
+	Tile const& head = m_tiles.back();
+	Rectangle gradientRec = drawTile(id);
+	Tile const& thirdToLast = m_tiles[id - 2];
 	// i tried to add a corner gradient to make it look better but it didnt work so
 	// if the snake just turned then the gradient will be shorter so that it wont look cut off
 	if (head[0] == thirdToLast[0] || head[1] == thirdToLast[1]) {
@@ -148,16 +144,14 @@ void Snake::drawHead(int id) const {
 		case Right: DrawRectangleGradientEx(gradientRec, BLANK, BLANK, GRADIENT_COLOR, GRADIENT_COLOR); break;
 		default: break;
 	}
-
 }
 void Snake::draw() const {
-	auto const& head = m_tiles.back();
+	Tile const& head = m_tiles.back();
 	for (size_t i = 0; i < m_tiles.size(); i++) {
 		if (i != m_tiles.size() - 1) (void)drawTile(i);
 		else drawHead(i);
-
-		auto originalRect = recFromIndices(m_tiles[i], GRID);
-		auto textSize = MeasureTextEx(
+		Rectangle originalRect = recFromIndices(m_tiles[i], GRID);
+		Vector2 textSize = MeasureTextEx(
 			GetFontDefault(),
 			TextFormat("%i", i), 25.f, 2.5f
 		);

@@ -1,0 +1,279 @@
+name: Build raylib project
+on:
+  workflow_call:
+    inputs:
+      os:
+        type: string
+        required: true
+        description: Runner OS
+      compiler:
+        type: string
+        required: true
+        default: clang
+        description: Compiler to use for the build process
+      generator:
+        type: string
+        required: true
+        default: Ninja
+        description: CMake Generator
+      pch:
+        type: boolean
+        required: true
+        default: true
+        description: Whether or not the project headers should be precompiled
+      build-type:
+        type: string
+        required: true
+        default: Release
+        description: CMake build type
+      upload-outputs:
+        type: boolean
+        required: true
+        default: false
+        description: Whether or not the build outputs will be uploaded as artifacts
+      portable:
+        type: boolean
+        required: true
+        default: false
+        description: Whether or not the result will be a portable application
+      package:
+        type: boolean
+        required: true
+        default: false
+        description: Whether or not packaged binaries will be uploaded
+  workflow_dispatch:
+    inputs:
+      os:
+        type: string
+        required: true
+        description: Runner OS
+      compiler:
+        type: string
+        required: true
+        default: clang
+        description: Compiler
+      generator:
+        type: string
+        required: true
+        default: Ninja
+        description: CMake Generator
+      pch:
+        type: boolean
+        required: true
+        default: true
+        description: Precompile headers
+      build-type:
+        type: string
+        required: true
+        default: Release
+        description: CMake build type
+      upload-outputs:
+        type: boolean
+        required: true
+        default: false
+        description: Upload build outputs
+      portable:
+        type: boolean
+        required: true
+        default: false
+        description: Build portable application
+      package:
+        type: boolean
+        required: true
+        default: false
+        description: Build and upload packages
+jobs:
+  build:
+    runs-on: ${{ inputs.os }}
+    steps:
+      - name: Validate inputs and generate build data
+        id: build-data
+        run: |
+          os="${{ inputs.os }}"
+          compiler="${{ inputs.compiler }}"
+          generator="${{ inputs.generator }}"
+          case "$compiler" in
+            cl)
+              cmake_args="-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl"
+              ;;
+            clang)
+              cmake_args="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+              ;;
+            gcc)
+              cmake_args="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+              ;;
+            *)
+              echo "Unknown compiler: $compiler" >&2
+              exit 2
+              ;;
+          esac
+          case "$generator" in
+            "Visual Studio 15 2017" | \
+            "Visual Studio 16 2019" | \
+            "Visual Studio 17 2022")
+              if [ "$compiler" != "cl" ]; then
+                echo "Expected cl compiler for a Visual Studio generator." >&2
+                exit 2
+              fi
+              case "$os" in
+                windows-*) ;;
+                *)
+                  echo "Expected Windows for a Visual Studio generator." >&2
+                  exit 2
+                  ;;
+              esac
+              cmake_args="$cmake_args -G \"$generator\""
+              id="win-MSVC"
+              ;;
+            "Xcode")
+              case "$compiler" in
+                clang) ;;
+                *)
+                  echo "Expected clang for Xcode generator." >&2
+                  exit 2
+                ;;
+              esac
+              case "$os" in
+                macos-*) ;;
+                *)
+                  echo "Expected MacOS for Xcode generator." >&2
+                  exit 2
+                  ;;
+              esac
+              cmake_args="$cmake_args -G \"$generator\""
+              id="mac-Xcode"
+              ;;
+            "Ninja")
+              case "$compiler" in
+                clang|gcc) ;;
+                *)
+                  echo "Expected clang or gcc for Ninja." >&2
+                  exit 2
+                ;;
+              esac
+              cmake_args="$cmake_args -G \"$generator\""
+              case "$os" in
+                windows-*) id="win-Ninja" ;;
+                macos-*) id="mac-Ninja" ;;
+                ubuntu-*) id="linux-Ninja" ;;
+              esac
+              ;;
+            "MinGW Makefiles")
+              case "$compiler" in
+                clang|gcc) ;;
+                *)
+                  echo "Expected clang or gcc for MinGW Makefiles." >&2
+                  exit 2
+                ;;
+              esac
+              case "$os" in
+                windows-*) ;;
+                *)
+                  echo "Expected Windows for MinGW Makefiles." >&2
+                  exit 2
+                  ;;
+              esac
+              cmake_args="$cmake_args -G \"$generator\""
+              id="win-MinGW"
+              ;;
+            "Unix Makefiles")
+              case "$compiler" in
+                clang|gcc) ;;
+                *)
+                  echo "Expected clang or gcc for Unix Makefiles." >&2
+                  exit 2
+                ;;
+              esac
+              case "$os" in
+                macos-*) id="mac-Makefiles" ;;
+                ubuntu-*) id="linux-Makefiles" ;;
+                *)
+                  echo "Expected Linux or MacOS for Unix Makefiles." >&2
+                  exit 2
+                  ;;
+              esac
+              cmake_args="$cmake_args -G \"$generator\""
+              ;;
+            *)
+              echo "Unexpected generator: \"$generator\"" >&2
+              exit 2
+              ;;
+          esac
+          if [ ! "${{ inputs.pch }}" == "true" ]; then
+            cmake_args="$cmake_args -DUSE_PRECOMPILED_HEADERS=OFF"
+          fi
+          if [ "${{ inputs.portable }}" == "true" ]; then
+            cmake_args="$cmake_args -DBUILD_PORTABLE_APPLICATION=ON"
+            id="$id-portable"
+          fi
+          echo "cmake-args=$cmake_args" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+        shell: bash
+      - uses: actions/checkout@v4
+      - name: windows
+        env:
+          REPO_PATH: ${{ github.workspace }}
+        run: |
+          echo "REPO_PATH=$REPO_PATH" >> $GITHUB_ENV
+        shell: bash
+      - name: Install Latest LLVM on Windows
+        if: inputs.compiler == 'clang' && startsWith(inputs.os, 'windows-')
+        run: |
+          curl -Lo llvm.exe "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-win64.exe"
+          7z x llvm.exe -o"C:/Program Files/Latest LLVM"
+          echo "C:/Program Files/Latest LLVM/bin" >> $env:GITHUB_PATH
+        shell: bash
+      - name: Install Linux dependencies
+        if: startsWith(inputs.os, 'ubuntu-')
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev
+        shell: bash
+      - name: Configure CMake
+        run: |
+          cd $REPO_PATH
+          cmake -S. -Bbuild ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+        shell: bash
+      - name: Build
+        run: |
+          cd $REPO_PATH
+          cmake --build $REPO_PATH/build --config ${{ inputs.build-type }}
+        shell: bash
+      - name: Upload Build outputs
+        uses: actions/upload-artifact@v4
+        if: inputs.upload-outputs
+        with:
+          name: build-${{ steps.build-data.outputs.id }}-${{ inputs.build-type }}
+          path: ${{ github.workspace }}/bin/*
+      - name: Install NSIS for Windows
+        if: inputs.package && startsWith(inputs.os, 'windows-')
+        run: |
+          curl -Lo nsis.exe "https://prdownloads.sourceforge.net/nsis/nsis-3.09-setup.exe"
+          7z x nsis.exe -o"C:/Program Files/NSIS"
+          echo "C:/Program Files/NSIS/" >> $GITHUB_PATH
+          "C:/Program Files/NSIS/makensis.exe" -version
+        shell: bash
+      - name: Build packages with CPack
+        continue-on-error: true
+        if: inputs.package
+        run: |
+          cd $REPO_PATH
+          mkdir packages
+          cp build/{CPackConfig,CPackSourceConfig}.cmake packages
+          cd packages
+          onFail() {
+            echo;echo;echo;echo "NSIS Log:"
+            cat $REPO_PATH/packages/_CPack_Packages/win64/NSIS/NSISOutput.log || echo "Not found"
+            echo;echo;echo;echo "NSIS Script:"
+            cat $REPO_PATH/packages/_CPack_Packages/win64/NSIS/project.nsi || echo "Not found"
+            echo;echo;echo;echo "Repo contents:"
+            ls -R "$REPO_PATH"
+          }
+          cpack || onFail
+          rm -rf _CPack_Packages {CPackConfig,CPackSourceConfig}.cmake
+          cd ..
+        shell: bash
+      - name: Upload Packages
+        uses: actions/upload-artifact@v4
+        if: inputs.package
+        with:
+          name: packages-${{ inputs.os }}
+          path: ${{ github.workspace }}/packages/*

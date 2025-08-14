@@ -1,0 +1,103 @@
+name: Test build
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+    tags:
+      - '**'
+    paths:
+      - '.github/workflows/ci-test.yml'
+      - 'src/'
+      - 'cmake/'
+      - 'CMakeLists.txt'
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'windows-2025', 'macos-15', 'ubuntu-24.04' ]
+        compiler: [ 'cl', 'clang', 'gcc' ]
+        generator: [ 'Visual Studio 17 2022', 'MinGW Makefiles', 'Xcode', 'Ninja', 'Unix Makefiles' ]
+        pch: [ false ]
+        build-type: [ 'Release' ]
+        upload-outputs: [ false ]
+        portable: [ true ]
+        package: [ false ]
+        exclude:
+          - os: 'windows-2025'
+            generator: 'Xcode'
+          - os: 'windows-2025'
+            generator: 'Unix Makefiles'
+          - os: 'macos-15'
+            generator: 'Visual Studio 17 2022'
+          - os: 'macos-15'
+            generator: 'MinGW Makefiles'
+          - os: 'ubuntu-24.04'
+            generator: 'Visual Studio 17 2022'
+          - os: 'ubuntu-24.04'
+            generator: 'Xcode'
+          - os: 'ubuntu-24.04'
+            generator: 'MinGW Makefiles'
+          - os: 'windows-2025'
+            generator: 'Visual Studio 17 2022'
+            compiler: 'clang'
+          - os: 'windows-2025'
+            generator: 'Visual Studio 17 2022'
+            compiler: 'gcc'
+          - os: 'windows-2025'
+            generator: 'MinGW Makefiles'
+            compiler: 'cl'
+          - os: 'windows-2025'
+            generator: 'Ninja'
+            compiler: 'cl'
+          - os: 'macos-15'
+            compiler: 'cl'
+          - os: 'macos-15'
+            generator: 'Xcode'
+            compiler: 'gcc'
+          - os: 'ubuntu-24.04'
+            compiler: 'cl'
+    name: >
+      ${{ matrix.portable && 'Portable' || 'Non-portable' }}
+      ${{ matrix.build-type }} build
+      for ${{ matrix.os }}
+      with ${{ matrix.generator }}
+      and ${{ matrix.compiler }},
+      ${{ matrix.pch && 'with' || 'without' }} pch
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ${{ matrix.os }}
+      compiler: ${{ matrix.compiler }}
+      generator: ${{ matrix.generator }}
+      pch: ${{ matrix.pch }}
+      build-type: ${{ matrix.build-type }}
+      upload-outputs: ${{ matrix.upload-outputs }}
+      portable: ${{ matrix.portable }}
+      package: ${{ matrix.package }}
+  build-web:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        imgui: [ 'OFF', 'ON' ]
+        build-type: [ 'RelWithDebInfo', 'Release' ]
+    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }} - ${{ matrix.build-type }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.12
+          actions-cache-folder: 'emsdk-cache'
+      - name: Build
+        run: |
+          emcmake cmake \
+            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
+            -DPLATFORM=Web -Wno-dev -G Ninja
+          cmake --build "${{ github.workspace }}/build"
+        shell: bash
+  ### TODO: add more platofmrs, e.g. android
