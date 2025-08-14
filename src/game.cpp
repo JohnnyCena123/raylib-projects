@@ -22,7 +22,7 @@ Game::Game() :
 	m_screenSize(DEFAULT_SCREEN_SIZE), m_resourceManager(*this),
 	m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED), m_speed(m_startSpeed),
 	m_timeSinceStep(0.f), m_hasLost(false), m_isPaused(false), m_shouldRestart(false),
-	m_restartButtonHovered(false), m_restartButtonHeld(false), m_isSaveDirty(false),
+	m_restartButtonHeld(false), m_isSaveDirty(false),
 	m_inputQueue(), m_snake(SNAKE_START_LENGTH, *this), m_apples(),
 	m_saveData(0)
 { /* cant call init() here, handleCli() needs to be called first */ }
@@ -212,7 +212,6 @@ void Game::reset() {
 	m_hasLost
 		= m_isPaused
 		= m_shouldRestart
-		= m_restartButtonHovered
 		= m_restartButtonHeld
 		= false;
 	while (!m_inputQueue.empty()) m_inputQueue.pop(); // if only std::queue::clear() existed...
@@ -237,7 +236,8 @@ bool Game::run() {
 			static_cast<float>(GetScreenHeight())
 		};
 		float resizeRatio = std::min(
-o			m_screenSize.y / DEFAULT_SCREEN_SIZE.y
+			m_screenSize.x / DEFAULT_SCREEN_SIZE.x,
+			m_screenSize.y / DEFAULT_SCREEN_SIZE.y
 		);
 		bool hasStepped = false;
 		hasStepped |= update();
@@ -382,17 +382,11 @@ bool Game::update() {
 	}
 IMGUI_ONLY(void Game::debugGUI() {
 	ImGui::Begin("Debug Window");
-	if (m_shouldRestart) ImGui::Text(
-		"restarting in the next frame lol"
-		"\nhow are you reading this its too long to be read in 1/60 of a second"
-		"\nunless youre reading the code, in which case... yeah...\n"
-	);
-	Direction currentDirection = directionToString(m_snake.m_direction);
+	std::string currentDirection = directionToString(m_snake.m_direction);
 	ImGui::Text("Current direction: %s", currentDirection.c_str());
 	ImGui::Text("Step count: %i", m_stepCount);
 	ImGui::Text("Time since step: %f", m_timeSinceStep);
 	if (m_isSaveDirty) ImGui::Text("Save is dirty.");
-	if (m_restartButtonHovered) ImGui::Text("Restart button is hovered.");
 	if (m_restartButtonHeld) ImGui::Text("Restart button is held.");
 	ImGui::NewLine();
 	ImGui::Checkbox("Pause game", &m_isPaused);
@@ -465,14 +459,16 @@ void Game::handleRestartButton(float resizeRatio) {
 			// here too
 			}, RESTART_BUTTON_INFO.radius * resizeRatio
 		)) {
-			if (IsMouseButtonReleased(0) && m_restartButtonHeld) m_shouldRestart = true;
-			m_restartButtonHovered = true;
+			DrawCircleLinesV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius - 1.5f, RAYWHITE);
 			if (IsMouseButtonDown(0)) {
 				m_restartButtonHeld = true;
 				DrawCircleV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius, {.a = 70});
-			} else m_restartButtonHeld = false;
-			DrawCircleLinesV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius - 1.5f, RAYWHITE);
-		} else {
+			} else if (m_restartButtonHeld) m_shouldRestart = true;
+		} else if (IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_ENTER)) {
+			m_restartButtonHeld = true;
+			DrawCircleV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius, {.a = 70});
+		} else if ((IsKeyReleased(KEY_SPACE) || IsKeyReleased(KEY_ENTER)) && m_restartButtonHeld) m_shouldRestart = true;
+		else {
 			m_restartButtonHeld = false;
 			DrawTextureV(restartBtn, RESTART_BUTTON_INFO.origin, WHITE);
 		}

@@ -57,7 +57,6 @@ DESKTOP_ONLY(
 	bool m_hasLost;
 	bool m_isPaused;
 	bool m_shouldRestart;
-	bool m_restartButtonHovered;
 	bool m_restartButtonHeld;
 	bool m_isSaveDirty;
 	std::queue<Direction> m_inputQueue;
