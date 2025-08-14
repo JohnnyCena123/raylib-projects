@@ -239,8 +239,7 @@ bool Game::run() {
 			m_screenSize.x / DEFAULT_SCREEN_SIZE.x,
 			m_screenSize.y / DEFAULT_SCREEN_SIZE.y
 		);
-		bool hasStepped = false;
-		hasStepped |= update();
+		update();
 		BeginTextureMode(m_screen); {
 			ClearBackground(BLANK);
 			draw();
@@ -309,7 +308,7 @@ void Game::step() {
 	if (pop) m_snake.m_tiles.pop_front();
 }
 
-bool Game::update() {
+void Game::update() {
 	auto processInput = [&](Direction direction) {
 		if (m_inputQueue.size() > 5) return;
 		bool changeDirection = false;
@@ -364,14 +363,10 @@ bool Game::update() {
 				if (m_hasLost) {
 					while (!m_inputQueue.empty()) m_inputQueue.pop();
 					m_snake.m_direction = prev;
-				} else {
-					step();
-					return true;
-				}
+				} else step();
 			}
 		}
 	}
-	return false;
 }
 
 #define DIRECTION_BUTTON(_direction)                                                          \

@@ -72,9 +72,7 @@ DESKTOP_ONLY(
 	void checkDeath();
 	void advanceScore();
 	void step();
-	// returns: true - did step, false - did not
-	bool update();
-	// same here
+	void update();
 	void handleRestartButton(float resizeRatio);
 	void draw() const;
 IMGUI_ONLY(
