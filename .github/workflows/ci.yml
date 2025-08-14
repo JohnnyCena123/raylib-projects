@@ -272,7 +272,7 @@ jobs:
         id: organize
         run: |
           rm -rf "Debian package" "Windows installer" "WebAssembly build"
-          cp build-win-MSVC-portable-Release/resources .
+          cp -rf build-win-MSVC-portable-Release/resources .
           zip -r ./resources.zip ./resources/
           for config in Release RelWithDebInfo; do
             mkdir $config
