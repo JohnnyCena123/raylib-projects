@@ -94,15 +94,15 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			if (!printRepository) {
 				if (minimalOutput) {
 					if (printVersion) std::cout << PROJECT_VERSION "\n";
-					else if ( printDescription) std::cout << "Template project for raylib apps\n";
+					else if ( printDescription) std::cout << "Snake game made with raylib\n";
 					return 0;
 				}
 				std::cout << PROJECT_NAME " version " PROJECT_VERSION ".\n";
 				if (!noMetadata) std::cout << buildMetadata << "\n";
 				if (printDescription) {
 					std::cout <<
-						"'" PROJECT_NAME "' is a template project. it is used to easily create\n"
-						"and start new projects using raylib. it is not a full game or app.\n";
+						"'" PROJECT_NAME "' is a simple Snake inspired game made using raylib.\n"
+						"The only goal for it is to have fun!";
 				}
 			}
 			if (minimalOutput) {
