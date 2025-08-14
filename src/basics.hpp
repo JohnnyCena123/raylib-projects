@@ -10,7 +10,7 @@ using Tile = std::array<int, 2>;
 using Apple = Tile;
 using Direction = enum { None = 0, Up = 1, Down = 2, Left = 3, Right = 4 };
 inline Tile constexpr START_POS = { 12, 10 };
-inline size_t constexpr GRID_SIZE = 21;
+inline int constexpr GRID_SIZE = 21;
 inline size_t constexpr NEW_APPLE_INTERVAL = 10;
 inline size_t constexpr SNAKE_START_LENGTH = 3;
 inline float constexpr SNAKE_START_SPEED = 15.f;
