@@ -75,7 +75,7 @@ DESKTOP_ONLY(
 	void advanceScore();
 	void step();
 	void update();
-	void handleRestartButton(float resizeRatio);
+	void handleButtons(float resizeRatio);
 	void draw() const;
 IMGUI_ONLY(
 	void debugGUI();

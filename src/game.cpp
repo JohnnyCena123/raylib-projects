@@ -239,7 +239,7 @@ bool Game::run() {
 		BeginTextureMode(m_screen); {
 			ClearBackground(BLANK);
 			draw();
-			handleRestartButton(resizeRatio);
+			handleButtons(resizeRatio);
 		} EndTextureMode();
 		BeginDrawing(); {
 			Vector2 const actualScreenSize = DEFAULT_SCREEN_SIZE * resizeRatio;
@@ -434,7 +434,7 @@ IMGUI_ONLY(void Game::debugGUI() {
 	ImGui::End();
 })
 
-void Game::handleRestartButton(float resizeRatio) {
+void Game::handleButtons(float resizeRatio) {
 	static Texture2D const restartBtn = [&] {
 		Image image = GenImageColor(2 * RESTART_BUTTON_SIZE, 2 * RESTART_BUTTON_SIZE, BLANK);
 		ImageDrawCircleV(&image, { RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE }, RESTART_BUTTON_SIZE, RESTART_BUTTON_OUTER_COLOR);
@@ -482,6 +482,69 @@ void Game::handleRestartButton(float resizeRatio) {
 				DrawTextureV(restartBtn, RESTART_BUTTON_INFO.origin, WHITE);
 			}
 		}
+	}
+	{
+		static Color constexpr COLOR = { 32, 32, 32, 255 };
+		static Texture2D const speaker = [&] {
+			RenderTexture2D rt = LoadRenderTexture(35, 50);
+			BeginTextureMode(rt); {
+				DrawRectangleRounded({ 0.f, 12.5f, 20.f, 25.f }, .3f, 5, COLOR);
+				DrawTriangle(
+					{ 10.f, 25.f },
+					{ 35.f, 48.f },
+					{ 35.f, 2.f },
+				COLOR);
+			} EndTextureMode();
+			Image temp = LoadImageFromTexture(rt.texture);
+			ImageFlipVertical(&temp);
+			Texture2D ret = LoadTextureFromImage(temp);
+			UnloadRenderTexture(rt);
+			UnloadImage(temp);
+			return ret;
+		}();
+		static Texture2D const speakerOutline = [&] {
+			RenderTexture2D rt = LoadRenderTexture(40, 50);
+			BeginTextureMode(rt); {
+				DrawRectangleRoundedLines({ 0.f, 12.5f, 22.f, 25.f }, .3f, 5, RAYWHITE);
+				DrawTriangleLines(
+					{ 9.f, 25.f },
+					{ 36.f, 48.5f },
+					{ 36.f, 1.5f },
+				RAYWHITE);
+			} EndTextureMode();
+			Image temp = LoadImageFromTexture(rt.texture);
+			ImageFlipVertical(&temp);
+			Texture2D ret = LoadTextureFromImage(temp);
+			UnloadRenderTexture(rt);
+			UnloadImage(temp);
+			return ret;
+		}();
+		if (CheckCollisionPointRec(GetMousePosition(), {
+			FREE_SPACE + 45.f, 0.f,
+			static_cast<float>(speaker.width), static_cast<float>(speaker.height)
+		})) {
+			DrawTextureV(speakerOutline, { FREE_SPACE + 44.f, 0.f }, WHITE);
+			SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
+			if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) m_muted ^= true;
+		} else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+		DrawTextureV(speaker, { FREE_SPACE + 45.f, 0.f }, WHITE);
+		
+		static Texture2D const soundWaves = [&] {
+			RenderTexture2D rt = LoadRenderTexture(25, 50);
+			BeginTextureMode(rt); {
+				DrawRing({ 0.f, 25.f }, 10.f, 15.f, -60.f, 60.f, 10, COLOR);
+				DrawRing({ 0.f, 25.f }, 20.f, 25.f, -50.f, 50.f, 10, COLOR);
+			} EndTextureMode();
+			Image temp = LoadImageFromTexture(rt.texture);
+			ImageFlipVertical(&temp);
+			Texture2D ret = LoadTextureFromImage(temp);
+			UnloadRenderTexture(rt);
+			UnloadImage(temp);
+			return ret;
+		}();
+		if (m_muted) DrawLineEx({ FREE_SPACE + 50.f, 5.f }, { FREE_SPACE + 90.f, 45.f }, 5.f, BLACK);
+		else DrawTextureV(soundWaves, { FREE_SPACE + 78.f, 0.f }, WHITE);
+		DrawTextEx(GetFontDefault(), "M", { FREE_SPACE + 5.f, 5.f }, 45.f, 1e20, BLACK);
 	}
 }
 
@@ -593,43 +656,6 @@ void Game::drawOverlay() const {
 			90.f,  1.f,
 			(IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) && !m_hasLost ? BLACK : Color{.a = 70}
 		);
-	}
-	{
-		static Color constexpr COLOR = { 32, 32, 32, 255 };
-		static Texture2D const speaker = [&] {
-			RenderTexture2D rt = LoadRenderTexture(35, 50);
-			BeginTextureMode(rt); {
-				DrawRectangleRounded({ 0.f, 12.5f, 20.f, 25.f }, .3f, 5, COLOR);
-				DrawTriangle(
-					{ 10.f, 25.f },
-					{ 35.f, 48.f },
-					{ 35.f, 2.f },
-				COLOR);
-			} EndTextureMode();
-			Image temp = LoadImageFromTexture(rt.texture);
-			ImageFlipVertical(&temp);
-			Texture2D ret = LoadTextureFromImage(temp);
-			UnloadRenderTexture(rt);
-			UnloadImage(temp);
-			return ret;
-		}();
-		static Texture2D const soundWaves = [&] {
-			RenderTexture2D rt = LoadRenderTexture(25, 50);
-			BeginTextureMode(rt); {
-				DrawRing({ 0.f, 25.f }, 10.f, 15.f, -60.f, 60.f, 10, COLOR);
-				DrawRing({ 0.f, 25.f }, 20.f, 25.f, -50.f, 50.f, 10, COLOR);
-			} EndTextureMode();
-			Image temp = LoadImageFromTexture(rt.texture);
-			ImageFlipVertical(&temp);
-			Texture2D ret = LoadTextureFromImage(temp);
-			UnloadRenderTexture(rt);
-			UnloadImage(temp);
-			return ret;
-		}();
-		DrawTextureV(speaker, { FREE_SPACE + 45.f, 0.f }, WHITE);
-		if (m_muted) DrawLineEx({ FREE_SPACE + 50.f, 5.f }, { FREE_SPACE + 90.f, 45.f }, 5.f, BLACK);
-		else DrawTextureV(soundWaves, { FREE_SPACE + 78.f, 0.f }, WHITE);
-		DrawTextEx(GetFontDefault(), "M", { FREE_SPACE + 5.f, 5.f }, 45.f, 1e20, BLACK);
 	}
 }
 void Game::deinit() {
