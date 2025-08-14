@@ -2,7 +2,6 @@
 #include <raylib.h>
 #include <string>
 #include "game.hpp"
-#include "imgui.h"
 #include "resource-manager.hpp"
 #include "utils.hpp"
 #include "save-data.hpp"
