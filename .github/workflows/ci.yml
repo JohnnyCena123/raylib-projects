@@ -8,11 +8,11 @@ on:
       - '**'
     paths:
       - '.github/workflows/ci.yml'
-      - '.github/scripts'
-      - 'src/'
-      - 'cmake/'
+      - '.github/scripts/**'
+      - 'src/**'
+      - 'cmake/**'
       - 'CMakeLists.txt'
-      - 'resources'
+      - 'resources/**'
       - 'icon.rc'
 jobs:
   build-desktop:
