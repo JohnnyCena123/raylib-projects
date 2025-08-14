@@ -49,6 +49,8 @@ DESKTOP_ONLY(
 	RenderTexture2D m_screen;
 	Music m_bgMusic;
 	ResourceManager m_resourceManager;
+	bool m_muted;
+	float m_masterVolume; 
 	int m_stepCount;
 	int m_score;
 	float m_startSpeed;

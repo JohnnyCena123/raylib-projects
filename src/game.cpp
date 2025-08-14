@@ -2,6 +2,7 @@
 #include <raylib.h>
 #include <string>
 #include "game.hpp"
+#include "imgui.h"
 #include "resource-manager.hpp"
 #include "utils.hpp"
 #include "save-data.hpp"
@@ -9,20 +10,20 @@
 #include "basics.hpp"
 Game::Game() :
 #ifdef PLATFORM_DESKTOP
-		m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
-	#ifdef PORTABLE
-			true
-		#else
-			FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
-		#endif
-		),
+	m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
+#ifdef PORTABLE
+		true
+	#else
+		FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
+	#endif
+	),
 	m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
 	m_hadWarning(false), m_logs(""),
 #endif
-	m_screenSize(DEFAULT_SCREEN_SIZE), m_resourceManager(*this),
-	m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED), m_speed(m_startSpeed),
-	m_timeSinceStep(0.f), m_hasLost(false), m_isPaused(false), m_shouldRestart(false),
-	m_restartButtonHeld(false), m_isSaveDirty(false),
+	m_screenSize(DEFAULT_SCREEN_SIZE), m_resourceManager(*this), m_muted(false),
+	m_masterVolume(.5f), m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED),
+	m_speed(m_startSpeed), m_timeSinceStep(0.f), m_hasLost(false), m_isPaused(false),
+	m_shouldRestart(false), m_restartButtonHeld(false), m_isSaveDirty(false),
 	m_inputQueue(), m_snake(SNAKE_START_LENGTH, *this), m_apples(),
 	m_saveData(0)
 { /* cant call init() here, handleCli() needs to be called first */ }
@@ -226,6 +227,7 @@ bool Game::run() {
 	reset();
 	bool isWindowMaximized = false;
 	while (!WindowShouldClose()) {
+		SetMasterVolume(m_muted ? 0.f : m_masterVolume);
 		UpdateMusicStream(m_bgMusic);
 		if (IsWindowMaximized()) m_screenSize = {
 			static_cast<float>(GetMonitorWidth(GetCurrentMonitor())),
@@ -261,6 +263,7 @@ bool Game::run() {
 				rlImGuiEnd();
 			)
 		EndDrawing();
+		if (IsKeyPressed(KEY_M)) m_muted ^= true;
 		if (IsKeyPressed(KEY_Q)) return false;
 		if (IsKeyPressed(KEY_R) || m_shouldRestart) return true;
 	}
@@ -384,7 +387,10 @@ IMGUI_ONLY(void Game::debugGUI() {
 	if (m_isSaveDirty) ImGui::Text("Save is dirty.");
 	if (m_restartButtonHeld) ImGui::Text("Restart button is held.");
 	ImGui::NewLine();
+	ImGui::Separator();
 	ImGui::Checkbox("Pause game", &m_isPaused);
+	ImGui::Text("Master Volume");
+	ImGui::SliderFloat("##master-volume", &m_masterVolume, 0.f, 5.f);
 	if (ImGui::Button("Step")) {
 		step();
 		checkDeath();
@@ -578,6 +584,43 @@ void Game::drawOverlay() const {
 			90.f,  1.f,
 			(IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) && !m_hasLost ? BLACK : Color{.a = 70}
 		);
+	}
+	{
+		static Color constexpr COLOR = { 32, 32, 32, 255 };
+		static Texture2D const speaker = [&] {
+			RenderTexture2D rt = LoadRenderTexture(35, 50);
+			BeginTextureMode(rt); {
+				DrawRectangleRounded({ 0.f, 12.5f, 20.f, 25.f }, .3f, 5, COLOR);
+				DrawTriangle(
+					{ 10.f, 25.f },
+					{ 35.f, 48.f },
+					{ 35.f, 2.f },
+				COLOR);
+			} EndTextureMode();
+			Image temp = LoadImageFromTexture(rt.texture);
+			ImageFlipVertical(&temp);
+			Texture2D ret = LoadTextureFromImage(temp);
+			UnloadRenderTexture(rt);
+			UnloadImage(temp);
+			return ret;
+		}();
+		static Texture2D const soundWaves = [&] {
+			RenderTexture2D rt = LoadRenderTexture(25, 50);
+			BeginTextureMode(rt); {
+				DrawRing({ 0.f, 25.f }, 10.f, 15.f, -60.f, 60.f, 10, COLOR);
+				DrawRing({ 0.f, 25.f }, 20.f, 25.f, -50.f, 50.f, 10, COLOR);
+			} EndTextureMode();
+			Image temp = LoadImageFromTexture(rt.texture);
+			ImageFlipVertical(&temp);
+			Texture2D ret = LoadTextureFromImage(temp);
+			UnloadRenderTexture(rt);
+			UnloadImage(temp);
+			return ret;
+		}();
+		DrawTextureV(speaker, { FREE_SPACE + 45.f, 0.f }, WHITE);
+		if (m_muted) DrawLineEx({ FREE_SPACE + 50.f, 5.f }, { FREE_SPACE + 90.f, 45.f }, 5.f, BLACK);
+		else DrawTextureV(soundWaves, { FREE_SPACE + 78.f, 0.f }, WHITE);
+		DrawTextEx(GetFontDefault(), "M", { FREE_SPACE + 5.f, 5.f }, 45.f, 1e20, BLACK);
 	}
 }
 void Game::deinit() {
