@@ -227,11 +227,7 @@ bool Game::run() {
 	while (!WindowShouldClose()) {
 		SetMasterVolume(m_muted ? 0.f : m_masterVolume);
 		UpdateMusicStream(m_bgMusic);
-		if (IsWindowMaximized()) m_screenSize = {
-			static_cast<float>(GetMonitorWidth(GetCurrentMonitor())),
-			static_cast<float>(GetMonitorHeight(GetCurrentMonitor()))
-		};
-		else m_screenSize = {
+		m_screenSize = {
 			static_cast<float>(GetScreenWidth()),
 			static_cast<float>(GetScreenHeight())
 		};
