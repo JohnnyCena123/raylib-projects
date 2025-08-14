@@ -383,6 +383,8 @@ IMGUI_ONLY(void Game::debugGUI() {
 	ImGui::Text("Current direction: %s", currentDirection.c_str());
 	ImGui::Text("Step count: %i", m_stepCount);
 	ImGui::Text("Time since step: %f", m_timeSinceStep);
+	ImGui::Text("screen size: %f, %f", m_screenSize.x, m_screenSize.y);
+	ImGui::Text("mouse pos: %f, %f", GetMousePosition().x, GetMousePosition().y);
 	if (m_isSaveDirty) ImGui::Text("Save is dirty.");
 	if (m_restartButtonHeld) ImGui::Text("Restart button is held.");
 	ImGui::NewLine();
