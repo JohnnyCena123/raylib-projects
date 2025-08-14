@@ -241,7 +241,7 @@ bool Game::run() {
 			draw();
 			handleRestartButton(resizeRatio);
 		} EndTextureMode();
-		BeginDrawing();
+		BeginDrawing(); {
 			Vector2 const actualScreenSize = DEFAULT_SCREEN_SIZE * resizeRatio;
 			ClearBackground(BLANK);
 			DrawTexturePro(m_screen.texture,
@@ -256,9 +256,11 @@ bool Game::run() {
 				debugGUI();
 				rlImGuiEnd();
 			)
-		EndDrawing();
-		if (IsKeyPressed(KEY_Q)) return false;
-		if (IsKeyPressed(KEY_R) || m_shouldRestart) return true;
+		} EndDrawing();
+		m_shouldRestart |= IsKeyPressed(KEY_R);
+		bool qPressed = IsKeyPressed(KEY_Q);
+		if (m_shouldRestart) return true;
+		else if (qPressed) return false;
 	}
 	return false;
 }
