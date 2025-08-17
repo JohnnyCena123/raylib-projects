@@ -23,7 +23,6 @@ jobs:
     outputs:
       name: ${{ steps.main.outputs.branch-name }}
     steps:
-      - uses: actions/checkout@v4
       - name: main
         id: main
         run: |
