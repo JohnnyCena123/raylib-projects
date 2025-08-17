@@ -45,7 +45,7 @@ if(PLATFORM_DESKTOP)
 		GIT_TAG master
 	)
 
-	set(LCB_TARGET ${LCB_TARGET} CACHE STRING "Name of libclipboard's target.")
+	set(LCB_TARGET clipboard CACHE STRING "Name of libclipboard's target.")
 	target_include_directories(${LCB_TARGET} PRIVATE "${lcb_BINARY_DIR}/include")
 	set_target_properties(${LCB_TARGET} PROPERTIES
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
