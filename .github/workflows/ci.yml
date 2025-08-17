@@ -19,7 +19,6 @@ on:
 jobs:
   branch:
     name: Get branch name
-    needs: [ 'build-desktop' ]
     runs-on: ubuntu-24.04
     outputs:
       name: ${{ steps.main.outputs.branch-name }}
@@ -156,6 +155,7 @@ jobs:
     outputs:
       version: ${{ steps.main.outputs.version }}
       full-name: ${{ steps.main.outputs.full-name }}
+      suffix: ${{ steps.main.outputs.suffix }}
     steps:
       - uses: actions/checkout@v4
 
@@ -178,10 +178,12 @@ jobs:
 
           if [ "${{ github.ref_type }}" == "branch" ]; then
             echo "full-name=${{ needs.branch.outputs.name }}-$PROJECT_VERSION-dev" >> $GITHUB_OUTPUT
+            echo "suffix=dev"
           elif [ "${{ github.ref_type }}" == "tag" ]; then
             TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
             BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
             echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
+            echo "suffix=stable"
           fi
         shell: bash
 
@@ -202,15 +204,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-win-MSVC-Release
-          path: ${{ needs.metadata.outputs.branch-name }}
+          path: ${{ needs.branch.outputs.name }}
 
       - name: Build installer
         id: build
         run: |
           $msi = "${{ needs.metadata.outputs.full-name }}.msi"
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
-            -SourceDir .\${{ needs.metadata.outputs.branch-name }} `
-            -AppName "${{ needs.metadata.outputs.branch-name }}" `
+            -SourceDir .\${{ needs.branch.outputs.name }} `
+            -AppName "${{ needs.branch.outputs.name }}" `
             -Manufacturer "Johnny Cena" `
             -Version "${{ needs.metadata.outputs.version }}" `
             -OutputMsi "$msi"
@@ -224,7 +226,7 @@ jobs:
             -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' `
             -PassThru
           $proc.WaitForExit(30000)
-          dir "C:\Program Files\${{ needs.metadata.outputs.branch-name }}"
+          dir "C:\Program Files\${{ needs.branch.outputs.name }}"
         shell: pwsh
 
       - name: Upload installer
@@ -248,7 +250,7 @@ jobs:
         id: build
         run: |
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          PACKAGE_NAME=${{ needs.metadata.outputs.branch-name }}
+          PACKAGE_NAME=${{ needs.branch.outputs.name }}
           chmod +x ./$PACKAGE_NAME
           PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output --no-metadata)
           PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description --no-metadata)"
@@ -450,8 +452,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
             -DPLATFORM=Web -Wno-dev -G Ninja
           cmake --build "${{ github.workspace }}/build"
-          ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.metadata.outputs.branch-name }}"
-          mv bin/${{ needs.metadata.outputs.branch-name }}.zip bin/Web.zip
+          ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.branch.outputs.name }}"
+          mv bin/${{ needs.branch.outputs.name }}.zip bin/Web.zip
         shell: bash
 
       - name: Upload output
@@ -469,7 +471,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: ${{ github.workspace }}/${{ needs.metadata.outputs.branch-name }}/
+          path: ${{ github.workspace }}/${{ needs.branch.outputs.name }}/
 
       - name: Download Windows installer
         uses: actions/download-artifact@v4
@@ -520,30 +522,31 @@ jobs:
           sudo mv butler/butler /usr/local/bin/
           rm -rf butler butler.zip
 
-          branch_name="${{ needs.metadata.outputs.branch-name }}"
+          branch_name="${{ needs.branch.outputs.name }}"
           full_name="${{ needs.metadata.outputs.full-name }}"
+          suffix="${{ needs.metadata.outputs.suffix }}"
 
           cp Web.zip $full_name.zip
-          butler push $full_name.zip johnnycena123/$branch_name:web
+          butler push $full_name.zip johnnycena123/$branch_name:web-$suffix
 
           cp Windows.zip $full_name.zip
-          butler push $full_name.zip johnnycena123/$branch_name:windows-portable
-          butler push $full_name.msi johnnycena123/$branch_name:windows-msi
+          butler push $full_name.zip johnnycena123/$branch_name:windows-portable-$suffix
+          butler push $full_name.msi johnnycena123/$branch_name:windows-msi-$suffix
 
           cp MacOS.tar.gz $full_name.tar.gz
-          butler push $full_name.tar.gz johnnycena123/$branch_name:mac-portable
+          butler push $full_name.tar.gz johnnycena123/$branch_name:mac-portable-$suffix
 
           cp Linux.tar.gz $full_name.tar.gz
-          butler push $full_name.tar.gz johnnycena123/$branch_name:linux-portable
+          butler push $full_name.tar.gz johnnycena123/$branch_name:linux-portable-$suffix
           butler push $full_name.deb johnnycena123/$branch_name:linux-deb
 
           cd ./$branch_name
           rm -rf .git*
           echo "$branch_name" > .git-branch
           zip -r ../$full_name.zip *
-          butler push $full_name.zip johnnycena123/$branch_name:source-zip
+          butler push $full_name.zip johnnycena123/$branch_name:source-zip-$suffix
           tar -czvf ../$full_name.tar.gz *
-          butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip
+          butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip-$suffix
 
         shell: bash
 
@@ -551,7 +554,7 @@ jobs:
         uses: dev-drprasad/delete-tag-and-release@v1.1
         if: github.ref_type == 'branch'
         with:
-          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
+          tag_name: nightly-${{ needs.branch.outputs.name }}
           delete_release: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -559,10 +562,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'branch'
         with:
-          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
-          name: Development build for ${{ needs.metadata.outputs.branch-name }}
+          tag_name: nightly-${{ needs.branch.outputs.name }}
+          name: Development build for ${{ needs.branch.outputs.name }}
           body: |
-            Build triggered by commit ${{ github.sha }} on branch ${{ needs.metadata.outputs.branch-name }}.
+            Build triggered by commit ${{ github.sha }} on branch ${{ needs.branch.outputs.name }}.
             This is a build of the **latest commit**, it is not guaranteed to be stable.
           draft: false
           prerelease: true
@@ -581,7 +584,7 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           tag_name: ${{ github.ref_name }}
-          name: Release build for ${{ needs.metadata.outputs.branch-name }}
+          name: Release build for ${{ needs.branch.outputs.name }}
           body: |
             TODO: Add release body
           draft: true
