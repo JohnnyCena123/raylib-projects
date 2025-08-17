@@ -30,6 +30,7 @@ jobs:
           echo "branch-name=${ref%%-v[0-9].[0-9].[0-9]*}" >> $GITHUB_OUTPUT
 
   build-desktop:
+    needs: [ 'branch' ]
     strategy:
       fail-fast: false
       matrix:
@@ -181,7 +182,7 @@ jobs:
 
   win-msi:
     name: Build Windows installer
-    needs: [ 'build-desktop', 'metadata' ]
+    needs: [ 'branch', 'build-desktop', 'metadata' ]
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
@@ -229,7 +230,7 @@ jobs:
 
   linux-deb:
     name: Build Debian package
-    needs: [ 'metadata', 'build-desktop' ]
+    needs: [ 'branch', 'metadata', 'build-desktop' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download build output
@@ -313,7 +314,7 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-24.04
-    needs: [ linux-deb, win-msi ]
+    needs: [ 'win-msh', 'linux-deb' ]
     permissions:
       contents: write
 
@@ -425,7 +426,7 @@ jobs:
       matrix:
         imgui: [ 'OFF', 'ON' ]
     name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
-    needs: [ 'metadata' ]
+    needs: [ 'branch', 'metadata' ]
     steps:
       - uses: actions/checkout@v4
 
