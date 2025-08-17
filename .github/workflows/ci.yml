@@ -24,13 +24,6 @@ jobs:
       name: ${{ steps.main.outputs.branch-name }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: build-linux-Makefiles-Release
-          path: ${{ github.workspace }}/output
-
       - name: main
         id: main
         run: |
