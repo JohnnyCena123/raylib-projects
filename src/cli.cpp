@@ -12,7 +12,7 @@
 #define ERROR_MSG argv[0] << ": \033[1;31merror:\033[0m "
 #define HELP_SUGGESTION "use \033[1;33m" << argv[0] << " --help\033[0m for more info." << std::endl
 
-void Game::handleCli(int argc, char* argv[]) {
+std::optional<int> Game::handleCli(int argc, char* argv[]) {
 
 	if (argc > 1) {
 		bool hasError = false;
@@ -94,14 +94,14 @@ void Game::handleCli(int argc, char* argv[]) {
 			}
 		}
 
-		if (hasError) exit(2);
+		if (hasError) return 2;
 
 		if (printRepository || printDescription || printVersion) {
 			if (!printRepository) {
 				if (minimalOutput) {
 					if (printVersion) std::cout << PROJECT_VERSION "\n";
 					else if ( printDescription) std::cout << "Template project for raylib apps\n";
-					exit(0);
+					return 0;
 				}
 				std::cout << PROJECT_NAME " version " PROJECT_VERSION ".\n";
 				if (!noMetadata) std::cout << buildMetadata << "\n";
@@ -113,14 +113,14 @@ void Game::handleCli(int argc, char* argv[]) {
 			}
 			if (minimalOutput) {
 				std::cout << PROJECT_HOMEPAGE_URL << '\n';
-				exit(0);
+				return 0;
 			}
 			std::cout << "The source code for '" PROJECT_NAME "' can be found in \033[1;33m"
 				<< PROJECT_HOMEPAGE_URL << "\033[0m.\n";
 			std::cout <<
 				"This project is licensed under the LGPLv3.0 license - "
 				"see \033[1;33m" << PROJECT_HOMEPAGE_URL << "/LICENSE\033[0m for more details.\n";
-			exit(0);
+			return 0;
 		} else if (printHelp) {
 			std::cout << "Usage: \033[1;33m" << argv[0] << "\033[0m <options>\n"
 				"        --no-metadata       --  dont print build metadata (build date & time, compiler, etc.)\n"
@@ -134,18 +134,18 @@ void Game::handleCli(int argc, char* argv[]) {
 				"    -u, --usage             --  same as --help.\n"
 				"    -d, --description       --  prints a general description of this app.\n"
 				"    -r, --repo              --  provides a link to the GitHub repository of the project.\n"
-				"        --resource-dir=DIR  --  sets a custom directory to use for save data. includes log files.\n"
-				"        --save-dir=DIR      --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
+				"        --resource-dir=DIR  --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
+				"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n"
 				"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
 				"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n";
-			exit(0);
+			return 0;
 		}
 
 		if (altSaveDir) {
 			if (!DirectoryExists(altSaveDir->string().c_str())) {
 				if (!MakeDirectory(altSaveDir->string().c_str())) {
 					std::cerr << ERROR_MSG << "failed to create save directory: " << altSaveDir->string() << ".\n";
-					exit(2);
+					return 2;
 				}
 			}
 			m_saveDir = *altSaveDir;
@@ -161,7 +161,7 @@ void Game::handleCli(int argc, char* argv[]) {
 					"e.g. " << argv[0] << " --log-level=Debug\n"
 					<< HELP_SUGGESTION;
 					
-				exit(2);
+				return 2;
 			}
 			bool invalidLogLevel = false;
 			if (rawLogLevel->size() < 3) invalidLogLevel = true;
@@ -191,7 +191,7 @@ void Game::handleCli(int argc, char* argv[]) {
 			if (invalidLogLevel) {
 				std::cerr << ERROR_MSG << "invalid log level: " << *rawLogLevel << "\n"
 					<< HELP_SUGGESTION;
-				exit(2);
+				return 2;
 			}
 		}
 
@@ -231,15 +231,11 @@ void Game::handleCli(int argc, char* argv[]) {
 
 		if (!_this.m_silent) std::cout << ss.str() << std::endl;
 		_this.m_logs << ss.str() << std::endl;
-		if (logType == LOG_FATAL) {
-			_this.m_traceLogLevel = LOG_NONE;
-			_this.saveLogs();
-			exit(EXIT_FAILURE);
-		}
 	};
 	SetTraceLogCallback(traceLogCallback);
 	// im handling log levels myself
 	SetTraceLogLevel(LOG_ALL);
+	return std::nullopt;
 }
 
 void Game::saveLogs() {
