@@ -65,7 +65,7 @@ jobs:
           - os: 'macos-15'
             generator: 'Xcode'
             compiler: 'gcc'
-            
+
           - os: 'ubuntu-24.04'
             compiler: 'cl'
 
@@ -75,7 +75,7 @@ jobs:
       for ${{ matrix.os }}
       with ${{ matrix.generator }}
       and ${{ matrix.compiler }},
-      ${{ matrix.pch && 'with' || 'without' }} pch 
+      ${{ matrix.pch && 'with' || 'without' }} pch
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
@@ -103,7 +103,7 @@ jobs:
         with:
           version: 4.0.12
           actions-cache-folder: 'emsdk-cache'
-        
+
       - name: Build
         run: |
           emcmake cmake \

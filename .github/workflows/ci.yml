@@ -16,11 +16,32 @@ on:
       - 'resources/**'
       - 'icon.rc'
 jobs:
+  branch:
+    name: Get branch name
+    needs: [ 'build-desktop' ]
+    runs-on: ubuntu-24.04
+    outputs:
+      name: ${{ steps.main.outputs.branch-name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux-Makefiles-Release
+          path: ${{ github.workspace }}/output
+
+      - name: main
+        id: main
+        run: |
+          ref="${{ github.ref_name }}"
+          echo "branch-name=${ref%%-v[0-9].[0-9].[0-9]*}" >> $GITHUB_OUTPUT
+
   build-desktop:
     strategy:
       fail-fast: false
       matrix:
-        id: 
+        id:
           - 'win-portable-Release'
           - 'win-nonportable-Release'
           - 'win-portable-RelWithDebInfo'
@@ -58,7 +79,7 @@ jobs:
             build-type: 'RelWithDebInfo'
             portable: true
             package: false
-            
+
 
           - id: 'mac-portable-Release'
             os: 'macos-15'
@@ -125,14 +146,14 @@ jobs:
       upload-outputs: ${{ matrix.upload-outputs }}
       portable: ${{ matrix.portable }}
       package: ${{ matrix.package }}
+      app-name: ${{ needs.branch.outputs.name }}
 
   metadata:
     name: Generate metadata
-    needs: [ 'build-desktop' ]
+    needs: [ 'branch', 'build-desktop' ]
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.main.outputs.version }}
-      branch-name: ${{ steps.main.outputs.branch-name }}
       full-name: ${{ steps.main.outputs.full-name }}
     steps:
       - uses: actions/checkout@v4
@@ -148,21 +169,21 @@ jobs:
         run: |
           cd output
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          chmod +x ./${{ github.ref_name }}
-          PROJECT_VERSION=$(./${{ github.ref_name }} --version --minimal-output)
+          exe="${{ needs.branch.outputs.name }}"
+          chmod +x "./$exe"
+          PROJECT_VERSION=$("./$exe" --version --minimal-output)
 
           echo "version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
-          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
           if [ "${{ github.ref_type }}" == "branch" ]; then
-            echo "full-name=${{ github.ref_name }}-$PROJECT_VERSION-dev" >> $GITHUB_OUTPUT
+            echo "full-name=${{ needs.branch.outputs.name }}-$PROJECT_VERSION-dev" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref_type }}" == "tag" ]; then
             TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
             BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
             echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
           fi
         shell: bash
-    
+
   win-msi:
     name: Build Windows installer
     needs: [ 'build-desktop', 'metadata' ]
@@ -341,7 +362,7 @@ jobs:
           mv build-*-Release non-portable/
           cd non-portable
             cd build-win-MSVC-Release && zip -r ../Windows-non-portable.zip * && cd .. && rm -rf build-win-MSVC-Release
-            
+
             cd build-mac-Xcode-Release
               ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
               ln -sf libraylib.550.dylib libraylib.dylib
@@ -403,7 +424,7 @@ jobs:
           name: |
             build-*
             packages-*
-  
+
   build-web:
     runs-on: ubuntu-24.04
     strategy:
@@ -420,7 +441,7 @@ jobs:
         with:
           version: 4.0.12
           actions-cache-folder: 'emsdk-cache'
-        
+
       - name: Build
         run: |
           emcmake cmake \
@@ -507,22 +528,22 @@ jobs:
           cp Windows.zip $full_name.zip
           butler push $full_name.zip johnnycena123/$branch_name:windows-portable
           butler push $full_name.msi johnnycena123/$branch_name:windows-msi
-          
+
           cp MacOS.tar.gz $full_name.tar.gz
           butler push $full_name.tar.gz johnnycena123/$branch_name:mac-portable
-          
+
           cp Linux.tar.gz $full_name.tar.gz
           butler push $full_name.tar.gz johnnycena123/$branch_name:linux-portable
           butler push $full_name.deb johnnycena123/$branch_name:linux-deb
-          
-          echo "$branch_name" > ./$branch_name/.git-branch*
-          rm -rf ./$branch_name/.git*
-          zip -r $full_name.zip ./$branch_name/ 
+
+          cd ./$branch_name
+          rm -rf .git*
+          echo "$branch_name" > .git-branch
+          zip -r ../$full_name.zip *
           butler push $full_name.zip johnnycena123/$branch_name:source-zip
-          tar -czvf $full_name.tar.gz ./$branch_name/ 
+          tar -czvf ../$full_name.tar.gz *
           butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip
 
-          rm -f $full_name.{zip,tar.gz}
         shell: bash
 
       - name: Delete tag
@@ -573,3 +594,4 @@ jobs:
             non-portable/*.zip
             non-portable/*.tar.gz
             packages/*
+

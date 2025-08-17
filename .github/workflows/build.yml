@@ -50,6 +50,12 @@ on:
         default: false
         description: Whether or not packaged binaries will be uploaded
 
+      app-name:
+        type: string
+        required: false
+        default: placeholder
+        description: Provides the name of the app, cannot be consistently generated otherwise
+
   workflow_dispatch:
     inputs:
       os:
@@ -99,6 +105,12 @@ on:
         default: false
         description: Build and upload packages
 
+      app-name:
+        type: string
+        required: false
+        default: placeholder
+        description: App name
+
 jobs:
   build:
     runs-on: ${{ inputs.os }}
@@ -114,10 +126,10 @@ jobs:
             cl)
               cmake_args="-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl"
               ;;
-            clang) 
+            clang)
               cmake_args="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
               ;;
-            gcc) 
+            gcc)
               cmake_args="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
               ;;
             *)
@@ -229,6 +241,7 @@ jobs:
           fi
           echo "cmake-args=$cmake_args" >> "$GITHUB_OUTPUT"
           echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "${{ inputs.app-name }}" >> ${{ github.workspace }}/.git-branch
         shell: bash
 
       - uses: actions/checkout@v4
@@ -309,3 +322,4 @@ jobs:
         with:
           name: packages-${{ inputs.os }}
           path: ${{ github.workspace }}/packages/*
+
