@@ -115,6 +115,13 @@ jobs:
   build:
     runs-on: ${{ inputs.os }}
     steps:
+      - name: windows
+        env:
+          REPO_PATH: ${{ github.workspace }}
+        run: |
+          echo "REPO_PATH=$REPO_PATH" >> $GITHUB_ENV
+        shell: bash
+
       - name: Validate inputs and generate build data
         id: build-data
         run: |
@@ -241,17 +248,10 @@ jobs:
           fi
           echo "cmake-args=$cmake_args" >> "$GITHUB_OUTPUT"
           echo "id=$id" >> "$GITHUB_OUTPUT"
-          echo "${{ inputs.app-name }}" >> ${{ github.workspace }}/.git-branch
+          echo "${{ inputs.app-name }}" >> "$REPO_PATH/.git-branch"
         shell: bash
 
       - uses: actions/checkout@v4
-
-      - name: windows
-        env:
-          REPO_PATH: ${{ github.workspace }}
-        run: |
-          echo "REPO_PATH=$REPO_PATH" >> $GITHUB_ENV
-        shell: bash
 
       - name: Install Latest LLVM on Windows
         if: inputs.compiler == 'clang' && startsWith(inputs.os, 'windows-')
