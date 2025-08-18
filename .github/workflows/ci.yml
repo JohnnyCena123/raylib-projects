@@ -123,6 +123,40 @@ jobs:
             portable: true
             package: false
 
+  build-web:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        imgui: [ 'OFF', 'ON' ]
+    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
+    needs: [ 'branch' ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.12
+          actions-cache-folder: 'emsdk-cache'
+
+      - name: Build
+        run: |
+          emcmake cmake \
+            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
+            -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
+            -DPLATFORM=Web -Wno-dev -G Ninja
+          cmake --build "${{ github.workspace }}/build"
+          ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.branch.outputs.name }}"
+          mv bin/${{ needs.branch.outputs.name }}.zip bin/Web.zip
+        shell: bash
+
+      - name: Upload output
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/bin/Web.zip
+          name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
+
     name: >
       ${{ matrix.portable && 'Portable' || 'Non-portable' }}
       ${{ matrix.build-type }} build
@@ -419,40 +453,6 @@ jobs:
           name: |
             build-*
             packages-*
-
-  build-web:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        imgui: [ 'OFF', 'ON' ]
-    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
-    needs: [ 'branch', 'metadata' ]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: 4.0.12
-          actions-cache-folder: 'emsdk-cache'
-
-      - name: Build
-        run: |
-          emcmake cmake \
-            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
-            -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
-            -DPLATFORM=Web -Wno-dev -G Ninja
-          cmake --build "${{ github.workspace }}/build"
-          ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.branch.outputs.name }}"
-          mv bin/${{ needs.branch.outputs.name }}.zip bin/Web.zip
-        shell: bash
-
-      - name: Upload output
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/bin/Web.zip
-          name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
 
   publish:
     name: Publish
