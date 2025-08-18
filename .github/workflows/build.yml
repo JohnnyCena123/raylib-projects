@@ -271,7 +271,7 @@ jobs:
           cmake -S. -Bbuild \
             ${{ steps.build-data.outputs.cmake-args }} \
             -DBUILD_SHARED_LIBS=ON \
-            -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+            -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} \
             -DGIT_BRANCH=${{ inputs.branch-name }}
         shell: bash
       - name: Build
