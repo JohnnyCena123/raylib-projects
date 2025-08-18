@@ -67,7 +67,7 @@ The project can be built as usual like any other CMake project:
 ```bash
 git clone https://github.com/JohnnyCena123/raylib-projects
 cd raylib-projects
-git checkout Snake
+git checkout snake
 cmake -Bbuild -S. <optional flags - see below> -DCMAKE_BUILD_TYPE=<build type>
 cmake --build build --config <build type>
 ```
