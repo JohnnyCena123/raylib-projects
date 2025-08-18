@@ -35,11 +35,8 @@ This is where I am making my second project, a Snake game!
 
 There are 4 options for installing the projects in this repository.
 
-1. Downloading from the latest release of each one (currently there are such only for
-  [Tic Tac Toe](https://github.com/JohnnyCena123/raylib-projects/releases/tag/TicTacToe-v1.0.0) and
-  [Snake](https://github.com/JohnnyCena123/raylib-projects/releases/tag/Snake-v1.0.0))
-2. Downloading from the development build of the latest commit, e.g.
-  [snake](github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-snake)
+1. Downloading from the [latest release](https://github.com/JohnnyCena123/raylib-projects/releases/tag/Snake-v1.0.0)
+2. Downloading from the [development build of the latest commit](github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-snake)
 3. Downloading CI artifacts - practically the same as getting them from nightly releases.
 4. [Building from source](#building)
 
