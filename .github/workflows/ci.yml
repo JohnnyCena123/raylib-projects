@@ -208,7 +208,6 @@ jobs:
             echo "suffix=dev" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref_type }}" == "tag" ]; then
             TAG_COMMIT=$(git rev-list -n 1 HEAD)
-            BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
             echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
             echo "suffix=stable" >> $GITHUB_OUTPUT
           fi
