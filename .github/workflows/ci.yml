@@ -538,12 +538,14 @@ jobs:
           butler push $full_name.deb johnnycena123/$branch_name:linux-deb
 
           cd ./$branch_name
-          rm -rf .git*
-          echo "$branch_name" > .git-branch
-          zip -r ../$full_name.zip *
-          butler push $full_name.zip johnnycena123/$branch_name:source-zip-$suffix
-          tar -czvf ../$full_name.tar.gz *
-          butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip-$suffix
+            rm -rf .git*
+            echo "$branch_name" > .git-branch
+            zip -r ../${full_name}-source.zip *
+            tar -czvf ../${full_name}-source.tar.gz *
+          cd ..
+
+          butler push ${full_name}-source.zip johnnycena123/$branch_name:source-zip-$suffix
+          butler push ${full_name}-source.tar.gz johnnycena123/$branch_name:source-gzip-$suffix
 
         shell: bash
 
