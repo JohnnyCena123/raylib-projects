@@ -8,6 +8,7 @@ on:
       - '**'
     paths:
       - '.github/workflows/ci-test.yml'
+      - '.github/workflows/build.yml'
       - 'src/**'
       - 'cmake/**'
       - 'CMakeLists.txt'
@@ -92,6 +93,7 @@ jobs:
         with:
           version: 4.0.12
           actions-cache-folder: 'emsdk-cache'
+
       - name: Build
         run: |
           emcmake cmake \

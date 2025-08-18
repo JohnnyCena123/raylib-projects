@@ -41,6 +41,12 @@ on:
         required: true
         default: false
         description: Whether or not packaged binaries will be uploaded
+      branch-name:
+        type: string
+        required: false
+        default: placeholder
+        description: Provides the name of the app, cannot be consistently generated otherwise
+
   workflow_dispatch:
     inputs:
       os:
@@ -82,10 +88,23 @@ on:
         required: true
         default: false
         description: Build and upload packages
+      branch-name:
+        type: string
+        required: false
+        default: placeholder
+        description: App name
+
 jobs:
   build:
     runs-on: ${{ inputs.os }}
     steps:
+      - name: windows
+        env:
+          REPO_PATH: ${{ github.workspace }}
+        run: |
+          echo "REPO_PATH=$REPO_PATH" >> $GITHUB_ENV
+        shell: bash
+
       - name: Validate inputs and generate build data
         id: build-data
         run: |
@@ -210,12 +229,7 @@ jobs:
           echo "id=$id" >> "$GITHUB_OUTPUT"
         shell: bash
       - uses: actions/checkout@v4
-      - name: windows
-        env:
-          REPO_PATH: ${{ github.workspace }}
-        run: |
-          echo "REPO_PATH=$REPO_PATH" >> $GITHUB_ENV
-        shell: bash
+
       - name: Install Latest LLVM on Windows
         if: inputs.compiler == 'clang' && startsWith(inputs.os, 'windows-')
         run: |
@@ -230,7 +244,11 @@ jobs:
       - name: Configure CMake
         run: |
           cd $REPO_PATH
-          cmake -S. -Bbuild ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+          cmake -S. -Bbuild \
+            ${{ steps.build-data.outputs.cmake-args }} \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} \
+            -DGIT_BRANCH=${{ inputs.branch-name }}
         shell: bash
       - name: Build
         run: |
@@ -277,3 +295,4 @@ jobs:
         with:
           name: packages-${{ inputs.os }}
           path: ${{ github.workspace }}/packages/*
+
