@@ -166,7 +166,7 @@ jobs:
           emcmake cmake \
             -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
             -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
-            -DPLATFORM=Web -Wno-dev -G Ninja
+            -DGIT_BRANCH=${{ inputs.branch-name }} -DPLATFORM=Web -Wno-dev -G Ninja
           cmake --build "${{ github.workspace }}/build"
           ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.branch.outputs.name }}"
           mv bin/${{ needs.branch.outputs.name }}.zip bin/Web.zip
