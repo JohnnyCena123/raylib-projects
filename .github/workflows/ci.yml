@@ -160,6 +160,9 @@ jobs:
 
       - name: Build
         run: |
+          echo "${{ needs.branch.outputs.name }}" > "${{ github.workspace }}/.git-branch"
+          realpath "$REPO_PATH/.git-branch"
+          cat "$REPO_PATH/.git-branch"
           emcmake cmake \
             -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
             -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
