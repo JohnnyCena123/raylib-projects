@@ -171,12 +171,12 @@ jobs:
 
           if [ "${{ github.ref_type }}" == "branch" ]; then
             echo "full-name=${{ needs.branch.outputs.name }}-$PROJECT_VERSION-dev" >> $GITHUB_OUTPUT
-            echo "suffix=dev"
+            echo "suffix=dev" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref_type }}" == "tag" ]; then
             TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
             BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
             echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
-            echo "suffix=stable"
+            echo "suffix=stable" >> $GITHUB_OUTPUT
           fi
         shell: bash
 
@@ -230,7 +230,7 @@ jobs:
 
   linux-deb:
     name: Build Debian package
-    needs: [ 'branch', 'metadata', 'build-desktop' ]
+    needs: [ 'branch', 'build-desktop', 'metadata' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download build output
@@ -419,6 +419,7 @@ jobs:
           name: |
             build-*
             packages-*
+
   build-web:
     runs-on: ubuntu-24.04
     strategy:
@@ -457,7 +458,12 @@ jobs:
     name: Publish
     permissions:
       contents: write
-    needs: [ 'branch', 'metadata', 'cleanup', 'build-web' ]
+    needs:
+      - 'branch'
+      - 'build-desktop'
+      - 'metadata'
+      - 'cleanup'
+      - 'build-web'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
