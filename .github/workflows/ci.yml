@@ -199,18 +199,17 @@ jobs:
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
           exe="${{ needs.branch.outputs.name }}"
           chmod +x "./$exe"
-          PROJECT_VERSION=$("./$exe" --version --minimal-output)
-
-          echo "version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          version=$("./$exe" --version --minimal-output)
 
           if [ "${{ github.ref_type }}" == "branch" ]; then
-            echo "full-name=${{ needs.branch.outputs.name }}-$PROJECT_VERSION-dev" >> $GITHUB_OUTPUT
-            echo "suffix=dev" >> $GITHUB_OUTPUT
+            suffix=dev
           elif [ "${{ github.ref_type }}" == "tag" ]; then
-            TAG_COMMIT=$(git rev-list -n 1 HEAD)
-            echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
-            echo "suffix=stable" >> $GITHUB_OUTPUT
+            suffix=stable
           fi
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "suffix=$suffix" >> $GITHUB_OUTPUT
+          echo "full-name=${{ needs.branch.outputs.name }}-$version-$suffix" >> $GITHUB_OUTPUT
         shell: bash
 
   win-msi:
