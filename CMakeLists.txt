@@ -3,7 +3,19 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_STANDARD 23)
 
 if(NOT DEFINED GIT_BRANCH)
-	if(EXISTS "${CMAKE_SOURCE_DIR}/.git-branch" AND NOT LOCAL_CMAKE_BUILD)
+	execute_process(
+		COMMAND git symbolic-ref -q --short HEAD
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		OUTPUT_VARIABLE GIT_IS_BRANCH
+		RESULT_VARIABLE GIT_RESULT1
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+	if(EXISTS "${CMAKE_SOURCE_DIR}/.git-branch" AND NOT (
+		LOCAL_CMAKE_BUILD AND
+			(GIT_RESULT1 STREQUAL "0"
+			# works because cmake considers empty variables as not defined
+			AND DEFINED GIT_IS_BRANCH)
+	))
 		file(READ "${CMAKE_SOURCE_DIR}/.git-branch" GIT_BRANCH)
 		string(REGEX REPLACE "[ \t\n]" "" GIT_BRANCH "${GIT_BRANCH}")
 		message(STATUS "read branch from file: ${GIT_BRANCH}")
@@ -12,10 +24,10 @@ if(NOT DEFINED GIT_BRANCH)
 			COMMAND git rev-parse --abbrev-ref HEAD
 			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 			OUTPUT_VARIABLE GIT_BRANCH
-			RESULT_VARIABLE GIT_RESULT
+			RESULT_VARIABLE GIT_RESULT2
 			OUTPUT_STRIP_TRAILING_WHITESPACE
 		)
-		if(NOT GIT_RESULT STREQUAL "0")
+		if(NOT GIT_RESULT2 STREQUAL "0")
 			message(FATAL_ERROR "Unable to determine the git branch!\n"
 				"Please specify it via the command-line using -DGIT_BRANCH=example,\n"
 				"or by adding a .git-branch file containing the git branch to the root of this project ."
