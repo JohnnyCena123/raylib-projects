@@ -139,7 +139,7 @@ jobs:
       upload-outputs: ${{ matrix.upload-outputs }}
       portable: ${{ matrix.portable }}
       package: ${{ matrix.package }}
-      : ${{ needs.branch.outputs.name }}
+      branch-name: ${{ needs.branch.outputs.name }}
 
   build-web:
     runs-on: ubuntu-24.04
