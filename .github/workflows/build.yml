@@ -248,7 +248,9 @@ jobs:
           fi
           echo "cmake-args=$cmake_args" >> "$GITHUB_OUTPUT"
           echo "id=$id" >> "$GITHUB_OUTPUT"
-          echo "${{ inputs.app-name }}" >> "$REPO_PATH/.git-branch"
+          echo "${{ inputs.app-name }}" > "$REPO_PATH/.git-branch"
+          realpath "$REPO_PATH/.git-branch"
+          cat "$REPO_PATH/.git-branch"
         shell: bash
 
       - uses: actions/checkout@v4
