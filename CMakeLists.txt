@@ -6,6 +6,7 @@ if(NOT DEFINED GIT_BRANCH)
 	if(EXISTS "${CMAKE_SOURCE_DIR}/.git-branch" AND NOT LOCAL_CMAKE_BUILD)
 		file(READ "${CMAKE_SOURCE_DIR}/.git-branch" GIT_BRANCH)
 		string(REGEX REPLACE "[ \t\n]" "" GIT_BRANCH "${GIT_BRANCH}")
+		message(STATUS "read branch from file: ${GIT_BRANCH}")
 	else()
 		execute_process(
 			COMMAND git rev-parse --abbrev-ref HEAD
@@ -20,6 +21,7 @@ if(NOT DEFINED GIT_BRANCH)
 				"or by adding a .git-branch file containing the git branch to the root of this project ."
 			)
 		endif()
+		message(STATUS "detected branch from git: ${GIT_BRANCH}")
 	endif()
 	configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/.git-branch.in"
 		"${CMAKE_SOURCE_DIR}/.git-branch")
