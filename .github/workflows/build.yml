@@ -50,7 +50,7 @@ on:
         default: false
         description: Whether or not packaged binaries will be uploaded
 
-      app-name:
+      branch-name:
         type: string
         required: false
         default: placeholder
@@ -105,7 +105,7 @@ on:
         default: false
         description: Build and upload packages
 
-      app-name:
+      branch-name:
         type: string
         required: false
         default: placeholder
@@ -248,9 +248,6 @@ jobs:
           fi
           echo "cmake-args=$cmake_args" >> "$GITHUB_OUTPUT"
           echo "id=$id" >> "$GITHUB_OUTPUT"
-          echo "${{ inputs.app-name }}" > "$REPO_PATH/.git-branch"
-          realpath "$REPO_PATH/.git-branch"
-          cat "$REPO_PATH/.git-branch"
         shell: bash
 
       - uses: actions/checkout@v4
@@ -271,7 +268,11 @@ jobs:
       - name: Configure CMake
         run: |
           cd $REPO_PATH
-          cmake -S. -Bbuild ${{ steps.build-data.outputs.cmake-args }} -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+          cmake -S. -Bbuild \
+            ${{ steps.build-data.outputs.cmake-args }} \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
+            -DGIT_BRANCH=${{ inputs.branch-name }}
         shell: bash
       - name: Build
         run: |
