@@ -457,7 +457,7 @@ jobs:
     name: Publish
     permissions:
       contents: write
-    needs: [ 'metadata', 'cleanup', 'build-web' ]
+    needs: [ 'branch', 'metadata', 'cleanup', 'build-web' ]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
