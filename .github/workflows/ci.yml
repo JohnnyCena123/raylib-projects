@@ -123,6 +123,24 @@ jobs:
             portable: true
             package: false
 
+    name: >
+      ${{ matrix.portable && 'Portable' || 'Non-portable' }}
+      ${{ matrix.build-type }} build
+      for ${{ matrix.os }}
+      with ${{ matrix.generator }}
+      and ${{ matrix.compiler }},
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ${{ matrix.os }}
+      compiler: ${{ matrix.compiler }}
+      generator: ${{ matrix.generator }}
+      pch: ${{ matrix.pch }}
+      build-type: ${{ matrix.build-type }}
+      upload-outputs: ${{ matrix.upload-outputs }}
+      portable: ${{ matrix.portable }}
+      package: ${{ matrix.package }}
+      app-name: ${{ needs.branch.outputs.name }}
+
   build-web:
     runs-on: ubuntu-24.04
     strategy:
@@ -156,24 +174,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/bin/Web.zip
           name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
-
-    name: >
-      ${{ matrix.portable && 'Portable' || 'Non-portable' }}
-      ${{ matrix.build-type }} build
-      for ${{ matrix.os }}
-      with ${{ matrix.generator }}
-      and ${{ matrix.compiler }},
-    uses: ./.github/workflows/build.yml
-    with:
-      os: ${{ matrix.os }}
-      compiler: ${{ matrix.compiler }}
-      generator: ${{ matrix.generator }}
-      pch: ${{ matrix.pch }}
-      build-type: ${{ matrix.build-type }}
-      upload-outputs: ${{ matrix.upload-outputs }}
-      portable: ${{ matrix.portable }}
-      package: ${{ matrix.package }}
-      app-name: ${{ needs.branch.outputs.name }}
 
   metadata:
     name: Generate metadata
