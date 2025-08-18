@@ -3,7 +3,6 @@ include("${CMAKE_SOURCE_DIR}/cmake/CPM.cmake")
 include(CheckCCompilerFlag)
 CPMAddPackage("gh:raysan5/raylib#master")
 set(RAYLIB_TARGET raylib CACHE STRING "Name of raylib's target.")
-set(RAYLIB_TARGET ${RAYLIB_TARGET} PARENT_SCOPE)
 if(DISABLE_WARNINGS)
 	check_c_compiler_flag("-Wno-tautological-compare" HAS_W_NO_TAUTOLOGICAL_COMPARE)
 	check_c_compiler_flag("-Wno-unused-result" HAS_W_NO_UNUSED_RESULT)
@@ -46,8 +45,7 @@ if(PLATFORM_DESKTOP)
 		GIT_TAG master
 	)
 
-    set(LCB_TARGET clipboard CACHE STRING "Name of libclipboard's target." FORCE)
-	set(LCB_TARGET ${LCB_TARGET} PARENT_SCOPE)
+	set(LCB_TARGET clipboard CACHE STRING "Name of libclipboard's target.")
 	target_include_directories(${LCB_TARGET} PRIVATE "${lcb_BINARY_DIR}/include")
 	set_target_properties(${LCB_TARGET} PROPERTIES
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
@@ -66,8 +64,7 @@ endif()
 if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
 	CPMAddPackage("gh:ocornut/imgui#eaac68c") 
 	CPMAddPackage("gh:raylib-extras/rlImGui#9512b36")
-    set(IMGUI_TARGET imgui CACHE STRING "Name of ImGui's target." FORCE)
-    set(IMGUI_TARGET ${IMGUI_TARGET} PARENT_SCOPE)
+	set(IMGUI_TARGET imgui CACHE STRING "Name of ImGui's target." FORCE)
 	add_library(${IMGUI_TARGET}
 		${imgui_SOURCE_DIR}/imgui.cpp
 		${imgui_SOURCE_DIR}/imgui_widgets.cpp

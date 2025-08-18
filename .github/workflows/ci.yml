@@ -9,6 +9,7 @@ on:
       - '**'
     paths:
       - '.github/workflows/ci.yml'
+      - '.github/workflows/build.yml'
       - '.github/scripts/**'
       - 'src/**'
       - 'cmake/**'
@@ -16,11 +17,24 @@ on:
       - 'resources/**'
       - 'icon.rc'
 jobs:
+  branch:
+    name: Get branch name
+    runs-on: ubuntu-24.04
+    outputs:
+      name: ${{ steps.main.outputs.branch-name }}
+    steps:
+      - name: main
+        id: main
+        run: |
+          ref="${{ github.ref_name }}"
+          echo "branch-name=${ref%%-v[0-9].[0-9].[0-9]*}" >> $GITHUB_OUTPUT
+
   build-desktop:
+    needs: [ 'branch' ]
     strategy:
       fail-fast: false
       matrix:
-        id: 
+        id:
           - 'win-portable-Release'
           - 'win-nonportable-Release'
           - 'win-portable-RelWithDebInfo'
@@ -58,7 +72,7 @@ jobs:
             build-type: 'RelWithDebInfo'
             portable: true
             package: false
-            
+
 
           - id: 'mac-portable-Release'
             os: 'macos-15'
@@ -125,15 +139,50 @@ jobs:
       upload-outputs: ${{ matrix.upload-outputs }}
       portable: ${{ matrix.portable }}
       package: ${{ matrix.package }}
+      branch-name: ${{ needs.branch.outputs.name }}
+
+  build-web:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        imgui: [ 'OFF', 'ON' ]
+    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
+    needs: [ 'branch' ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.12
+          actions-cache-folder: 'emsdk-cache'
+
+      - name: Build
+        run: |
+          emcmake cmake \
+            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
+            -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
+            -DGIT_BRANCH=${{ needs.branch.outputs.name }} -DPLATFORM=Web -Wno-dev -G Ninja
+          cmake --build "${{ github.workspace }}/build"
+          ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.branch.outputs.name }}"
+          mv bin/${{ needs.branch.outputs.name }}.zip bin/Web.zip
+        shell: bash
+
+      - name: Upload output
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/bin/Web.zip
+          name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
 
   metadata:
     name: Generate metadata
-    needs: [ 'build-desktop' ]
+    needs: [ 'branch', 'build-desktop' ]
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.main.outputs.version }}
-      branch-name: ${{ steps.main.outputs.branch-name }}
       full-name: ${{ steps.main.outputs.full-name }}
+      suffix: ${{ steps.main.outputs.suffix }}
     steps:
       - uses: actions/checkout@v4
 
@@ -148,24 +197,24 @@ jobs:
         run: |
           cd output
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          chmod +x ./${{ github.ref_name }}
-          PROJECT_VERSION=$(./${{ github.ref_name }} --version --minimal-output)
-
-          echo "version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
-          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          exe="${{ needs.branch.outputs.name }}"
+          chmod +x "./$exe"
+          version=$("./$exe" --version --minimal-output)
 
           if [ "${{ github.ref_type }}" == "branch" ]; then
-            echo "full-name=${{ github.ref_name }}-$PROJECT_VERSION-dev" >> $GITHUB_OUTPUT
+            suffix=dev
           elif [ "${{ github.ref_type }}" == "tag" ]; then
-            TAG_COMMIT=$(git rev-list -n 1 "${{ github.ref_name }}")
-            BRANCH=$(git branch -r --contains "$TAG_COMMIT" | grep -v '\->' | head -n 1 | sed 's|origin/||' | xargs)
-            echo "full-name=$BRANCH-$PROJECT_VERSION" >> $GITHUB_OUTPUT
+            suffix=stable
           fi
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "suffix=$suffix" >> $GITHUB_OUTPUT
+          echo "full-name=${{ needs.branch.outputs.name }}-$version-$suffix" >> $GITHUB_OUTPUT
         shell: bash
-    
+
   win-msi:
     name: Build Windows installer
-    needs: [ 'build-desktop', 'metadata' ]
+    needs: [ 'branch', 'build-desktop', 'metadata' ]
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
@@ -180,15 +229,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-win-MSVC-Release
-          path: ${{ needs.metadata.outputs.branch-name }}
+          path: ${{ needs.branch.outputs.name }}
 
       - name: Build installer
         id: build
         run: |
           $msi = "${{ needs.metadata.outputs.full-name }}.msi"
           powershell -ExecutionPolicy Bypass -File .\.github\scripts\build-msi.ps1 `
-            -SourceDir .\${{ needs.metadata.outputs.branch-name }} `
-            -AppName "${{ needs.metadata.outputs.branch-name }}" `
+            -SourceDir .\${{ needs.branch.outputs.name }} `
+            -AppName "${{ needs.branch.outputs.name }}" `
             -Manufacturer "Johnny Cena" `
             -Version "${{ needs.metadata.outputs.version }}" `
             -OutputMsi "$msi"
@@ -202,7 +251,7 @@ jobs:
             -ArgumentList '/i "${{ steps.build.outputs.installer-path }}" /norestart /quiet' `
             -PassThru
           $proc.WaitForExit(30000)
-          dir "C:\Program Files\${{ needs.metadata.outputs.branch-name }}"
+          dir "C:\Program Files\${{ needs.branch.outputs.name }}"
         shell: pwsh
 
       - name: Upload installer
@@ -213,7 +262,7 @@ jobs:
 
   linux-deb:
     name: Build Debian package
-    needs: [ 'metadata', 'build-desktop' ]
+    needs: [ 'branch', 'build-desktop', 'metadata' ]
     runs-on: ubuntu-24.04
     steps:
       - name: Download build output
@@ -226,7 +275,7 @@ jobs:
         id: build
         run: |
           sudo apt-get update && sudo apt-get install -y libopengl0 libglu1-mesa
-          PACKAGE_NAME=${{ needs.metadata.outputs.branch-name }}
+          PACKAGE_NAME=${{ needs.branch.outputs.name }}
           chmod +x ./$PACKAGE_NAME
           PACKAGE_VERSION=$(./$PACKAGE_NAME --version --minimal-output --no-metadata)
           PACKAGE_DESCRIPTION="$(./$PACKAGE_NAME --description --no-metadata)"
@@ -297,7 +346,7 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-24.04
-    needs: [ linux-deb, win-msi ]
+    needs: [ 'win-msi', 'linux-deb' ]
     permissions:
       contents: write
 
@@ -341,7 +390,6 @@ jobs:
           mv build-*-Release non-portable/
           cd non-portable
             cd build-win-MSVC-Release && zip -r ../Windows-non-portable.zip * && cd .. && rm -rf build-win-MSVC-Release
-            
             cd build-mac-Xcode-Release
               ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
               ln -sf libraylib.550.dylib libraylib.dylib
@@ -403,51 +451,22 @@ jobs:
           name: |
             build-*
             packages-*
-  
-  build-web:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        imgui: [ 'OFF', 'ON' ]
-    name: Build WebAssembly application ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
-    needs: [ 'metadata' ]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: 4.0.12
-          actions-cache-folder: 'emsdk-cache'
-        
-      - name: Build
-        run: |
-          emcmake cmake \
-            -B"${{ github.workspace }}/build" -S"${{ github.workspace }}/" \
-            -DCMAKE_BUILD_TYPE=Release -DIMGUI_IN_RELEASE=${{ matrix.imgui }} \
-            -DPLATFORM=Web -Wno-dev -G Ninja
-          cmake --build "${{ github.workspace }}/build"
-          ./.github/scripts/zip-web-app.sh --git-branch="${{ needs.metadata.outputs.branch-name }}"
-          mv bin/${{ needs.metadata.outputs.branch-name }}.zip bin/Web.zip
-        shell: bash
-
-      - name: Upload output
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/bin/Web.zip
-          name: WebAssembly build ${{ matrix.imgui == 'ON' && 'with Dear ImGui' || '' }}
 
   publish:
     name: Publish
     permissions:
       contents: write
-    needs: [ 'metadata', 'cleanup', 'build-web' ]
+    needs:
+      - 'branch'
+      - 'build-desktop'
+      - 'metadata'
+      - 'cleanup'
+      - 'build-web'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
-          path: ${{ github.workspace }}/${{ needs.metadata.outputs.branch-name }}/
+          path: ${{ github.workspace }}/${{ needs.branch.outputs.name }}/
 
       - name: Download Windows installer
         uses: actions/download-artifact@v4
@@ -498,38 +517,41 @@ jobs:
           sudo mv butler/butler /usr/local/bin/
           rm -rf butler butler.zip
 
-          branch_name="${{ needs.metadata.outputs.branch-name }}"
+          branch_name="${{ needs.branch.outputs.name }}"
           full_name="${{ needs.metadata.outputs.full-name }}"
+          suffix="${{ needs.metadata.outputs.suffix }}"
 
           cp Web.zip $full_name.zip
-          butler push $full_name.zip johnnycena123/$branch_name:web
+          butler push $full_name.zip johnnycena123/$branch_name:web-$suffix
 
           cp Windows.zip $full_name.zip
-          butler push $full_name.zip johnnycena123/$branch_name:windows-portable
-          butler push $full_name.msi johnnycena123/$branch_name:windows-msi
-          
-          cp MacOS.tar.gz $full_name.tar.gz
-          butler push $full_name.tar.gz johnnycena123/$branch_name:mac-portable
-          
-          cp Linux.tar.gz $full_name.tar.gz
-          butler push $full_name.tar.gz johnnycena123/$branch_name:linux-portable
-          butler push $full_name.deb johnnycena123/$branch_name:linux-deb
-          
-          echo "$branch_name" > ./$branch_name/.git-branch*
-          rm -rf ./$branch_name/.git*
-          zip -r $full_name.zip ./$branch_name/ 
-          butler push $full_name.zip johnnycena123/$branch_name:source-zip
-          tar -czvf $full_name.tar.gz ./$branch_name/ 
-          butler push $full_name.tar.gz johnnycena123/$branch_name:source-gzip
+          butler push $full_name.zip johnnycena123/$branch_name:windows-portable-$suffix
+          butler push $full_name.msi johnnycena123/$branch_name:windows-msi-$suffix
 
-          rm -f $full_name.{zip,tar.gz}
+          cp MacOS.tar.gz $full_name.tar.gz
+          butler push $full_name.tar.gz johnnycena123/$branch_name:mac-portable-$suffix
+
+          cp Linux.tar.gz $full_name.tar.gz
+          butler push $full_name.tar.gz johnnycena123/$branch_name:linux-portable-$suffix
+          butler push $full_name.deb johnnycena123/$branch_name:linux-deb
+
+          cd ./$branch_name
+            rm -rf .git*
+            echo "$branch_name" > .git-branch
+            zip -r ../${full_name}-source.zip *
+            tar -czvf ../${full_name}-source.tar.gz *
+          cd ..
+
+          butler push ${full_name}-source.zip johnnycena123/$branch_name:source-zip-$suffix
+          butler push ${full_name}-source.tar.gz johnnycena123/$branch_name:source-gzip-$suffix
+
         shell: bash
 
       - name: Delete tag
         uses: dev-drprasad/delete-tag-and-release@v1.1
         if: github.ref_type == 'branch'
         with:
-          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
+          tag_name: nightly-${{ needs.branch.outputs.name }}
           delete_release: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -537,10 +559,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'branch'
         with:
-          tag_name: nightly-${{ needs.metadata.outputs.branch-name }}
-          name: Development build for ${{ needs.metadata.outputs.branch-name }}
+          tag_name: nightly-${{ needs.branch.outputs.name }}
+          name: Development build for ${{ needs.branch.outputs.name }}
           body: |
-            Build triggered by commit ${{ github.sha }} on branch ${{ needs.metadata.outputs.branch-name }}.
+            Build triggered by commit ${{ github.sha }} on branch ${{ needs.branch.outputs.name }}.
             This is a build of the **latest commit**, it is not guaranteed to be stable.
           draft: false
           prerelease: true
@@ -559,7 +581,7 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           tag_name: ${{ github.ref_name }}
-          name: Release build for ${{ needs.metadata.outputs.branch-name }}
+          name: Release build for ${{ needs.branch.outputs.name }}
           body: |
             TODO: Add release body
           draft: true
