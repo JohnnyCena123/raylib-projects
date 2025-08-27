@@ -35,6 +35,7 @@ if(PLATFORM_DESKTOP)
 	)
 	set(TINYFD_TARGET "tinyfd")
 	add_library(${TINYFD_TARGET} STATIC "${tinyfd_SOURCE_DIR}/tinyfiledialogs.c")
+	target_compile_options(tinyfd PRIVATE -Wno-unused-result)
 
 	if(DISABLE_WARNINGS)
 		set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
@@ -50,7 +51,7 @@ if(PLATFORM_DESKTOP)
 	set_target_properties(${LCB_TARGET} PROPERTIES
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
 	)
-	
+
 	if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
 		foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
 			string(TOUPPER "${CONFIG}" UPPER_CONFIG)
@@ -62,7 +63,7 @@ if(PLATFORM_DESKTOP)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
-	CPMAddPackage("gh:ocornut/imgui#eaac68c") 
+	CPMAddPackage("gh:ocornut/imgui#eaac68c")
 	CPMAddPackage("gh:raylib-extras/rlImGui#9512b36")
 	set(IMGUI_TARGET imgui CACHE STRING "Name of ImGui's target." FORCE)
 	add_library(${IMGUI_TARGET}
@@ -72,7 +73,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
 		${imgui_SOURCE_DIR}/imgui_draw.cpp
 		${imgui_SOURCE_DIR}/imgui_demo.cpp
 		${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
-		
+
 		${rlImGui_SOURCE_DIR}/rlImGui.cpp
 	)
 	target_include_directories(${IMGUI_TARGET} PRIVATE

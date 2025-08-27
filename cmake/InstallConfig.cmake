@@ -9,8 +9,8 @@ install(
 	LIBRARY DESTINATION lib/${PROJECT_NAME}
 )
 install(FILES
-	"${CMAKE_SOURCE_DIR}/LICENSE" 
-	"${CMAKE_SOURCE_DIR}/README.md" 
+	"${CMAKE_SOURCE_DIR}/LICENSE"
+	"${CMAKE_SOURCE_DIR}/README.md"
 	DESTINATION "share/${PROJECT_NAME}"
 )
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources"
@@ -24,8 +24,8 @@ if(UNIX)
 		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DEB;RPM")
 		set(DESKTOP_FILE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop")
 		install(FILES "${DESKTOP_FILE}" DESTINATION share/applications
-			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-				GROUP_READ GROUP_EXECUTE 
+			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+				GROUP_READ GROUP_EXECUTE
 				WORLD_READ WORLD_EXECUTE
 		)
 		install(FILES "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png" DESTINATION share/icons/hicolor/64x64/apps/)
@@ -33,7 +33,7 @@ if(UNIX)
 			set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 		endif()
 		set(COMMENT "@MIN_DESCRIPTION@. Source code: @REPO@.")
-		configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/project.desktop.in" 
+		configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/project.desktop.in"
 			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop.in")
 		configure_file("${CMAKE_SOURCE_DIR}/resources/icon.png"
 			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png" COPYONLY)

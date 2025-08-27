@@ -26,7 +26,7 @@ string(REPLACE "\n" "\\n\n" DESCRIPTION "${DESCRIPTION}")                       
 string(REPLACE "\n" "\\n\n" MIN_DESCRIPTION "${MIN_DESCRIPTION}")                      # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 string(REPLACE "\"" "\\\"" DESCRIPTION "${DESCRIPTION}")                               # properly escape quote characters if exist
 string(REPLACE "\"" "\\\"" MIN_DESCRIPTION "${MIN_DESCRIPTION}")                       # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-string(ASCII 27 ESCAPE_CHAR)                                                           # theres no other way to produce this specific charcter - all the usual options (\033, \x1b, \e) are unfamiliar to the CMake parser 
+string(ASCII 27 ESCAPE_CHAR)                                                           # theres no other way to produce this specific charcter - all the usual options (\033, \x1b, \e) are unfamiliar to the CMake parser
 set(REGEXP "${ESCAPE_CHAR}\\[[0-9;?]*[a-zA-Z]")                                        # regular expression for ANSI escape codes
 string(REGEX REPLACE "${REGEXP}" "" DESCRIPTION "${DESCRIPTION}")                      # strip out all of them
 string(REGEX REPLACE "${REGEXP}" "" MIN_DESCRIPTION "${MIN_DESCRIPTION}")              # ^^^^^^^^^^^^^^^^^^^^^
@@ -36,7 +36,7 @@ if(UNIX AND NOT APPLE)
 	if(NOT DEFINED DESKTOP_FILE)
 		message(WARNING "Please provide the desktop filepath via -DDESKTOP_FILE=<FILEPATH>")
 	else()
-		configure_file("${DESKTOP_FILE}.in" 
+		configure_file("${DESKTOP_FILE}.in"
 			"${DESKTOP_FILE}")
 	endif()
 endif()

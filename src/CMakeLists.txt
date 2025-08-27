@@ -68,7 +68,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"${imgui_SOURCE_DIR}"
 	"${rlImGui_SOURCE_DIR}"
 )
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
 	${RAYLIB_TARGET}
 	${TINYFD_TARGET}
 	${LCB_TARGET}
