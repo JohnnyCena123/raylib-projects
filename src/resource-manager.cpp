@@ -9,144 +9,92 @@ void dummyImageManipulator(Image& image) { }
 void dummySoundManipulator(Sound& image) { }
 void dummyMusicManipulator(Music& image) { }
 
-ResourceManager::ResourceManager(Game& game) : m_game(game), m_initialized(false) { }
+static inline bool isValidResourceDirPath(fs::path dir) {
+	fs::path resourceDir = dir/"resources";
+	return DirectoryExists(resourceDir.string().c_str()) &&
+		FileExists((resourceDir/"icon.png").string().c_str());
+};
+
+fs::path ResourceManager::getResourceDir(bool portable) {
+#ifdef PLATFORM_WEB
+	fs::path ret = ".";
+#else
+	fs::path exeDir = GetApplicationDirectory();
+	fs::path ret = exeDir;
+	if (!portable) {
+	#ifdef __linux__
+		bool found = false;
+		while (ret.has_parent_path()) {
+			std::array subdirOptions{
+				fs::path{"."},
+				fs::path{"share"},
+				fs::path{"share"}/PROJECT_NAME,
+				fs::path{"usr"}/"share"/PROJECT_NAME
+			};
+			for (fs::path option : subdirOptions) {
+				fs::path fullpath = ret/option;
+				TraceLog(LOG_TRACE, "Testing %s", fullpath.string().c_str());
+				if (isValidResourceDirPath(fullpath)) {
+					TraceLog(LOG_INFO, "Detected %s as the parent for the resources directory", fullpath.string().c_str());
+					found = true;
+					break;
+				}
+			}
+			if (found) break;
+			ret = ret.parent_path();
+		}
+	#endif
+	}
+	if (!isValidResourceDirPath(ret)) {
+		DESKTOP_ONLY(tinyfd_messageBox("Failure", (
+			"Could not find the resource directory.\n"
+			"Are you sure you downloaded the resources and extracted them to the right place?\n"
+			"NOTE: the folder structure should look like this:\n"
+			"/path/to/" PROJECT_NAME "/\n"
+			"    |-- " PROJECT_NAME "\n"
+			"    |-- libraries...\n"
+			"    |-- resources/\n"
+			"         |-- resources...\n"
+			"additional info:\n" +
+			ret.string() + " is not a valid parent directory for the resources."
+			).c_str(), "ok", "error", 0
+		));
+		TraceLog(LOG_ERROR, "Failed to locate resource dir; %s is not a valid parent directory.", ret.string().c_str());
+	}
+#endif
+		return ret/"resources";
+}
+
+ResourceManager::ResourceManager(bool portable) : m_initialized(false) { }
 ResourceManager::~ResourceManager() { }
 
 void ResourceManager::init() {
 	if (!m_initialized) {
-		m_dummyImage = GenImageColor(1, 1, BLANK);
-		m_dummyTexture = LoadTextureFromImage(m_dummyImage);
-		m_images["dummy"] = m_dummyImage;
-		m_textures["dummy"] = m_dummyTexture;
+		s_dummy<Image> = GenImageColor(1, 1, BLANK);
+		s_dummy<Texture> = LoadTextureFromImage(s_dummy<Image>);
 
-		loadSound("dummy", "dummy.wav");
-		loadMusic("dummy", "dummy-stream.wav");
-		m_dummySound = getSound("dummy");
-		m_dummyMusic = getMusic("dummy");
+		load<Sound>("dummy", "dummy.wav");
+		load<Music>("dummy", "dummy-stream.wav");
+		s_dummy<Sound> = get<Sound>("dummy");
+		s_dummy<Music> = get<Music>("dummy");
+		s_resources<Sound>.erase("dummy");
+		s_resources<Music>.erase("dummy");
 		m_initialized = true;
 	}
 }
 
 void ResourceManager::deinit() {
 	if (m_initialized) {
-		for (auto const& [id, image] : m_images)       { UnloadImage(image);       m_images.erase(id); }
-		for (auto const& [id, texture] : m_textures) { UnloadTexture(texture);   m_textures.erase(id); }
-		for (auto const& [id, sound] : m_sounds)       { UnloadSound(sound);       m_sounds.erase(id); }
-		for (auto const& [id, music] : m_musicStreams) { UnloadMusicStream(music); m_musicStreams.erase(id); }
-		UnloadImage(m_dummyImage);
-		UnloadTexture(m_dummyTexture);
-		UnloadSound(m_dummySound);
-		UnloadMusicStream(m_dummyMusic);
+		for (auto const& [id, image]   : s_resources<Image>)       unloader<Image>(image);
+		for (auto const& [id, texture] : s_resources<Texture2D>)   unloader<Texture2D>(texture);
+		for (auto const& [id, wave]    : s_resources<Wave>)        unloader<Wave>(wave);
+		for (auto const& [id, sound]   : s_resources<Sound>)       unloader<Sound>(sound);
+		for (auto const& [id, music]   : s_resources<Sound>)       unloader<Sound>(music);
+		unloader<Image>(s_dummy<Image>);
+		unloader<Texture2D>(s_dummy<Texture2D>);
+		unloader<Wave>(s_dummy<Wave>);
+		unloader<Sound>(s_dummy<Sound>);
+		unloader<Music>(s_dummy<Music>);
 		m_initialized = false;
 	}
 }
-
-bool ResourceManager::loadImage(std::string id, fs::path relativePath, LoadImageCallback manipulator) {
-	fs::path const fullPath = m_game.getResourceDir()/relativePath;
-
-	if (!FileExists(fullPath.string().c_str())) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Image file does not exist: %s", id.c_str(), fullPath.string().c_str());
-		return false;
-	}
-	Image image = LoadImage(fullPath.string().c_str());
-	if (!IsImageValid(image)) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Image file failed to load: %s", id.c_str(), fullPath.string().c_str());
-		return false;
-	}
-	if (manipulator != nullptr) manipulator(image);
-	if (!IsImageValid(image)) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Image was corrupted", id.c_str());
-		UnloadImage(image);
-		return false;
-	}
-	m_images[id] = image;
-	return true;
-}
-bool ResourceManager::loadTexture(std::string id, fs::path relativePath, LoadImageCallback manipulator) {
-	if (!loadImage(id, relativePath, manipulator)) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Texture failed to load", id.c_str());
-		return false;
-	}
-	m_textures[id] = LoadTextureFromImage(m_images[id]);
-	UnloadImage(m_images[id]);
-	m_images.erase(id);
-	return true;
-}
-bool ResourceManager::loadSound(std::string id, fs::path relativePath, LoadSoundCallback manipulator) {
-	fs::path const fullPath = m_game.getResourceDir()/relativePath;
-
-	if (!FileExists(fullPath.string().c_str())) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Sound file does not exist: %s", id.c_str(), fullPath.string().c_str());
-		return false;
-	}
-	Sound sound = LoadSound(fullPath.string().c_str());
-	if (!IsSoundValid(sound)) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Sound file failed to load: %s", id.c_str(), fullPath.string().c_str());
-		UnloadSound(sound);
-		return false;
-	}
-	if (manipulator != nullptr) manipulator(sound);
-	if (!IsSoundValid(sound)) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Sound was corrupted", id.c_str());
-		UnloadSound(sound);
-		return true;
-	}
-	m_sounds[id] = sound;
-	return true;
-}
-bool ResourceManager::loadMusic(std::string id, fs::path relativePath, LoadMusicCallback manipulator) {
-	fs::path const fullPath = m_game.getResourceDir()/relativePath;
-
-	if (!FileExists(fullPath.string().c_str())) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Music file does not exist: %s", id.c_str(), fullPath.string().c_str());
-		return false;
-	}
-	Music music = LoadMusicStream(fullPath.string().c_str());
-	if (!IsMusicValid(music)) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Music file failed to load: %s", id.c_str(), fullPath.string().c_str());
-		UnloadMusicStream(music);
-		return false;
-	}
-	if (manipulator != nullptr) manipulator(music);
-	if (!IsMusicValid(music)) {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Music was corrupted", id.c_str());
-		UnloadMusicStream(music);
-		return true;
-	}
-	m_musicStreams[id] = music;
-	return true;
-}
-
-Image const& ResourceManager::getImage(std::string id) const {
-	if (m_images.contains(id)) return m_images.at(id);
-	else {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Image has NOT been loaded, returning dummy", id.c_str());
-		return m_dummyImage;
-	}
-}
-Texture2D const& ResourceManager::getTexture(std::string id) const {
-	if (m_textures.contains(id)) return m_textures.at(id);
-	else {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Texture has NOT been loaded, returning dummy", id.c_str());
-		return m_dummyTexture;
-	}
-}
-Sound const& ResourceManager::getSound(std::string id) const {
-	if (m_sounds.contains(id)) return m_sounds.at(id);
-	else {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Sound has NOT been loaded, returning dummy", id.c_str());
-		return m_dummySound;
-	}
-}
-Music const& ResourceManager::getMusic(std::string id) const {
-	if (m_musicStreams.contains(id)) return m_musicStreams.at(id);
-	else {
-		TraceLog(LOG_WARNING, "RESOURCES: ['%s'] Music has NOT been loaded, returning dummy", id.c_str());
-		return m_dummyMusic;
-	}
-}
-
-Image const& ResourceManager::getDummyImage() const { return m_dummyImage; }
-Texture2D const& ResourceManager::getDummyTexture() const { return m_dummyTexture; }
-Sound const& ResourceManager::getDummySound() const { return m_dummySound; }
-Music const& ResourceManager::getDummyMusic() const { return m_dummyMusic; }

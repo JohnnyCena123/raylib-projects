@@ -1,88 +1,29 @@
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
-#include <optional>
 #include <raylib.h>
 #include "game.hpp"
 #include "basics.hpp"
 
-Game::Game() : 
+Game::Game() :
 #ifdef PLATFORM_DESKTOP
-		m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
+	m_cb(nullptr), m_saveDir(""), m_traceLogLevel(LOG_INFO), m_silent(false),
+	m_shouldSaveLogs(false), m_hadWarning(false), m_logs(""), m_resourceManager(
 	#ifdef PORTABLE
-			true
-		#else
-			FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
-		#endif
-		),
-	m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
-	m_hadWarning(false), m_logs(""), 
-#endif 
-	m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f), m_resourceManager(*this)
-{ /* cant call init() here, handleCli() needs to be called first */ }
+		true
+	#else
+		FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
+	#endif
+	),
+#else
+	m_resourceManager(false),
+#endif
+	m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f)
+	{ /* cant call init() here, handleCli() needs to be called first */ }
 
 Game::~Game() { }
 
-fs::path Game::getResourceDir() { return m_resourceDir; }
-
-static inline bool isValidResourceDirPath(fs::path dir) {
-	fs::path resourceDir = dir/"resources";
-	return DirectoryExists(resourceDir.string().c_str()) &&
-		FileExists((resourceDir/"icon.png").string().c_str());
-};
-
 void Game::init() {
-	m_resourceDir = [&] -> fs::path {
-	#ifdef PLATFORM_WEB
-		fs::path ret = ".";
-	#else
-		fs::path exeDir = GetApplicationDirectory();
-		fs::path ret = exeDir;
-		if (!m_portable) {
-		#ifdef __linux__
-			fs::path testedDir = exeDir;
-			std::optional<fs::path> finalPath;
-			while (testedDir.has_parent_path()) {
-				std::array subdirOptions{
-					fs::path{"."},
-					fs::path{"share"},
-					fs::path{"share"}/PROJECT_NAME,
-					fs::path{"usr"}/"share"/PROJECT_NAME
-				};
-				for (fs::path option : subdirOptions) {
-					fs::path fullpath = testedDir/option;
-					TraceLog(LOG_TRACE, "Testing %s", fullpath.string().c_str());
-					if (isValidResourceDirPath(fullpath)) {
-						TraceLog(LOG_INFO, "Detected %s as the parent for the resources directory", fullpath.string().c_str());
-						finalPath = fullpath;
-						break;
-					}
-				}
-				if (finalPath) break;
-				testedDir = testedDir.parent_path();
-			}
-			ret = *finalPath;
-		#endif
-		}
-		if (!isValidResourceDirPath(ret)) {
-			DESKTOP_ONLY(tinyfd_messageBox("Failure", (
-				"Could not find the resource directory.\n"
-				"Are you sure you downloaded the resources and extracted them to the right place?\n"
-				"NOTE: the folder structure should look like this:\n"
-				"/path/to/" PROJECT_NAME "/\n"
-				"    |-- " PROJECT_NAME "\n"
-				"    |-- libraries...\n"
-				"    |-- resources/\n"
-				"         |-- resources...\n"
-				"additional info:\n" +
-				ret.string() + " is not a valid parent directory for the resources."
-				).c_str(), "ok", "error", 0
-			));
-			TraceLog(LOG_ERROR, "Failed to locate resource dir; %s is not a valid parent directory.", ret.string().c_str());
-		}
-	#endif
-		return ret/"resources";
-	}();
 
 #ifdef PLATFORM_DESKTOP
 	m_saveDir = [&] -> fs::path {
@@ -125,21 +66,21 @@ DESKTOP_ONLY(
 
 	m_screen = LoadRenderTexture(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y);
 
-DESKTOP_ONLY(
 	m_resourceManager.init();
-	if (!m_resourceManager.loadImage("app-icon", "icon.png"))
+DESKTOP_ONLY(
+	if (!m_resourceManager.load<Image>("app-icon", "icon.png"))
 		TraceLog(LOG_WARNING, "Failed to load app icon");
-	SetWindowIcon(m_resourceManager.getImage("app-icon"));
+	SetWindowIcon(m_resourceManager.get<Image>("app-icon"));
 )
 
-	if (!m_resourceManager.loadTexture("image", "image.png"))
+	if (!m_resourceManager.load<Texture2D>("image", "image.png"))
 		TraceLog(LOG_WARNING, "Failed to load dummy image");
-	m_dummyResource = m_resourceManager.getTexture("image");
+	m_dummyResource = m_resourceManager.get<Texture2D>("image");
 
 	// credit: https://sunixdev.itch.io/casual-music-pack
-	if (!m_resourceManager.loadMusic("bg-music", "music-loop.mp3", [](Music& music) { music.looping = true; }))
+	if (!m_resourceManager.load<Music>("bg-music", "music-loop.mp3", [](Music& music) { music.looping = true; }))
 		TraceLog(LOG_WARNING, "Failed to load background music");
-	m_bgMusic = m_resourceManager.getMusic("bg-music");
+	m_bgMusic = m_resourceManager.get<Music>("bg-music");
 }
 
 void Game::run() {

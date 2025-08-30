@@ -28,8 +28,6 @@ public:
 	Game(Game&&) = delete;
 	~Game();
 
-	fs::path getResourceDir();
-
 DESKTOP_ONLY(
 	std::optional<int> handleCli(int argc, char* argv[]);
 )
@@ -40,7 +38,6 @@ DESKTOP_ONLY(
 
 private:
 
-	fs::path m_resourceDir;
 
 DESKTOP_ONLY(
 	clipboard_c* m_cb;
