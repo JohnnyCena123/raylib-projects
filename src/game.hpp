@@ -12,37 +12,36 @@
 	#include <libclipboard.h>
 	#include <tinyfiledialogs.h>
 	#include <filesystem>
-	#include <sstream>
-	#include <optional>
 	namespace fs = std::filesystem;
-	#define DESKTOP_ONLY(...) __VA_ARGS__
-#else
-	#define DESKTOP_ONLY(...)
 #endif
 #include "resource-manager.hpp"
+	
+#include <sstream>
+#include <optional>
 
 class Game {
 public:
-	Game();
+	Game() = delete;
+	Game(int argc, char* argv[], std::optional<int>& exit); // no other way to get a return value from a ctor
 	Game(Game const&) = delete;
 	Game(Game&&) = delete;
 	~Game();
 
-DESKTOP_ONLY(
-	std::optional<int> handleCli(int argc, char* argv[]);
-)
-	void init();
 	void run();
-	void deinit();
-
 
 private:
 
+	bool m_didInit;
+	
+	DESKTOP_ONLY(clipboard_c* m_cb);
 
-DESKTOP_ONLY(
-	clipboard_c* m_cb;
-
+NOT_IN_WEB(
 	fs::path m_saveDir;
+	static fs::path getDefaultSaveDir();
+	static fs::path getSaveDir(bool portable);
+)
+
+	std::optional<int> handleCli(int argc, char* argv[]);
 
 	bool m_portable;
 
@@ -52,7 +51,6 @@ DESKTOP_ONLY(
 	bool m_hadWarning;
 	std::stringstream m_logs;
 	void saveLogs();
-)
 
 	Vector2 m_screenSize;
 

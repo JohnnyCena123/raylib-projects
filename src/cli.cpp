@@ -1,3 +1,4 @@
+#include "resource-manager.hpp"
 #include <array>
 #include <raylib.h>
 #include <regex>
@@ -5,7 +6,9 @@
 #include <iostream>
 #include <optional>
 #include <string>
-#include <tinyfiledialogs.h>
+#ifdef PLATFORM_DESKTOP
+	#include <tinyfiledialogs.h>
+#endif
 #include "metadata/build-metadata.hpp"
 #include "game.hpp"
 
@@ -58,7 +61,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 				altSaveDir = arg.substr(sizeof(ALT_SAVE_DIR_ARG) - 1, std::string::npos);
 				found = true;
 			} else if (arg.starts_with(LOG_LEVEL_ARG)) {
-				rawLogLevel = arg.substr(sizeof(ALT_SAVE_DIR_ARG), std::string::npos);
+				rawLogLevel = arg.substr(sizeof(LOG_LEVEL_ARG), std::string::npos);
 				found = true;
 			} else for (auto const& option : options) {
 				if (arg == option.full) {
@@ -140,6 +143,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		return 0;
 	}
 
+#ifndef PLATFORM_WEB
 	if (altSaveDir) {
 		if (!DirectoryExists(altSaveDir->string().c_str())) {
 			if (!MakeDirectory(altSaveDir->string().c_str())) {
@@ -149,11 +153,12 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		}
 		m_saveDir = *altSaveDir;
 	}
+#endif
 	if (altResourceDir) {
 		if (!DirectoryExists(altResourceDir->string().c_str()))
 			std::cerr << ERROR_MSG << "resource dir does not exist: " << altResourceDir->string() << ".\n";
-		m_resourceManager.m_resourceDir = *altResourceDir;
-	} else m_resourceManager.m_resourceDir = ResourceManager::getResourceDir(portable);
+		ResourceManager::s_resourceDir = *altResourceDir;
+	} else ResourceManager::s_resourceDir = ResourceManager::getResourceDir(portable);
 	if (rawLogLevel) {
 		if (rawLogLevel->empty()) {
 			std::cerr << ERROR_MSG << "please provide a log level for --log-level.\n"
@@ -187,7 +192,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			}
 		}
 		if (invalidLogLevel) {
-			std::cerr << ERROR_MSG << "invalid log level: " << *rawLogLevel << "\n"
+			std::cerr << ERROR_MSG << "invalid log level: \033[1m" << *rawLogLevel << "\033[0m\n"
 				<< HELP_SUGGESTION;
 			return 2;
 		}
@@ -196,7 +201,11 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	static Game& _this = *this; // static for the tracelog callback to be able to access it
 	TraceLogCallback traceLogCallback = [](int logType, const char* text, va_list args) {
 		if (logType < _this.m_traceLogLevel) return;
-		if (logType >= LOG_WARNING) _this.m_hadWarning = true;
+		std::ostream* out = &std::cout; // has to be a pointer, references cant be reassigned
+		if (logType >= LOG_WARNING) {
+			_this.m_hadWarning = true;
+			out = &std::cerr;
+		}
 
 		va_list argsCopy;
 		va_copy(argsCopy, args);
@@ -225,72 +234,16 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		}
 		ss << std::string(buffer.data());
 
-		if (!_this.m_silent) std::cout << ss.str() << std::endl;
-		_this.m_logs << ss.str() << std::endl;
+		std::stringstream withoutColors = std::stringstream{std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "")};
+
+
+		if (!_this.m_silent) *out <<
+			// avoid printing with colors to the web console, it wont work anyway
+			(WEB_ONLY(withoutColors) NOT_IN_WEB(ss)).str() << std::endl;
+		_this.m_logs << withoutColors.str() << std::endl;
 	};
 	SetTraceLogCallback(traceLogCallback);
 	// im handling log levels myself
 	SetTraceLogLevel(LOG_ALL);
 	return std::nullopt;
-}
-
-void Game::saveLogs() {
-	std::time_t currentTime = std::time(0);
-	std::tm* localTime = std::localtime(&currentTime);
-
-	fs::path logsDir = m_saveDir/"logs";
-	std::string logFilename = TextFormat("%04d.%02d.%02d-%02d:%02d:%02d.log",
-		localTime->tm_year + 1900,
-		localTime->tm_mon + 1,
-		localTime->tm_mday,
-		localTime->tm_hour,
-		localTime->tm_min,
-		localTime->tm_sec
-	);
-	fs::path logFilepath = logsDir/logFilename;
-	if (!DirectoryExists(logsDir.string().c_str()))
-		MakeDirectory(logsDir.string().c_str());
-	m_logs = std::stringstream{std::regex_replace(m_logs.str(), std::regex{"\033\\[(\\d+|;)+m"}, "")};
-	bool saved = SaveFileText(logFilepath.string().c_str(), m_logs.str().c_str());
-	if (m_hadWarning) {
-		tinyfd_messageBox("Warning",
-			(
-				"Your latest run of " PROJECT_NAME " had logged a warning.\n"
-				"logs can be found in " + logFilepath.string() + "."
-			).c_str(), "ok", "warning", 1
-		);
-		if (saved) return;
-		else tinyfd_messageBox("Failed", (
-			"Failed to save logs to " + logFilepath.string() + ".\n"
-			"Falling back to default save directory"
-		).c_str(), "ok", "warning", 1);
-		logsDir = [] -> fs::path {
-			fs::path ret = fs::path{GetApplicationDirectory()} / "save";
-		#ifdef _WIN32
-			fs::path appData = std::getenv("APPDATA");
-			ret = appData/PROJECT_NAME;
-		#elif defined(__linux__)
-			fs::path homeDir = std::getenv("HOME");
-			ret = homeDir/".local"/"share"/PROJECT_NAME;
-		#endif
-			if (!DirectoryExists(ret.string().c_str()))
-				MakeDirectory(ret.string().c_str());
-			return ret;
-		}()/"logs";
-		if (!DirectoryExists(logsDir.string().c_str()))
-			MakeDirectory(logsDir.string().c_str());
-		logFilepath = logsDir/logFilename;
-
-		if (!SaveFileText(logFilepath.string().c_str(), m_logs.str().c_str()) &&
-			tinyfd_messageBox("Fail", (
-				"Failed to save logs to " + logFilepath.string() + ".\n"
-				"Do you want to copy them to clipboard?."
-			).c_str(), "yesno", "warning", 1) &&
-			!clipboard_set_text(m_cb, m_logs.str().c_str())
-		) tinyfd_messageBox(
-			"Fatal error",
-			"Failed to copy logs to clipboard. You are out of luck...",
-			"ok", "error", 1
-		);
-	}
 }

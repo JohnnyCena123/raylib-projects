@@ -38,7 +38,7 @@ if(UNIX)
 		configure_file("${CMAKE_SOURCE_DIR}/resources/icon.png"
 			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png" COPYONLY)
 	endif()
-elseif(WIN32)
+elseif(WIN32 OR CYGWIN)
 	set(CPACK_GENERATOR "TGZ;ZIP;7Z;NSIS;WIX")
 endif()
 set(CPACK_SOURCE_GENERATOR "TGZ;ZIP;7Z")

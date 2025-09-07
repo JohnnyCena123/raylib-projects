@@ -4,45 +4,31 @@
 #include <raylib.h>
 #include "game.hpp"
 #include "basics.hpp"
+#include "resource-manager.hpp"
 
-Game::Game() :
+Game::Game(int argc, char* argv[], std::optional<int>& exit) : m_didInit(false),
 #ifdef PLATFORM_DESKTOP
-	m_cb(nullptr), m_saveDir(""), m_traceLogLevel(LOG_INFO), m_silent(false),
-	m_shouldSaveLogs(false), m_hadWarning(false), m_logs(""), m_resourceManager(
+	m_cb(nullptr), m_saveDir(""), m_portable(
 	#ifdef PORTABLE
 		true
 	#else
 		FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
 	#endif
-	),
+	), m_traceLogLevel(LOG_INFO), m_silent(false),
+	m_shouldSaveLogs(false), m_hadWarning(false), m_logs(""),
 #else
-	m_resourceManager(false),
+	m_portable(false),
 #endif
-	m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f)
-	{ /* cant call init() here, handleCli() needs to be called first */ }
+m_resourceManager(m_portable), m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f) {
 
-Game::~Game() { }
+	if ((exit = handleCli(argc, argv))) return;
+	fs::path resourceDir = ResourceManager::getResourceDir(m_portable);
+	ResourceManager::s_resourceDir = resourceDir;
+	TraceLog(LOG_INFO, "Detected %s as the resources directory", resourceDir.string().c_str());
 
-void Game::init() {
-
-#ifdef PLATFORM_DESKTOP
-	m_saveDir = [&] -> fs::path {
-		fs::path ret = fs::path{GetApplicationDirectory()}/"save";
-		if (!m_portable) {
-			#ifdef _WIN32
-				fs::path appData = std::getenv("APPDATA");
-				ret = appData/PROJECT_NAME;
-			#elif defined(__linux__)
-				fs::path homeDir = std::getenv("HOME");
-				ret = homeDir/".local"/"share"/PROJECT_NAME;
-			#endif
-		}
-		if (!DirectoryExists(ret.string().c_str())) MakeDirectory(ret.string().c_str());
-		return ret;
-	}();
-
-	m_cb = clipboard_new(nullptr);
-#endif
+NOT_IN_WEB(
+	m_saveDir = getSaveDir(m_portable);
+)
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
 	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
@@ -67,11 +53,9 @@ DESKTOP_ONLY(
 	m_screen = LoadRenderTexture(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y);
 
 	m_resourceManager.init();
-DESKTOP_ONLY(
 	if (!m_resourceManager.load<Image>("app-icon", "icon.png"))
 		TraceLog(LOG_WARNING, "Failed to load app icon");
 	SetWindowIcon(m_resourceManager.get<Image>("app-icon"));
-)
 
 	if (!m_resourceManager.load<Texture2D>("image", "image.png"))
 		TraceLog(LOG_WARNING, "Failed to load dummy image");
@@ -81,8 +65,11 @@ DESKTOP_ONLY(
 	if (!m_resourceManager.load<Music>("bg-music", "music-loop.mp3", [](Music& music) { music.looping = true; }))
 		TraceLog(LOG_WARNING, "Failed to load background music");
 	m_bgMusic = m_resourceManager.get<Music>("bg-music");
+
+	m_didInit = true;
 }
 
+NOT_IN_WEB(fs::path Game::getDefaultSaveDir() { return fs::path{GetApplicationDirectory()}/"save"; })
 void Game::run() {
 
 	PlayMusicStream(m_bgMusic);
@@ -134,10 +121,7 @@ void Game::run() {
 				rlImGuiEnd();
 			)
 		} EndDrawing();
-
 	}
-
-
 }
 
 IMGUI_ONLY(void Game::debugGUI() {
@@ -147,7 +131,8 @@ IMGUI_ONLY(void Game::debugGUI() {
 	ImGui::End();
 })
 
-void Game::deinit() {
+Game::~Game() {
+	if (!m_didInit) return;
 	m_resourceManager.deinit();
 	UnloadRenderTexture(m_screen);
 	CloseAudioDevice();

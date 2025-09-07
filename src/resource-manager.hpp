@@ -23,24 +23,24 @@ inline bool constexpr isResource = isAny<T,
 	// probably should add fonts but eh
 >;
 template <class T>
-concept Resource = isResource<T>;
+concept resource = isResource<T>;
 
-template <Resource T>
+template <resource T>
 struct RawStruct { using Type = T; };
 
 template <>
 struct RawStruct<Texture2D> { using Type = Image; };
 
-template <Resource T>
-using Raw = typename RawStruct<T>::Type;
+template <resource T>
+using RawResource = typename RawStruct<T>::Type;
 
-template <Resource T>
-inline bool constexpr isRaw = std::is_same_v<T, Raw<T>>;
+template <resource T>
+inline bool constexpr isRawResource = std::is_same_v<T, RawResource<T>>;
 template <class T>
-concept RawResource = isRaw<T>;
+concept rawresource = isRawResource<T>;
 
 
-template <Resource T>
+template <resource T>
 inline char constexpr name[] = "<unknown>";
 
 template <>
@@ -54,8 +54,8 @@ inline char constexpr name<Sound>[] = "Sound";
 template <>
 inline char constexpr name<Music>[] = "Music";
 
-template <RawResource T>
-inline std::function<T(char const*)> loader;
+template <rawresource T>
+inline std::function<T(char const*)> loader = nullptr;
 
 template <>
 inline std::function<Image(char const*)> loader<Image> = LoadImage;
@@ -67,14 +67,14 @@ template <>
 inline std::function<Music(char const*)> loader<Music> = LoadMusicStream;
 
 
-template <Resource T>
-inline std::function<T(Raw<T>)> loaderFromRaw = nullptr;
+template <resource T>
+inline std::function<T(RawResource<T>)> loaderFromRaw = nullptr;
 
 template <>
-inline std::function<Texture2D(Raw<Texture2D>)> loaderFromRaw<Texture2D> = LoadTextureFromImage;
+inline std::function<Texture2D(RawResource<Texture2D>)> loaderFromRaw<Texture2D> = LoadTextureFromImage;
 
 
-template <Resource T>
+template <resource T>
 inline std::function<bool(T)> verifier;
 
 template <>
@@ -89,7 +89,7 @@ template <>
 inline std::function<bool(Music)> verifier<Music> = IsMusicValid;
 
 
-template <Resource T>
+template <resource T>
 inline std::function<void(T)> unloader;
 
 template <>
@@ -104,14 +104,20 @@ template <>
 inline std::function<void(Music)> unloader<Music> = UnloadMusicStream;
 
 
-template <Resource T>
-using LoadCallback = std::function<void(Raw<T>&)>;
+template <resource T>
+using LoadCallback = std::function<void(RawResource<T>&)>;
 
-template <Resource T>
-inline LoadCallback<T> dummyCallback = [](Raw<T>&) { };
+template <resource T>
+inline LoadCallback<T> dummyCallback = [](RawResource<T>&) { };
 
 /* metaprogramming ends here */
 
+
+static inline bool isValidResourceDirPath(fs::path dir) {
+	fs::path resourceDir = dir/"resources";
+	return DirectoryExists(resourceDir.string().c_str()) &&
+		FileExists((resourceDir/"icon.png").string().c_str());
+};
 
 class ResourceManager {
 	friend class Game;
@@ -126,11 +132,11 @@ public:
 	void init();
 	void deinit();
 
-	template <Resource T>
+	template <resource T>
 	bool load(std::string id, fs::path relativePath, LoadCallback<T> manipulator = dummyCallback<T>) {
-		fs::path const fullPath = m_resourceDir/relativePath;
+		fs::path const fullPath = s_resourceDir/relativePath;
 
-		if constexpr (isRaw<T>) {
+		if constexpr (isRawResource<T>) {
 			if (!FileExists(fullPath.string().c_str())) {
 				TraceLog(LOG_WARNING, "RESOURCES: ['%s'] %s file does not exist: %s", id.c_str(), name<T>, fullPath.string().c_str());
 				return false;
@@ -149,18 +155,18 @@ public:
 			s_resources<T>[id] = resource;
 			return true;
 		} else {
-			if (!load<Raw<T>>(id, relativePath, manipulator)) {
-				TraceLog(LOG_WARNING, "RESOURCES: ['%s'] raw %s failed to load for %s", id.c_str(), name<Raw<T>>, name<T>);
+			if (!load<RawResource<T>>(id, relativePath, manipulator)) {
+				TraceLog(LOG_WARNING, "RESOURCES: ['%s'] raw %s failed to load for %s", id.c_str(), name<RawResource<T>>, name<T>);
 				return false;
 			}
-			s_resources<T>[id] = loaderFromRaw<T>(s_resources<Raw<T>>.at(id));
-			unloader<Raw<T>>(s_resources<Raw<T>>.at(id));
-			s_resources<Raw<T>>.erase(id);
+			s_resources<T>[id] = loaderFromRaw<T>(s_resources<RawResource<T>>.at(id));
+			unloader<RawResource<T>>(s_resources<RawResource<T>>.at(id));
+			s_resources<RawResource<T>>.erase(id);
 			return true;
 		}
 	}
 
-	template <Resource T>
+	template <resource T>
 	T get(std::string id) {
 		if (s_resources<T>.contains(id)) return s_resources<T>.at(id);
 		else {
@@ -169,27 +175,30 @@ public:
 		}
 	}
 
-	template <Resource T>
+	template <resource T>
 	T const& getDummy() { return s_dummy<T>; }
 
 private:
 
-	static fs::path getResourceDir(bool portable);
+	static fs::path s_resourceDir;
 
-	fs::path m_resourceDir;
-
-	bool m_initialized;
+	static bool s_initialized;
 
 	// these 2 have to be static in order to be templated
-	template <Resource T>
+	template <resource T>
 	static std::map<std::string, T> s_resources;
 
-	template <Resource T>
+	template <resource T>
 	static T s_dummy;
+
+	static fs::path getResourceDir(bool portable);
+	static fs::path getDefaultResourceDir(bool portable);
+	static bool verifyResourceDir(fs::path dir);
+
 };
 
-template <Resource T>
+template <resource T>
 std::map<std::string, T> ResourceManager::s_resources{};
 
-template <Resource T>
+template <resource T>
 T ResourceManager::s_dummy{};
