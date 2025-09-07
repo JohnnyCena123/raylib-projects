@@ -293,6 +293,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: inputs.package
         with:
-          name: packages-${{ inputs.os }}
+          name: packages-${{ runner.os }}
           path: ${{ github.workspace }}/packages/*
 

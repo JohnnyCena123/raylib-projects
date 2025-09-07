@@ -1,4 +1,8 @@
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <filesystem>
+#include <optional>
 #include <raylib.h>
 #include <string>
 #include "game.hpp"
@@ -7,100 +11,37 @@
 #include "save-data.hpp"
 #include "snake.hpp"
 #include "basics.hpp"
-Game::Game() :
+#include "resource-manager.hpp"
+Game::Game(int argc, char* argv[], std::optional<int>& exit) : m_didInit(false),
 #ifdef PLATFORM_DESKTOP
-	m_cb(nullptr), m_resourceDir(""), m_saveDir(""), m_portable(
-#ifdef PORTABLE
+	m_cb(nullptr), m_saveDir(""), m_portable(
+	#ifdef PORTABLE
 		true
 	#else
 		FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
 	#endif
 	),
 	m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
-	m_hadWarning(false), m_logs(""),
-#endif
-	m_screenSize(DEFAULT_SCREEN_SIZE), m_resourceManager(*this), m_muted(false),
+	m_hadWarning(false), m_logs(""), 
+#endif 
+	m_screenSize(DEFAULT_SCREEN_SIZE), m_resourceManager(m_portable), m_muted(false),
 	m_masterVolume(.5f), m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED),
 	m_speed(m_startSpeed), m_timeSinceStep(0.f), m_hasLost(false), m_isPaused(false),
 	m_shouldRestart(false), m_restartButtonHeld(false), m_isSaveDirty(false), m_inputQueue(),
-	m_snake(SNAKE_START_LENGTH, *this), m_apples(), m_saveData(0)
-{ /* cant call init() here, handleCli() needs to be called first */ }
-Game::~Game() { }
-fs::path Game::getResourceDir() { return m_resourceDir; }
-static inline bool isValidResourceDirPath(fs::path dir) {
-	fs::path resourceDir = dir/"resources";
-	return DirectoryExists(resourceDir.string().c_str()) &&
-		FileExists((resourceDir/"icon.png").string().c_str());
-};
-void Game::init() {
-	m_resourceDir = [&] -> fs::path {
-	#ifdef PLATFORM_WEB
-		fs::path ret = ".";
-	#else
-		fs::path exeDir = GetApplicationDirectory();
-		fs::path ret = exeDir;
-		if (!m_portable) {
-		#ifdef __linux__
-			fs::path testedDir = exeDir;
-			std::optional<fs::path> finalPath;
-			while (testedDir.has_parent_path()) {
-				std::array subdirOptions{
-					fs::path{"."},
-					fs::path{"share"},
-					fs::path{"share"}/PROJECT_NAME,
-					fs::path{"usr"}/"share"/PROJECT_NAME
-				};
-				for (fs::path option : subdirOptions) {
-					fs::path fullpath = testedDir/option;
-					TraceLog(LOG_TRACE, "Testing %s", fullpath.string().c_str());
-					if (isValidResourceDirPath(fullpath)) {
-						TraceLog(LOG_INFO, "Detected %s as the parent for the resources directory", fullpath.string().c_str());
-						finalPath = fullpath;
-						break;
-					}
-				}
-				if (finalPath) break;
-				testedDir = testedDir.parent_path();
-			}
-			ret = *finalPath;
-		#endif
-		}
-		if (!isValidResourceDirPath(ret)) {
-			DESKTOP_ONLY(tinyfd_messageBox("Failure", (
-				"Could not find the resource directory.\n"
-				"Are you sure you downloaded the resources and extracted them to the right place?\n"
-				"NOTE: the folder structure should look like this:\n"
-				"/path/to/" PROJECT_NAME "/\n"
-				"    |-- " PROJECT_NAME "\n"
-				"    |-- libraries...\n"
-				"    |-- resources/\n"
-				"         |-- resources...\n"
-				"additional info:\n" +
-				ret.string() + " is not a valid parent directory for the resources."
-				).c_str(), "ok", "error", 0
-			));
-			TraceLog(LOG_ERROR, "Failed to locate resource dir; %s is not a valid parent directory.", ret.string().c_str());
-		}
-	#endif
-		return ret/"resources";
-	}();
+	m_snake(SNAKE_START_LENGTH, *this), m_apples(), m_saveData(0) {
+
 #ifdef PLATFORM_DESKTOP
-	m_saveDir = [&] -> fs::path {
-		fs::path ret = fs::path{GetApplicationDirectory()}/"save";
-		if (!m_portable) {
-			#ifdef _WIN32
-				fs::path appData = std::getenv("APPDATA");
-				ret = appData/PROJECT_NAME;
-			#elif defined(__linux__)
-				fs::path homeDir = std::getenv("HOME");
-				ret = homeDir/".local"/"share"/PROJECT_NAME;
-			#endif
-		}
-		if (!DirectoryExists(ret.string().c_str())) MakeDirectory(ret.string().c_str());
-		return ret;
-	}();
 	m_cb = clipboard_new(nullptr);
 #endif
+
+	if ((exit = handleCli(argc, argv))) return;
+	fs::path resourceDir = ResourceManager::getResourceDir(m_portable);
+	ResourceManager::s_resourceDir = resourceDir;
+	TraceLog(LOG_INFO, "Detected %s as the resources directory", resourceDir.string().c_str());
+
+NOT_IN_WEB(
+	m_saveDir = getSaveDir(m_portable);
+)
 	DESKTOP_ONLY(loadSaveData(SAVE_FILE));
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y, "Snake");
@@ -120,23 +61,31 @@ DESKTOP_ONLY(
 	SetWindowPosition((monitorWidth - newSize.x) / 2, (monitorHeight - newSize.y) / 2);
 )
 	m_screen = LoadRenderTexture(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y);
+
 	m_resourceManager.init();
-DESKTOP_ONLY(
-	if (!m_resourceManager.loadImage("app-icon", "icon.png"))
+	if (!m_resourceManager.load<Image>("app-icon", "icon.png"))
 		TraceLog(LOG_WARNING, "Failed to load app icon");
-	SetWindowIcon(m_resourceManager.getImage("app-icon"));
-)
-	LoadImageCallback resizer = [](Image& image) {
+	SetWindowIcon(m_resourceManager.get<Image>("app-icon"));
+	LoadCallback<Image> resizer = [](Image& image) {
 		ImageResize(&image, FREE_SPACE - 20.f, FREE_SPACE - 20.f);
 	};
-	m_resourceManager.loadTexture("apple", "apple.png", resizer);
-	m_resourceManager.loadTexture("trophy", "trophy.png", resizer);
+	m_resourceManager.load<Texture2D>("apple", "apple.png", resizer);
+	m_resourceManager.load<Texture2D>("trophy", "trophy.png", resizer);
 	// credit: https://sunixdev.itch.io/casual-music-pack
-	if (!m_resourceManager.loadMusic("bg-music", "music-loop.mp3", [](Music& music) { music.looping = true; }))
+	if (!m_resourceManager.load<Music>("bg-music", "music-loop.mp3", [](Music& music) { music.looping = true; }))
 		TraceLog(LOG_WARNING, "Failed to load background music");
-	m_bgMusic = m_resourceManager.getMusic("bg-music");
-	PlayMusicStream(m_bgMusic);
+	m_bgMusic = m_resourceManager.get<Music>("bg-music");
+
+	m_didInit = true;
 }
+
+NOT_IN_WEB(fs::path Game::getDefaultSaveDir() { return fs::path{GetApplicationDirectory()}/"save"; })
+
+void Game::run() {
+	PlayMusicStream(m_bgMusic);
+	while (runRound()) { }
+}
+
 DESKTOP_ONLY(
 void Game::loadSaveData(fs::path saveFile) {
 	fs::path realPath = m_saveDir/saveFile;
@@ -221,7 +170,7 @@ void Game::reset() {
 	m_apples.clear();
 	m_apples.push_back(firstApple);
 }
-bool Game::run() {
+bool Game::runRound() {
 	reset();
 	bool isWindowMaximized = false;
 	while (!WindowShouldClose()) {
@@ -573,7 +522,7 @@ void Game::draw() const {
 	{
 		for (Apple const& applePos : m_apples) {
 			Rectangle const& appleRec = recFromIndices(applePos, GRID);
-			DrawTextureEx(m_resourceManager.getTexture("apple"),
+			DrawTextureEx(m_resourceManager.get<Texture2D>("apple"),
 				{ appleRec.x + TILE_EDGE_SIZE, appleRec.y + TILE_EDGE_SIZE }, 0.f,
 				(FREE_SPACE - 20.f) / USED_TILE_SPACE, WHITE
 			);
@@ -602,7 +551,7 @@ void Game::draw() const {
 
 void Game::drawOverlay() const {
 	{
-		Texture2D const apple = m_resourceManager.getTexture("apple");
+		Texture2D const apple = m_resourceManager.get<Texture2D>("apple");
 		DrawTextureV(apple, {
 			DEFAULT_SCREEN_SIZE.x - 100.f,
 			(FREE_SPACE - apple.height) / 2,
@@ -611,7 +560,7 @@ void Game::drawOverlay() const {
 			TextFormat("%d", m_score),
 			{ DEFAULT_SCREEN_SIZE.x - 60.f, 15.f }, 25.f, 2.5f, BLACK
 		);
-		Texture2D const trophy = m_resourceManager.getTexture("trophy");
+		Texture2D const trophy = m_resourceManager.get<Texture2D>("trophy");
 		DrawTextureV(trophy, {
 			DEFAULT_SCREEN_SIZE.x - 200.f,
 			(FREE_SPACE - trophy.height) / 2,
@@ -658,7 +607,7 @@ void Game::drawOverlay() const {
 		);
 	}
 }
-void Game::deinit() {
+Game::~Game() {
 	m_resourceManager.deinit();
 	UnloadRenderTexture(m_screen);
 	CloseAudioDevice();

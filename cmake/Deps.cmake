@@ -33,6 +33,11 @@ if(PLATFORM_DESKTOP)
 	)
 	set(TINYFD_TARGET "tinyfd")
 	add_library(${TINYFD_TARGET} STATIC "${tinyfd_SOURCE_DIR}/tinyfiledialogs.c")
+	check_c_compiler_flag("-Wno-unused-result" HAS_W_NO_UNUSED_RESULT)
+	if(HAS_W_NO_UNUSED_RESULT)
+		target_compile_options(tinyfd PRIVATE "-Wno-unused-result")
+	endif()
+
 	if(DISABLE_WARNINGS)
 		set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
 	endif()
@@ -47,6 +52,7 @@ if(PLATFORM_DESKTOP)
 	set_target_properties(${LCB_TARGET} PROPERTIES
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
 	)
+
 	if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
 		foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
 			string(TOUPPER "${CONFIG}" UPPER_CONFIG)
@@ -67,6 +73,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
 		${imgui_SOURCE_DIR}/imgui_draw.cpp
 		${imgui_SOURCE_DIR}/imgui_demo.cpp
 		${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
+
 		${rlImGui_SOURCE_DIR}/rlImGui.cpp
 	)
 	target_include_directories(${IMGUI_TARGET} PRIVATE

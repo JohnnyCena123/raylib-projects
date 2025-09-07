@@ -367,7 +367,7 @@ jobs:
             cd .. && rm -rf build-linux-Makefiles-Release
           cd ..
           mkdir packages
-          for id in windows-2025 macos-15 ubuntu-24.04; do
+          for id in Windows macOS Linux; do
             cp packages-$id/* packages/
           done
         shell: bash

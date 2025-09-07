@@ -11,40 +11,47 @@
 #ifdef PLATFORM_DESKTOP
 	#include <libclipboard.h>
 	#include <tinyfiledialogs.h>
-	#include <sstream>
-	#include <optional>
 	#include <filesystem>
 	namespace fs = std::filesystem;
-	#define DESKTOP_ONLY(...) __VA_ARGS__
-#else
-	#define DESKTOP_ONLY(...)
 #endif
 #include "resource-manager.hpp"
+	
+#include <sstream>
+#include <optional>
 #include "snake.hpp"
 #include "save-data.hpp"
 class Game {
 public:
-	Game();
+	Game() = delete;
+	Game(int argc, char* argv[], std::optional<int>& exit); // no other way to get a return value from a ctor
 	Game(Game const&) = delete;
 	Game(Game&&) = delete;
 	~Game();
-	fs::path getResourceDir();
-	DESKTOP_ONLY(std::optional<int> handleCli(int argc, char* argv[]));
-	void init();
-	bool run();
-	void deinit();
+
+	void run();
+
 private:
-	fs::path m_resourceDir;
-DESKTOP_ONLY(
+
+	bool m_didInit;
+	
+	DESKTOP_ONLY(clipboard_c* m_cb);
+
+NOT_IN_WEB(
 	fs::path m_saveDir;
-	clipboard_c* m_cb;
+	static fs::path getDefaultSaveDir();
+	static fs::path getSaveDir(bool portable);
+)
+
+	std::optional<int> handleCli(int argc, char* argv[]);
+
 	bool m_portable;
 	int m_traceLogLevel;
 	bool m_silent;
 	bool m_shouldSaveLogs;
 	bool m_hadWarning;
 	std::stringstream m_logs;
-)
+	void saveLogs();
+
 	Vector2 m_screenSize;
 	RenderTexture2D m_screen;
 	Music m_bgMusic;
@@ -66,10 +73,11 @@ DESKTOP_ONLY(
 	std::vector<Apple> m_apples;
 	SaveData m_saveData;
 DESKTOP_ONLY(
-	void saveLogs();
 	void loadSaveData(fs::path saveFile);
 	void saveData(fs::path saveFile);
 )
+
+	bool runRound();
 	void reset();
 	void checkDeath();
 	void advanceScore();
