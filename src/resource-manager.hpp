@@ -165,7 +165,7 @@ public:
 	}
 
 	template <resource T>
-	T get(std::string id) {
+	T get(std::string id) const {
 		if (s_resources<T>.contains(id)) return s_resources<T>.at(id);
 		else {
 			TraceLog(LOG_WARNING, "RESOURCES: ['%s'] %s has NOT been loaded, returning dummy", id.c_str(), name<T>);
@@ -174,7 +174,7 @@ public:
 	}
 
 	template <resource T>
-	T const& getDummy() { return s_dummy<T>; }
+	T const& getDummy() const { return s_dummy<T>; }
 
 private:
 
