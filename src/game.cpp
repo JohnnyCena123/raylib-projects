@@ -384,55 +384,68 @@ IMGUI_ONLY(void Game::debugGUI() {
 })
 
 void Game::handleButtons(float resizeRatio) {
-	static Texture2D const restartBtn = [&] {
-		Image image = GenImageColor(2 * RESTART_BUTTON_SIZE, 2 * RESTART_BUTTON_SIZE, BLANK);
-		ImageDrawCircleV(&image, { RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE }, RESTART_BUTTON_SIZE, RESTART_BUTTON_OUTER_COLOR);
-		ImageDrawCircleV(&image, { RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE }, RESTART_BUTTON_SIZE * .65f, RESTART_BUTTON_INNER_COLOR);
-		ImageDrawCircleV(&image, { RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE }, RESTART_BUTTON_SIZE * .4f, RESTART_BUTTON_OUTER_COLOR);
-		ImageDrawTriangle(&image,
-			{ RESTART_BUTTON_SIZE * .15f, RESTART_BUTTON_SIZE / 2 },
-			{ RESTART_BUTTON_SIZE * .15f, RESTART_BUTTON_SIZE * 1.5f },
-			{ RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE },
-		RESTART_BUTTON_OUTER_COLOR);
-		ImageDrawTriangle(&image,
-			{ RESTART_BUTTON_SIZE * .38f, RESTART_BUTTON_SIZE * .57f },
-			{ RESTART_BUTTON_SIZE * .4f,  RESTART_BUTTON_SIZE * .92f },
-			{ RESTART_BUTTON_SIZE * .75f, RESTART_BUTTON_SIZE * .89f },
-		RESTART_BUTTON_INNER_COLOR);
-		Texture2D ret = LoadTextureFromImage(image);
-		UnloadImage(image);
-		return ret;
-	}();
-	if (m_hasLost) {
-		DrawTextureV(restartBtn, RESTART_BUTTON_INFO.origin, WHITE);
-		float gameSize = std::min(m_screenSize.x, m_screenSize.y);
-		if (CheckCollisionPointCircle(
-			// needed because otherwise it checks for clicks in the unresized original position
-			GetMousePosition(), {
-				RESTART_BUTTON_INFO.center.x * resizeRatio + (m_screenSize.x - gameSize) / 2,
-				RESTART_BUTTON_INFO.center.y * resizeRatio + (m_screenSize.y - gameSize) / 2
-			// here too
-			}, RESTART_BUTTON_INFO.radius * resizeRatio
-		)) {
-			SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
-			DrawCircleLinesV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius - 1.5f, RAYWHITE);
-			if (IsMouseButtonDown(0)) {
-				m_restartButtonHeld = true;
-				DrawCircleV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius, {.a = 70});
-			} else if (m_restartButtonHeld) m_shouldRestart = true;
-		} else {
-			SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-			if (IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_ENTER)) {
-				m_restartButtonHeld = true;
-				DrawCircleV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius, {.a = 70});
-			} else if ((IsKeyReleased(KEY_SPACE) || IsKeyReleased(KEY_ENTER)) && m_restartButtonHeld) m_shouldRestart = true;
-			else {
-				m_restartButtonHeld = false;
-				DrawTextureV(restartBtn, RESTART_BUTTON_INFO.origin, WHITE);
+	float gameSize = std::min(m_screenSize.x, m_screenSize.y);
+	{
+		static Texture2D const restartBtn = [&] {
+			Image image = GenImageColor(2 * RESTART_BUTTON_SIZE, 2 * RESTART_BUTTON_SIZE, BLANK);
+			ImageDrawCircleV(&image, { RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE }, RESTART_BUTTON_SIZE, RESTART_BUTTON_OUTER_COLOR);
+			ImageDrawCircleV(&image, { RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE }, RESTART_BUTTON_SIZE * .65f, RESTART_BUTTON_INNER_COLOR);
+			ImageDrawCircleV(&image, { RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE }, RESTART_BUTTON_SIZE * .4f, RESTART_BUTTON_OUTER_COLOR);
+			ImageDrawTriangle(&image,
+				{ RESTART_BUTTON_SIZE * .15f, RESTART_BUTTON_SIZE / 2 },
+				{ RESTART_BUTTON_SIZE * .15f, RESTART_BUTTON_SIZE * 1.5f },
+				{ RESTART_BUTTON_SIZE, RESTART_BUTTON_SIZE },
+			RESTART_BUTTON_OUTER_COLOR);
+			ImageDrawTriangle(&image,
+				{ RESTART_BUTTON_SIZE * .38f, RESTART_BUTTON_SIZE * .57f },
+				{ RESTART_BUTTON_SIZE * .4f,  RESTART_BUTTON_SIZE * .92f },
+				{ RESTART_BUTTON_SIZE * .75f, RESTART_BUTTON_SIZE * .89f },
+			RESTART_BUTTON_INNER_COLOR);
+			Texture2D ret = LoadTextureFromImage(image);
+			UnloadImage(image);
+			return ret;
+		}();
+		if (m_hasLost) {
+			static bool restartButtonHovered = false;
+			DrawTextureV(restartBtn, RESTART_BUTTON_INFO.origin, WHITE);
+			if (CheckCollisionPointCircle(
+				// needed because otherwise it checks for clicks in the unresized original position
+				GetMousePosition(), {
+					RESTART_BUTTON_INFO.center.x * resizeRatio + (m_screenSize.x - gameSize) / 2,
+					RESTART_BUTTON_INFO.center.y * resizeRatio + (m_screenSize.y - gameSize) / 2
+				// here too
+				}, RESTART_BUTTON_INFO.radius * resizeRatio
+			)) {
+				if (!restartButtonHovered) {
+					restartButtonHovered = true;
+					SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
+				}
+				DrawCircleLinesV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius - 1.5f, RAYWHITE);
+				if (IsMouseButtonDown(0)) {
+					m_restartButtonHeld = true;
+					DrawCircleV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius, {.a = 70});
+				} else if (m_restartButtonHeld) {
+					m_shouldRestart = true;
+					restartButtonHovered = false;
+				}
+			} else {
+				if (restartButtonHovered) {
+					restartButtonHovered = false;
+					SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+				}
+				if (IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_ENTER)) {
+					m_restartButtonHeld = true;
+					DrawCircleV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius, {.a = 70});
+				} else if ((IsKeyReleased(KEY_SPACE) || IsKeyReleased(KEY_ENTER)) && m_restartButtonHeld) m_shouldRestart = true;
+				else {
+					m_restartButtonHeld = false;
+					DrawTextureV(restartBtn, RESTART_BUTTON_INFO.origin, WHITE);
+				}
 			}
 		}
 	}
 	{
+		static bool muteButtonHovered = false;
 		static Color constexpr COLOR = { 32, 32, 32, 255 };
 		static Texture2D const speaker = [&] {
 			RenderTexture2D rt = LoadRenderTexture(35, 50);
@@ -440,8 +453,8 @@ void Game::handleButtons(float resizeRatio) {
 				DrawRectangleRounded({ 0.f, 12.5f, 20.f, 25.f }, .3f, 5, COLOR);
 				DrawTriangle(
 					{ 10.f, 25.f },
-					{ 35.f, 48.f },
-					{ 35.f, 2.f },
+					{ 35.f, 47.5f },
+					{ 35.f, 2.5f },
 				COLOR);
 			} EndTextureMode();
 			Image temp = LoadImageFromTexture(rt.texture);
@@ -457,8 +470,8 @@ void Game::handleButtons(float resizeRatio) {
 				DrawRectangleRoundedLines({ 0.f, 12.5f, 22.f, 25.f }, .3f, 5, RAYWHITE);
 				DrawTriangleLines(
 					{ 9.f, 25.f },
-					{ 36.f, 48.5f },
-					{ 36.f, 1.5f },
+					{ 38.f, 48.5f },
+					{ 38.f, 1.5f },
 				RAYWHITE);
 			} EndTextureMode();
 			Image temp = LoadImageFromTexture(rt.texture);
@@ -469,13 +482,19 @@ void Game::handleButtons(float resizeRatio) {
 			return ret;
 		}();
 		if (CheckCollisionPointRec(GetMousePosition(), {
-			FREE_SPACE + 45.f, 0.f,
-			static_cast<float>(speaker.width), static_cast<float>(speaker.height)
+			(FREE_SPACE + 45.f) * resizeRatio + (m_screenSize.x - gameSize) / 2, (m_screenSize.y - gameSize) / 2.f,
+			speaker.width * resizeRatio, speaker.height * resizeRatio
 		})) {
-			DrawTextureV(speakerOutline, { FREE_SPACE + 44.f, 0.f }, WHITE);
-			SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
+			if (!muteButtonHovered) {
+				muteButtonHovered = true;
+				SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
+			}
+			DrawTextureV(speakerOutline, { FREE_SPACE + 42.5f, 0.f }, WHITE);
 			if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) m_muted ^= true;
-		} else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+		} else if (muteButtonHovered) {
+			muteButtonHovered = false;
+			SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+		}
 		DrawTextureV(speaker, { FREE_SPACE + 45.f, 0.f }, WHITE);
 		
 		static Texture2D const soundWaves = [&] {
