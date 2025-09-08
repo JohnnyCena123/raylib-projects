@@ -629,6 +629,7 @@ void Game::drawOverlay() const {
 	}
 }
 Game::~Game() {
+	if (!m_didInit) return;
 	m_resourceManager.deinit();
 	UnloadRenderTexture(m_screen);
 	CloseAudioDevice();
