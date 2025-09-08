@@ -14,12 +14,12 @@ Game::Game(int argc, char* argv[], std::optional<int>& exit) : m_didInit(false),
 	#else
 		FileExists((fs::path{GetApplicationDirectory()}/PORTABLE_INDICATOR_FILE).string().c_str())
 	#endif
-	), m_traceLogLevel(LOG_INFO), m_silent(false),
-	m_shouldSaveLogs(false), m_hadWarning(false), m_logs(""),
+	),
 #else
 	m_portable(false),
 #endif
-m_resourceManager(m_portable), m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f) {
+	m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false), m_hadWarning(false), m_logs(""),
+	m_resourceManager(m_portable), m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f) {
 
 	if ((exit = handleCli(argc, argv))) return;
 	fs::path resourceDir = ResourceManager::getResourceDir(m_portable);
