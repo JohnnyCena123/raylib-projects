@@ -22,7 +22,9 @@ Game::Game(int argc, char* argv[], std::optional<int>& exit) : m_didInit(false),
 	#endif
 	),
 	m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false),
-	m_hadWarning(false), m_logs(""), 
+	m_hadWarning(false), m_logs(""),
+#else
+	m_portable(false),
 #endif 
 	m_screenSize(DEFAULT_SCREEN_SIZE), m_resourceManager(m_portable), m_muted(false),
 	m_masterVolume(.5f), m_stepCount(0), m_score(0), m_startSpeed(SNAKE_START_SPEED),
