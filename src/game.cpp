@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <optional>
@@ -238,8 +239,8 @@ void Game::step() {
 	bool pop = true;
 	for (Apple& apple : m_apples) {
 		if (CheckCollisionRecs(
-			recFromIndices(m_snake.m_tiles.back(), GRID),
-			recFromIndices(apple, GRID))
+			tileToRec(m_snake.m_tiles.back()),
+			tileToRec(apple))
 		) {
 			pop = false;
 			Apple newApple = apple;
@@ -527,9 +528,9 @@ void Game::draw() const {
 			RenderTexture2D target = LoadRenderTexture(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y);
 			BeginTextureMode(target);
 			bool alternateColor = false;
-			for (std::array<Rectangle, GRID_SIZE> const& line : GRID) {
-				for (Rectangle const& rect : line) {
-					DrawRectangleRec(rect, alternateColor ? ALT_COLOR : MAIN_COLOR);
+			for (int8_t x = 0; x < GRID_SIZE; x++) {
+				for (int8_t y = 0; y < GRID_SIZE; y++) {
+					DrawRectangleRec(tileToRec({ x, y }), alternateColor ? ALT_COLOR : MAIN_COLOR);
 					alternateColor = !alternateColor;
 				}
 			}
@@ -541,7 +542,7 @@ void Game::draw() const {
 
 	{
 		for (Apple const& applePos : m_apples) {
-			Rectangle const& appleRec = recFromIndices(applePos, GRID);
+			Rectangle const& appleRec = tileToRec(applePos);
 			DrawTextureEx(m_resourceManager.get<Texture2D>("apple"),
 				{ appleRec.x + TILE_EDGE_SIZE, appleRec.y + TILE_EDGE_SIZE }, 0.f,
 				(FREE_SPACE - 20.f) / USED_TILE_SPACE, WHITE

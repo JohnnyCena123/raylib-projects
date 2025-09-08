@@ -2,6 +2,7 @@
 #include "basics.hpp"
 #include "game.hpp"
 #include "utils.hpp"
+#include <cstdint>
 #include <random>
 #include <raylib.h>
 
@@ -36,7 +37,7 @@ Tile Snake::getNextTile() const {
 
 Rectangle Snake::drawTile(int id) const {
 	Tile const& tile = m_tiles[id];
-	Rectangle const& originalRec = recFromIndices(tile, GRID);
+	Rectangle const& originalRec = tileToRec(tile);
 	bool willWraparound = false;
 	bool didWraparound = false;
 	Rectangle drawRec = {
@@ -47,14 +48,20 @@ Rectangle Snake::drawTile(int id) const {
 		Direction forwardsDirection = None;
 		if (id < m_tiles.size() - 1) {
 			Tile const& nextTile = m_tiles[id + 1];
-			Tile const nextDiff = { nextTile[0] - tile[0], nextTile[1] - tile[1] };
+			Tile const nextDiff = {
+				static_cast<int8_t>(nextTile[0] - tile[0]),
+				static_cast<int8_t>(nextTile[1] - tile[1])
+			};
 			if (abs(nextDiff[0]) > 1 || abs(nextDiff[1]) > 1) willWraparound = true;
 			forwardsDirection = vecToDirection(nextDiff);
 		}
 		Direction backwardsDirection = None;
 		if (id > 0) { // only the first tile doesnt connect backwards
 			Tile const& prevTile = m_tiles[id - 1];
-			Tile const prevDiff = { tile[0] - prevTile[0], tile[1] - prevTile[1] };
+			Tile const prevDiff = {
+				static_cast<int8_t>(tile[0] - prevTile[0]),
+				static_cast<int8_t>(tile[1] - prevTile[1])
+			};
 			if (abs(prevDiff[0]) > 1 || abs(prevDiff[1]) > 1) didWraparound = true;
 			backwardsDirection = vecToDirection(prevDiff);
 		}
@@ -150,7 +157,7 @@ void Snake::draw() const {
 	for (size_t i = 0; i < m_tiles.size(); i++) {
 		if (i != m_tiles.size() - 1) (void)drawTile(i);
 		else drawHead(i);
-		Rectangle originalRect = recFromIndices(m_tiles[i], GRID);
+		Rectangle originalRect = tileToRec(m_tiles[i]);
 		Vector2 textSize = MeasureTextEx(
 			GetFontDefault(),
 			TextFormat("%i", i), 25.f, 2.5f

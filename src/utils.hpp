@@ -3,11 +3,13 @@
 #include <string>
 #include <raylib.h>
 #include "basics.hpp"
-static inline Rectangle constexpr& recFromIndices(Tile const& indices, Grid& grid) {
-	return grid[indices[0]][indices[1]];
-}
-static inline Rectangle const constexpr& recFromIndices(Tile const& indices, Grid const& grid) {
-	return grid[indices[0]][indices[1]];
+static inline Rectangle constexpr tileToRec(Tile const& tile) {
+	return {
+		FREE_SPACE + tile[0] * TILE_SIZE,
+		FREE_SPACE + tile[1] * TILE_SIZE,
+		TILE_SIZE, TILE_SIZE,
+
+	};
 }
 static inline std::string constexpr directionToString(Direction direction) {
 	switch (direction) {
@@ -28,7 +30,7 @@ static inline std::array<int, 2> constexpr directionToVec(Direction direction) {
 		default:    return { 0,  0 };
 	}
 }
-static inline Direction constexpr vecToDirection(std::array<int, 2> vec) {
+static inline Direction constexpr vecToDirection(Tile vec) {
 	switch (vec[0]) {
 		case GRID_SIZE - 1:
 		case 1: return Left;

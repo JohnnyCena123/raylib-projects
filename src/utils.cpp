@@ -4,6 +4,6 @@
 std::random_device rd;
 std::mt19937 mt{rd()};
 Tile getRandomTile() {
-	static std::uniform_int_distribution<int> dist{0, GRID_SIZE - 1};
+	static std::uniform_int_distribution<int8_t> dist{0, GRID_SIZE - 1};
 	return { dist(mt), dist(mt) };
 }
