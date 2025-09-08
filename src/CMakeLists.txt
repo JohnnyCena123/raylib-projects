@@ -100,6 +100,8 @@ if(EMSCRIPTEN)
 		-sWASM=1 -sASYNCIFY \
 		-sGL_ENABLE_GET_PROC_ADDRESS=1 \
 		-sEXPORTED_RUNTIME_METHODS=ccall \
+		-sALLOW_MEMORY_GROWTH \
+		-sABORTING_MALLOC=0 \
 		--preload-file '${CMAKE_SOURCE_DIR}/resources@resources' \
 		--shell-file '${raylib_SOURCE_DIR}/src/minshell.html'
 	")
