@@ -37,9 +37,6 @@ Game::Game(int argc, char* argv[], std::optional<int>& exit) : m_didInit(false),
 #endif
 
 	if ((exit = handleCli(argc, argv))) return;
-	fs::path resourceDir = ResourceManager::getResourceDir(m_portable);
-	ResourceManager::s_resourceDir = resourceDir;
-	TraceLog(LOG_INFO, "Detected %s as the resources directory", resourceDir.string().c_str());
 
 NOT_IN_WEB(
 	m_saveDir = getSaveDir(m_portable);

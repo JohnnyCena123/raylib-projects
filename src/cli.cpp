@@ -23,7 +23,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	bool noMetadata = false;
 	bool minimalOutput = false;
 	bool verbose = false;
-	bool portable;
+	bool portable = false;
 	bool printVersion = false;
 	bool printHelp = false;
 	bool printDescription = false;
@@ -42,9 +42,9 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		Option{ 'r', "--repo", printRepository },
 	};
 
+	std::optional<std::string> rawLogLevel = std::nullopt;
 	std::optional<fs::path> altResourceDir = std::nullopt;
 	std::optional<fs::path> altSaveDir     = std::nullopt;
-	std::optional<std::string> rawLogLevel = std::nullopt;
 	for (size_t i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if (arg.starts_with("--")) {
@@ -52,14 +52,15 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			static char constexpr ALT_RESOURCE_DIR_ARG[] = "--resource-dir=";
 			static char constexpr ALT_SAVE_DIR_ARG[] = "--save-dir=";
 			static char constexpr LOG_LEVEL_ARG[] = "--log-level=";
-			if (arg.starts_with(ALT_RESOURCE_DIR_ARG)) {
+			
+			if (arg.starts_with(LOG_LEVEL_ARG)) {
+				rawLogLevel = arg.substr(sizeof(LOG_LEVEL_ARG) - 1, std::string::npos);
+				found = true;
+			} else if (arg.starts_with(ALT_RESOURCE_DIR_ARG)) {
 				altResourceDir = arg.substr(sizeof(ALT_RESOURCE_DIR_ARG) - 1, std::string::npos);
 				found = true;
 			} else if (arg.starts_with(ALT_SAVE_DIR_ARG)) {
 				altSaveDir = arg.substr(sizeof(ALT_SAVE_DIR_ARG) - 1, std::string::npos);
-				found = true;
-			} else if (arg.starts_with(LOG_LEVEL_ARG)) {
-				rawLogLevel = arg.substr(sizeof(LOG_LEVEL_ARG), std::string::npos);
 				found = true;
 			} else for (auto const& option : options) {
 				if (arg == option.full) {
@@ -95,6 +96,54 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	}
 
 	if (hasError) return 2;
+
+	static Game& _this = *this; // static for the tracelog callback to be able to access it
+	TraceLogCallback traceLogCallback = [](int logType, const char* text, va_list args) {
+		if (logType < _this.m_traceLogLevel) return;
+		std::ostream* out = &std::cout; // has to be a pointer, references cant be reassigned
+		if (logType >= LOG_WARNING) {
+			_this.m_hadWarning = true;
+			out = &std::cerr;
+		}
+
+		va_list argsCopy;
+		va_copy(argsCopy, args);
+		int size = std::vsnprintf(nullptr, 0, text, argsCopy);
+		va_end(argsCopy);
+		std::vector<char> buffer(size + 1);
+		std::vsnprintf(buffer.data(), buffer.size(), text, args);
+
+		std::time_t currentTime = std::time(0);
+		std::tm* localTime = std::localtime(&currentTime);
+
+		std::stringstream ss;
+		ss << TextFormat("[\033[0;1m%02d:%02d:%02d\033[0m] ",
+			localTime->tm_hour,
+			localTime->tm_min,
+			localTime->tm_sec
+		);
+		switch (logType) {
+			case LOG_TRACE:     ss << "TRACE: "; break;
+			case LOG_DEBUG:     ss << "\033[0;34mDEBUG:\033[0m "; break;
+			case LOG_INFO:      ss << "\033[0;36mINFO:\033[0m "; break;
+			case LOG_WARNING:   ss << "\033[0;33mWARNING:\033[0m "; break;
+			case LOG_ERROR:     ss << "\033[1;31mERROR:\033[0m "; break;
+			case LOG_FATAL:     ss << "\033[0;30;41mFATAL:\033[0m "; break;
+			default: break;
+		}
+		ss << std::string(buffer.data());
+
+		std::stringstream withoutColors = std::stringstream{std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "")};
+
+
+		if (!_this.m_silent) *out <<
+			// avoid printing with colors to the web console, it wont work anyway
+			(WEB_ONLY(withoutColors) NOT_IN_WEB(ss)).str() << std::endl;
+		_this.m_logs << withoutColors.str() << std::endl;
+	};
+	SetTraceLogCallback(traceLogCallback);
+	// im handling log levels myself
+	SetTraceLogLevel(LOG_ALL);
 
 	if (printRepository || printDescription || printVersion) {
 		if (!printRepository) {
@@ -134,29 +183,13 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			"    -u, --usage             --  same as --help.\n"
 			"    -d, --description       --  prints a general description of this app.\n"
 			"    -r, --repo              --  provides a link to the GitHub repository of the project.\n"
-			"        --resource-dir=DIR  --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
-			"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n"
 			"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
-			"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n";
+			"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n"
+			"        --resource-dir=DIR  --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
+			"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n";
 		return 0;
 	}
 
-#ifndef PLATFORM_WEB
-	if (altSaveDir) {
-		if (!DirectoryExists(altSaveDir->string().c_str())) {
-			if (!MakeDirectory(altSaveDir->string().c_str())) {
-				std::cerr << ERROR_MSG << "failed to create save directory: " << altSaveDir->string() << ".\n";
-				return 2;
-			}
-		}
-		m_saveDir = *altSaveDir;
-	}
-#endif
-	if (altResourceDir) {
-		if (!DirectoryExists(altResourceDir->string().c_str()))
-			std::cerr << ERROR_MSG << "resource dir does not exist: " << altResourceDir->string() << ".\n";
-		ResourceManager::s_resourceDir = *altResourceDir;
-	} else ResourceManager::s_resourceDir = ResourceManager::getResourceDir(portable);
 	if (rawLogLevel) {
 		if (rawLogLevel->empty()) {
 			std::cerr << ERROR_MSG << "please provide a log level for --log-level.\n"
@@ -195,50 +228,22 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			return 2;
 		}
 	}
-	static Game& _this = *this; // static for the tracelog callback to be able to access it
-	TraceLogCallback traceLogCallback = [](int logType, const char* text, va_list args) {
-		if (logType < _this.m_traceLogLevel) return;
-		std::ostream* out = &std::cout; // has to be a pointer, references cant be reassigned
-		if (logType >= LOG_WARNING) {
-			_this.m_hadWarning = true;
-			out = &std::cerr;
+
+#ifndef PLATFORM_WEB
+	if (altSaveDir) {
+		if (!DirectoryExists(altSaveDir->string().c_str())) {
+			if (!MakeDirectory(altSaveDir->string().c_str())) {
+				std::cerr << ERROR_MSG << "failed to create save directory: " << altSaveDir->string() << ".\n";
+				return 2;
+			}
 		}
-
-		va_list argsCopy;
-		va_copy(argsCopy, args);
-		int size = std::vsnprintf(nullptr, 0, text, argsCopy);
-		va_end(argsCopy);
-		std::vector<char> buffer(size + 1);
-		std::vsnprintf(buffer.data(), buffer.size(), text, args);
-		std::time_t currentTime = std::time(0);
-		std::tm* localTime = std::localtime(&currentTime);
-		std::stringstream ss;
-		ss << TextFormat("[\033[0;1m%02d:%02d:%02d\033[0m] ",
-			localTime->tm_hour,
-			localTime->tm_min,
-			localTime->tm_sec
-		);
-		switch (logType) {
-			case LOG_TRACE:     ss << "TRACE: "; break;
-			case LOG_DEBUG:     ss << "\033[0;34mDEBUG:\033[0m "; break;
-			case LOG_INFO:      ss << "\033[0;36mINFO:\033[0m "; break;
-			case LOG_WARNING:   ss << "\033[0;33mWARNING:\033[0m "; break;
-			case LOG_ERROR:     ss << "\033[1;31mERROR:\033[0m "; break;
-			case LOG_FATAL:     ss << "\033[0;30;41mFATAL:\033[0m "; break;
-			default: break;
-		}
-		ss << std::string(buffer.data());
-
-		std::stringstream withoutColors = std::stringstream{std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "")};
-
-
-		if (!_this.m_silent) *out <<
-			// avoid printing with colors to the web console, it wont work anyway
-			(WEB_ONLY(withoutColors) NOT_IN_WEB(ss)).str() << std::endl;
-		_this.m_logs << withoutColors.str() << std::endl;
-	};
-	SetTraceLogCallback(traceLogCallback);
-	// im handling log levels myself
-	SetTraceLogLevel(LOG_ALL);
+		m_saveDir = *altSaveDir;
+	}
+#endif
+	if (altResourceDir) {
+		if (!DirectoryExists(altResourceDir->string().c_str()))
+			std::cerr << ERROR_MSG << "resource dir does not exist: " << altResourceDir->string() << ".\n";
+		ResourceManager::s_resourceDir = *altResourceDir;
+	} else ResourceManager::s_resourceDir = ResourceManager::getResourceDir(portable);
 	return std::nullopt;
 }

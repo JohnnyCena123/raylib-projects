@@ -15,6 +15,7 @@ fs::path ResourceManager::getDefaultResourceDir(bool portable) {
 
 bool ResourceManager::verifyResourceDir(fs::path dir) {
 	if (!isValidResourceDirPath(dir)) {
+		TraceLog(LOG_ERROR, "Failed to locate resource dir; %s is not a valid parent directory.", dir.string().c_str());
 		DESKTOP_ONLY(tinyfd_messageBox("Failure", (
 			"Could not find the resource directory.\n"
 			"Are you sure you downloaded the resources and extracted them to the right place?\n"
@@ -28,7 +29,6 @@ bool ResourceManager::verifyResourceDir(fs::path dir) {
 			dir.string() + " is not a valid parent directory for the resources."
 			).c_str(), "ok", "error", 0
 		));
-		TraceLog(LOG_ERROR, "Failed to locate resource dir; %s is not a valid parent directory.", dir.string().c_str());
 		return false;
 	} else return true;
 }
