@@ -2,15 +2,11 @@
 
 int main(int argc, char* argv[]) {
 
-	Game game{};
-DESKTOP_ONLY(
-	std::optional<int> result = game.handleCli(argc, argv);
+	std::optional<int> result = std::nullopt;
+	Game game{argc, argv, result};
 	if (result) return *result;
-)
 
-	game.init();
 	game.run();
-	game.deinit();
 
 	return 0;
 }

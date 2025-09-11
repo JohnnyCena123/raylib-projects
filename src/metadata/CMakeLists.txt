@@ -15,7 +15,7 @@ execute_process(
 )
 
 set(BUILD_METADATA_FILE "${CMAKE_BINARY_DIR}/src/build-metadata.cpp")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build-metadata.cpp.in" 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build-metadata.cpp.in"
     "${BUILD_METADATA_FILE}")
 add_library(${BUILD_METADATA_LIB} STATIC "${BUILD_METADATA_FILE}")
 target_include_directories(${BUILD_METADATA_LIB} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

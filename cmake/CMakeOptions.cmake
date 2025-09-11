@@ -3,7 +3,7 @@ option(ALL_BUILD_TYPES_TOGETHER "Puts all outputs of all build types in one fold
 option(LOCAL_CMAKE_BUILD "Enables separating outputs of different build types")
 option(CUSTOM_OUTPUT_OPTIONS "Allows specifying a custom binary suffix and output directory" OFF)
 option(DISABLE_WARNINGS "Disables warnings for dependencies" ON)
-if(WIN32)
+if(WIN32 OR CYGWIN)
 	option(INCLUDE_TERMINAL_IN_RELEASE "Keeps the terminal popup in Release builds when on Windows" OFF)
 	option(INCLUDE_ICON "Includes the taskbar/explorer application icon when on Windows" ON)
 endif()
