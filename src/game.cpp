@@ -22,9 +22,6 @@ Game::Game(int argc, char* argv[], std::optional<int>& exit) : m_didInit(false),
 	m_resourceManager(m_portable), m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f) {
 
 	if ((exit = handleCli(argc, argv))) return;
-	fs::path resourceDir = ResourceManager::getResourceDir(m_portable);
-	ResourceManager::s_resourceDir = resourceDir;
-	TraceLog(LOG_INFO, "Detected %s as the resources directory", resourceDir.string().c_str());
 
 NOT_IN_WEB(
 	m_saveDir = getSaveDir(m_portable);
