@@ -100,7 +100,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v14
+        uses: agriyakhetarpal/setup-emsdk@821e7eca255c715666d64745ad3278e8e18b3bd9
         with:
           version: 4.0.12
           actions-cache-folder: 'emsdk-cache'
