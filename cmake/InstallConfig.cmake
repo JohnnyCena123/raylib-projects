@@ -31,7 +31,7 @@ if(UNIX)
 		if(NOT DEFINED CPACK_PACKAGING_INSTALL_PREFIX)
 			set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 		endif()
-		set(COMMENT "@MIN_DESCRIPTION@. Source code: @REPO@.")
+		set(COMMENT "@MIN_DESCRIPTION@.")
 		configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/project.desktop.in"
 			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop.in")
 		configure_file("${CMAKE_SOURCE_DIR}/resources/icon.png"
