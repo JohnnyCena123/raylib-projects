@@ -23,16 +23,12 @@ if(UNIX)
 	else()
 		set(CPACK_GENERATOR "TGZ;ZIP;7Z;STGZ;DEB;RPM")
 		set(DESKTOP_FILE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop")
-		install(FILES "${DESKTOP_FILE}" DESTINATION share/applications
-			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-				GROUP_READ GROUP_EXECUTE
-				WORLD_READ WORLD_EXECUTE
-		)
+		install(FILES "${DESKTOP_FILE}" DESTINATION share/applications)
 		install(FILES "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png" DESTINATION share/icons/hicolor/64x64/apps/)
 		if(NOT DEFINED CPACK_PACKAGING_INSTALL_PREFIX)
 			set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 		endif()
-		set(COMMENT "@MIN_DESCRIPTION@.")
+		set(COMMENT "@MIN_DESCRIPTION@")
 		configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/project.desktop.in"
 			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop.in")
 		configure_file("${CMAKE_SOURCE_DIR}/resources/icon.png"
