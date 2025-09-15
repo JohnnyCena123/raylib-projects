@@ -133,3 +133,4 @@ else()
 endif()
 
 include("${CMAKE_SOURCE_DIR}/cmake/InstallConfig.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/PackageConfig.cmake")
