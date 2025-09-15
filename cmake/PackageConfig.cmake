@@ -30,7 +30,7 @@ set(CPACK_SOURCE_IGNORE_FILES
 	"/git-ignore/"
 	"/\\\\.vscode/"
 	"/\\\\.cache/"
-	"/build/"
+	"/*build*/"
 	"/bin/"
 )
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
