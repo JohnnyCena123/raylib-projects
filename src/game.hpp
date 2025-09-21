@@ -56,8 +56,8 @@ NOT_IN_WEB(
 
 	RenderTexture2D m_screen;
 
-	Texture2D m_dummyResource;
-	float m_dummyResourceRotation;
+	Texture2D m_exampleResource;
+	float m_exampleResourceRotation;
 
 	Music m_bgMusic;
 

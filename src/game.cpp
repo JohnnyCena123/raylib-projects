@@ -19,7 +19,7 @@ Game::Game(int argc, char* argv[], std::optional<int>& exit) : m_didInit(false),
 	m_portable(false),
 #endif
 	m_traceLogLevel(LOG_INFO), m_silent(false), m_shouldSaveLogs(false), m_hadWarning(false), m_logs(""),
-	m_resourceManager(m_portable), m_screenSize(DEFAULT_SCREEN_SIZE), m_dummyResourceRotation(0.f) {
+	m_resourceManager(m_portable), m_screenSize(DEFAULT_SCREEN_SIZE), m_exampleResourceRotation(0.f) {
 
 	if ((exit = handleCli(argc, argv))) return;
 
@@ -55,8 +55,8 @@ DESKTOP_ONLY(
 	SetWindowIcon(m_resourceManager.get<Image>("app-icon"));
 
 	if (!m_resourceManager.load<Texture2D>("image", "image.png"))
-		TraceLog(LOG_WARNING, "Failed to load dummy image");
-	m_dummyResource = m_resourceManager.get<Texture2D>("image");
+		TraceLog(LOG_WARNING, "Failed to load example resource");
+	m_exampleResource = m_resourceManager.get<Texture2D>("image");
 
 	// credit: https://sunixdev.itch.io/casual-music-pack
 	if (!m_resourceManager.load<Music>("bg-music", "music-loop.mp3", [](Music& music) { music.looping = true; }))
@@ -89,15 +89,15 @@ void Game::run() {
 		);
 		BeginTextureMode(m_screen); {
 			ClearBackground(SKYBLUE);
-			m_dummyResourceRotation += GetFrameTime() * (70 * cos(GetTime() * 1.5) + 100.f);
-			if (m_dummyResourceRotation > 360) m_dummyResourceRotation -= 360;
+			m_exampleResourceRotation += GetFrameTime() * (70 * cos(GetTime() * 1.5) + 100.f);
+			if (m_exampleResourceRotation > 360) m_exampleResourceRotation -= 360;
 
 			float const scale = sin(GetTime()) + 2.f;
-			Vector2 texSize = { static_cast<float>(m_dummyResource.width), static_cast<float>(m_dummyResource.height) };
-			DrawTexturePro(m_dummyResource, { 0, 0, texSize.x, texSize.y }, {
+			Vector2 texSize = { static_cast<float>(m_exampleResource.width), static_cast<float>(m_exampleResource.height) };
+			DrawTexturePro(m_exampleResource, { 0, 0, texSize.x, texSize.y }, {
 				DEFAULT_SCREEN_SIZE.x / 2, DEFAULT_SCREEN_SIZE.y / 2,
 				texSize.x * scale, texSize.y * scale
-			}, { texSize.x / 2, texSize.y / 2 }, m_dummyResourceRotation, WHITE);
+			}, { texSize.x / 2, texSize.y / 2 }, m_exampleResourceRotation, WHITE);
 		} EndTextureMode();
 		BeginDrawing(); {
 			Vector2 const actualScreenSize = {
@@ -124,7 +124,7 @@ void Game::run() {
 IMGUI_ONLY(void Game::debugGUI() {
 	ImGui::Begin("Debug Window");
 	ImGui::Text("Hello world!");
-	ImGui::SliderFloat("rotation", &m_dummyResourceRotation, 0.f, 360.f);
+	ImGui::SliderFloat("rotation", &m_exampleResourceRotation, 0.f, 360.f);
 	ImGui::End();
 })
 
