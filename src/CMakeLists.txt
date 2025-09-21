@@ -77,23 +77,22 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"${imgui_SOURCE_DIR}"
 	"${rlImGui_SOURCE_DIR}"
 )
+set(BUILD_METADATA_TARGET BuildMetadata)
+add_subdirectory(metadata)
 target_link_libraries(${PROJECT_NAME}
 	${RAYLIB_TARGET}
 	${TINYFD_TARGET}
 	${LCB_TARGET}
 	${IMGUI_TARGET}
+	${BUILD_METADATA_TARGET}
 )
-
-set(BUILD_METADATA_LIB BuildMetadata)
-add_subdirectory(metadata)
-target_link_libraries(${PROJECT_NAME} ${BUILD_METADATA_LIB})
 
 if(PLATFORM_DESKTOP)
 	set(PORTABLE_INDICATOR_FILE ".portable-application")
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE_INDICATOR_FILE="${PORTABLE_INDICATOR_FILE}")
 	if(BUILD_PORTABLE_APPLICATION)
 		add_custom_command(
-			OUTPUT "${CMAKE_BINARY_DIR}/unused"
+			TARGET ${PROJECT_NAME} POST_BUILD
 			COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PORTABLE_INDICATOR_FILE}"
 		)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE)
@@ -134,3 +133,10 @@ else()
 	include("${CMAKE_SOURCE_DIR}/cmake/InstallConfig.cmake")
 	include("${CMAKE_SOURCE_DIR}/cmake/PackageConfig.cmake")
 endif()
+
+add_custom_command(
+	TARGET ${PROJECT_NAME} POST_BUILD
+	COMMAND "$<TARGET_FILE:${PROJECT_NAME}>" "--version"
+	COMMENT "Build metadata:"
+	VERBATIM
+)

@@ -15,6 +15,8 @@
 #define ERROR_MSG argv[0] << ": \033[1;31merror:\033[0m "
 #define HELP_SUGGESTION "use \033[1;33m" << argv[0] << " --help\033[0m for more info." << std::endl
 
+#define HYPERLINK(url, text) "\033]8;;" url "\033\\" text "\033]8;;\033\\"
+
 std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	bool hasError = false;
 	struct Option {
@@ -166,11 +168,11 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			std::cout << PROJECT_HOMEPAGE_URL << '\n';
 			return 0;
 		}
-		std::cout << "The source code for '" PROJECT_NAME "' can be found in \033[1;33m"
-			<< PROJECT_HOMEPAGE_URL << "\033[0m.\n";
+		std::cout << "The source code for '" PROJECT_NAME "' can be found in "
+		"\033[1;33m" HYPERLINK(PROJECT_HOMEPAGE_URL, "the GitHub Repository") "\033[0m.\n";
 		std::cout <<
 			"This project is licensed under the LGPLv3.0 license - "
-			"see \033[1;33m" << PROJECT_HOMEPAGE_URL << "/LICENSE\033[0m for more details.\n";
+			"see \033[1;33m" HYPERLINK(PROJECT_HOMEPAGE_URL, "on GiHub") "\033[0m for more details.\n";
 		return 0;
 	} else if (printHelp) {
 		std::cout << "Usage: \033[1;33m" << argv[0] << "\033[0m <options>\n"
