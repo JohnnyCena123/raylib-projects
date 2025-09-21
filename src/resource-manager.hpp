@@ -133,7 +133,7 @@ public:
 	void deinit();
 
 	template <resource T>
-	bool load(std::string id, fs::path relativePath, LoadCallback<T> manipulator = dummyCallback<T>) {
+	inline bool load(std::string id, fs::path relativePath, LoadCallback<T> manipulator = dummyCallback<T>) {
 		fs::path const fullPath = s_resourceDir/relativePath;
 
 		if constexpr (isRawResource<T>) {
@@ -167,7 +167,7 @@ public:
 	}
 
 	template <resource T>
-	T get(std::string id) const {
+	inline T get(std::string id) const {
 		if (s_resources<T>.contains(id)) return s_resources<T>.at(id);
 		else {
 			TraceLog(LOG_WARNING, "RESOURCES: ['%s'] %s has NOT been loaded, returning dummy", id.c_str(), name<T>);
@@ -176,7 +176,7 @@ public:
 	}
 
 	template <resource T>
-	T const& getDummy() const { return s_dummy<T>; }
+	inline T const& getDummy() const { return s_dummy<T>; }
 
 private:
 
