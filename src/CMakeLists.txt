@@ -133,10 +133,3 @@ else()
 	include(InstallConfig)
 	include(PackageConfig)
 endif()
-
-add_custom_command(
-	TARGET ${PROJECT_NAME} POST_BUILD
-	COMMAND "$<TARGET_FILE:${PROJECT_NAME}>" "--version"
-	COMMENT "Build metadata:"
-	VERBATIM
-)

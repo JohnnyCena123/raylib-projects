@@ -37,3 +37,10 @@ add_custom_command(
 	VERBATIM
 )
 add_custom_target(GenerateBuildMetadata DEPENDS "${PROJECT_SOURCE_DIR}/${BUILD_METADATA_FILE}")
+
+add_custom_command(
+	TARGET ${BUILD_METADATA_TARGET} POST_BUILD
+	COMMAND "${CMAKE_COMMAND}" -E cat "${BUILD_METADATA_FILE}"
+	COMMENT "Generated build metadata:"
+	VERBATIM
+)
