@@ -4,7 +4,7 @@ set(CMAKE_C_STANDARD 23)
 if(NOT DEFINED GIT_BRANCH)
 	execute_process(
 		COMMAND git symbolic-ref -q --short HEAD
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		OUTPUT_VARIABLE GIT_IS_BRANCH
 		RESULT_VARIABLE GIT_IS_BRANCH_EXIT
 		OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -16,14 +16,14 @@ if(NOT DEFINED GIT_BRANCH)
 		(GIT_IS_BRANCH_EXIT STREQUAL "0"    # git exited successfully,
 		AND NOT GIT_IS_BRANCH STREQUAL "")  # and without any output. which means we are in a tag
 	))	# summary: if file exists, and we are not on a branch in a local build, then read the file.
-		set(GIT_BRANCH_FILE "${CMAKE_SOURCE_DIR}/.git-branch")
+		set(GIT_BRANCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/.git-branch")
 		file(READ "${GIT_BRANCH_FILE}" GIT_BRANCH)
 		string(REGEX REPLACE "[ \t\n]" "" GIT_BRANCH "${GIT_BRANCH}")
 		message(STATUS "Read branch from file: ${GIT_BRANCH}")
 	else()
 		execute_process(
 			COMMAND git rev-parse --abbrev-ref HEAD
-			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			OUTPUT_VARIABLE GIT_BRANCH
 			RESULT_VARIABLE GIT_BRANCH_EXIT
 			OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -36,25 +36,29 @@ if(NOT DEFINED GIT_BRANCH)
 		endif()
 		message(STATUS "Detected branch from git: ${GIT_BRANCH}")
 	endif()
-	configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/.git-branch.in"
-		"${CMAKE_SOURCE_DIR}/.git-branch")
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/templates/.git-branch.in"
+		"${CMAKE_CURRENT_SOURCE_DIR}/.git-branch")
 endif()
 project(${GIT_BRANCH}
 	LANGUAGES CXX C
 	VERSION 1.0.0
 	HOMEPAGE_URL "https://github.com/JohnnyCena123/raylib-projects/tree/${GIT_BRANCH}"
 )
-include("${CMAKE_SOURCE_DIR}/cmake/CMakeOptions.cmake")
-include("${CMAKE_SOURCE_DIR}/cmake/FindCacher.cmake")
+
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
+include(CMakeOptions)
+include(FindCacher)
+
 if(DEFINED CMAKE_BUILD_TYPE)
 	set(CONFIGURATION ${CMAKE_BUILD_TYPE})
 else()
 	set(CONFIGURATION $<CONFIG>)
 endif()
 if(ALL_BUILD_TYPES_TOGETHER)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 elseif(NOT CUSTOM_OUTPUT_OPTIONS)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/$CONFIGURATION")
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/$CONFIGURATION")
 endif()
 if(LOCAL_CMAKE_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
 	# separate different projects
@@ -76,6 +80,6 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
 		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 	endforeach()
 endif()
-include("${CMAKE_SOURCE_DIR}/cmake/Deps.cmake")
+include(Deps)
 
-add_subdirectory("${CMAKE_SOURCE_DIR}/src")
+add_subdirectory("${PROJECT_SOURCE_DIR}/src")

@@ -1,5 +1,5 @@
 
-file(GLOB SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
+file(GLOB SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 
 set(TARGET_ARGS ${SOURCES})
 
@@ -14,7 +14,7 @@ elseif(UNIX AND NOT CYGWIN)
 		list(APPEND TARGET_ARGS "${CMAKE_CURRENT_SOURCE_DIR}/platform/linux.cpp")
 	endif()
 elseif(WIN32 OR CYGWIN)
-	set(ICON_FILE ${CMAKE_SOURCE_DIR}/icon.rc)
+	set(ICON_FILE ${PROJECT_SOURCE_DIR}/icon.rc)
 	set(RESOURCE_FILE ${ICON_FILE})
 	list(APPEND TARGET_ARGS ${RESOURCE_FILE})
 	list(APPEND TARGET_ARGS "${CMAKE_CURRENT_SOURCE_DIR}/platform/windows.cpp")
@@ -30,7 +30,7 @@ add_executable(${PROJECT_NAME} ${TARGET_ARGS})
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/platform/platforms.hpp")
 if(USE_PRECOMPILED_HEADERS)
-	file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.hpp")
+	file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.hpp")
 	if(PLATFORM_DESKTOP)
 		list(APPEND HEADERS "${tinyfd_SOURCE_DIR}/tinyfiledialogs.h" "${lcb_SOURCE_DIR}/include/libclipboard.h")
 	endif()
@@ -51,7 +51,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT IMGUI_IN_RELEASE)
 	message(STATUS "ImGui: OFF")
 else()
 	if(BUILD_SHARED_LIBS)
-		target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_USER_CONFIG="${CMAKE_SOURCE_DIR}/src/imgui-config.hpp")
+		target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_USER_CONFIG="${PROJECT_SOURCE_DIR}/src/imgui-config.hpp")
 	endif()
 	message(STATUS "ImGui: ON")
 endif()
@@ -73,21 +73,22 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"${imgui_SOURCE_DIR}"
 	"${rlImGui_SOURCE_DIR}"
 )
+set(BUILD_METADATA_TARGET BuildMetadata)
+add_subdirectory(metadata)
 target_link_libraries(${PROJECT_NAME}
 	${RAYLIB_TARGET}
 	${TINYFD_TARGET}
 	${LCB_TARGET}
 	${IMGUI_TARGET}
+	${BUILD_METADATA_TARGET}
 )
-set(BUILD_METADATA_LIB BuildMetadata)
-add_subdirectory(metadata)
-target_link_libraries(${PROJECT_NAME} ${BUILD_METADATA_LIB})
+
 if(PLATFORM_DESKTOP)
 	set(PORTABLE_INDICATOR_FILE ".portable-application")
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE_INDICATOR_FILE="${PORTABLE_INDICATOR_FILE}")
 	if(BUILD_PORTABLE_APPLICATION)
 		add_custom_command(
-			OUTPUT "${CMAKE_BINARY_DIR}/unused"
+			TARGET ${PROJECT_NAME} POST_BUILD
 			COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PORTABLE_INDICATOR_FILE}"
 		)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE)
@@ -102,12 +103,12 @@ if(EMSCRIPTEN)
 		-sEXPORTED_RUNTIME_METHODS=ccall \
 		-sALLOW_MEMORY_GROWTH \
 		-sABORTING_MALLOC=0 \
-		--preload-file '${CMAKE_SOURCE_DIR}/resources@resources' \
+		--preload-file '${PROJECT_SOURCE_DIR}/resources@resources' \
 		--shell-file '${raylib_SOURCE_DIR}/src/minshell.html'
 	")
 	set(CMAKE_EXECUTABLE_SUFFIX ".html")
 else()
-	set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
+	set(RESOURCE_DIR "${PROJECT_SOURCE_DIR}/resources")
 	set(OUTPUT_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
 	set(RESOURCES_STAMP_FILE "${CMAKE_BINARY_DIR}/dummy3.stamp")
 	file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS "${RESOURCE_DIR}/*")
@@ -117,10 +118,12 @@ else()
 			-DSOURCE_DIR=${RESOURCE_DIR}
 			-DDESTINATION_DIR=${OUTPUT_RESOURCE_DIR}
 			-DSTAMP_FILE=${RESOURCES_STAMP_FILE}
-			-P "${CMAKE_SOURCE_DIR}/cmake/CopyResources.cmake"
+			-P "${PROJECT_SOURCE_DIR}/cmake/CopyResources.cmake"
 		DEPENDS ${RESOURCE_FILES}
 		COMMENT "Copying resources to output directory..."
 		VERBATIM
 	)
+
+	include(InstallConfig)
+	include(PackageConfig)
 endif()
-include("${CMAKE_SOURCE_DIR}/cmake/InstallConfig.cmake")

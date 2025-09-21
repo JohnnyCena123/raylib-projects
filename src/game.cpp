@@ -43,7 +43,8 @@ NOT_IN_WEB(
 )
 	DESKTOP_ONLY(loadSaveData(SAVE_FILE));
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-	InitWindow(DEFAULT_SCREEN_SIZE.x, DEFAULT_SCREEN_SIZE.y, "Snake");
+
+	InitWindow(m_screenSize.x, m_screenSize.y, "Snake");
 	SetTargetFPS(60);
 	IMGUI_ONLY(rlImGuiSetup(true));
 	rlSetLineWidth(3.f);
