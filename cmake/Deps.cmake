@@ -1,5 +1,5 @@
 
-include("${CMAKE_SOURCE_DIR}/cmake/CPM.cmake")
+include(CPM)
 include(CheckCCompilerFlag)
 CPMAddPackage("gh:raysan5/raylib#master")
 set(RAYLIB_TARGET raylib CACHE STRING "Name of raylib's target.")

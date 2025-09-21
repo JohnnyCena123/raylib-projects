@@ -46,8 +46,10 @@ project(${GIT_BRANCH}
 	HOMEPAGE_URL "https://github.com/JohnnyCena123/raylib-projects/tree/${GIT_BRANCH}"
 )
 
-include("${CMAKE_SOURCE_DIR}/cmake/CMakeOptions.cmake")
-include("${CMAKE_SOURCE_DIR}/cmake/FindCacher.cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
+include(CMakeOptions)
+include(FindCacher)
 
 if(DEFINED CMAKE_BUILD_TYPE)
 	set(CONFIGURATION ${CMAKE_BUILD_TYPE})
@@ -81,6 +83,6 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
 	endforeach()
 endif()
 
-include("${CMAKE_SOURCE_DIR}/cmake/Deps.cmake")
+include(Deps)
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/src")

@@ -130,8 +130,8 @@ else()
 		VERBATIM
 	)
 
-	include("${CMAKE_SOURCE_DIR}/cmake/InstallConfig.cmake")
-	include("${CMAKE_SOURCE_DIR}/cmake/PackageConfig.cmake")
+	include(InstallConfig)
+	include(PackageConfig)
 endif()
 
 add_custom_command(
