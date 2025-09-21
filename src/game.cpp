@@ -28,7 +28,7 @@ NOT_IN_WEB(
 )
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
-	InitWindow(m_screenSize.x, m_screenSize.y, "Hello!");
+	InitWindow(m_screenSize.x, m_screenSize.y, "Template raylib project");
 	SetTargetFPS(60);
 	IMGUI_ONLY(rlImGuiSetup(true));
 
