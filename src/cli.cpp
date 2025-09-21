@@ -1,5 +1,7 @@
+#include "platform/platforms.hpp"
 #include "resource-manager.hpp"
 #include <array>
+#include <functional>
 #include <raylib.h>
 #include <regex>
 #include <sstream>
@@ -11,29 +13,62 @@
 #endif
 #include "metadata/build-metadata.hpp"
 #include "game.hpp"
-#define ERROR_MSG argv[0] << ": \033[1;31merror:\033[0m "
-#define HELP_SUGGESTION "use \033[1;33m" << argv[0] << " --help\033[0m for more info." << std::endl
 
-#define HYPERLINK(url, text) "\033]8;;" url "\033\\" text "\033]8;;\033\\"
+#define ERROR_MSG argv[0] << ": " << boldYellow << "error:" << reset << " "
+#define HELP_SUGGESTION "use " << boldYellow << argv[0] << " --help" << reset << "for more info." << std::endl
 
 std::optional<int> Game::handleCli(int argc, char* argv[]) {
+	static std::string 
+		reset = "\033[0m",
+		hyperlink1 = "\033]8;;",
+		hyperlink2 = "\033\\",
+		bold = "\033[0;1m",
+		blue = "\033[0;34m",
+		cyan = "\033[0;36m",
+		yellow = "\033[0;33m",
+		boldYellow = "\033[1;33m",
+		boldRed = "\033[1;31m",
+		highlightedRed = "\033[0;30;41m";
+
+	std::vector<std::string> args{};
+	for (size_t i = 1; i < argc; i++) args.push_back(argv[i]);
+
+	std::function<std::string(std::string, std::string)> hyperlink = [](std::string url, std::string text) -> std::string {
+		return hyperlink1 + url + hyperlink2 + text + hyperlink1 + hyperlink2;
+	};
+
+	if (WEB_ONLY(true ||) std::find(args.begin(), args.end(), "--no-colors") != args.end()) {
+		reset =
+			hyperlink1 =
+			hyperlink2 =
+			bold =
+			blue =
+			cyan =
+			yellow =
+			boldYellow =
+			boldRed =
+			highlightedRed =
+		"";
+		hyperlink = [](std::string url, std::string text) -> std::string { return url; };
+	}
+
 	bool hasError = false;
 	struct Option {
 		std::optional<char> singleChar;
 		std::string full;
 		bool& v;
 	};
-	bool noMetadata = false;
-	bool minimalOutput = false;
+
+	bool _;
 	bool verbose = false;
 	bool portable = false;
 	bool printVersion = false;
 	bool printHelp = false;
+	bool noMetadata = false;
+	bool minimalOutput = false;
 	bool printDescription = false;
 	bool printRepository = false;
 	std::array options{
-		Option{ std::nullopt, "--no-metadata", noMetadata },
-		Option{ 'm', "--minimal-output", minimalOutput },
 		Option{ 's', "--silent", m_silent },
 		Option{ 'V', "--verbose", verbose },
 		Option{ 'S', "--save-logs", m_shouldSaveLogs },
@@ -41,8 +76,11 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		Option{ 'v', "--version", printVersion },
 		Option{ 'h', "--help", printHelp },
 		Option{ 'u', "--usage", printHelp },
-		Option{ 'd', "--description", printDescription },
-		Option{ 'r', "--repo", printRepository },
+		Option{ std::nullopt, "--no-colors", _ },
+		Option{ std::nullopt, "--no-metadata", noMetadata },
+		Option{ std::nullopt, "--minimal-output", minimalOutput },
+		Option{ std::nullopt, "--description", printDescription },
+		Option{ std::nullopt, "--repo", printRepository },
 	};
 
 	std::optional<std::string> rawLogLevel = std::nullopt;
@@ -120,24 +158,25 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		std::tm* localTime = std::localtime(&currentTime);
 
 		std::stringstream ss;
-		ss << TextFormat("[\033[0;1m%02d:%02d:%02d\033[0m] ",
+		ss << TextFormat("[%s%02d:%02d:%02d%s] ",
+			bold.c_str(),
 			localTime->tm_hour,
 			localTime->tm_min,
-			localTime->tm_sec
+			localTime->tm_sec,
+			reset.c_str()
 		);
 		switch (logType) {
-			case LOG_TRACE:     ss << "TRACE: "; break;
-			case LOG_DEBUG:     ss << "\033[0;34mDEBUG:\033[0m "; break;
-			case LOG_INFO:      ss << "\033[0;36mINFO:\033[0m "; break;
-			case LOG_WARNING:   ss << "\033[0;33mWARNING:\033[0m "; break;
-			case LOG_ERROR:     ss << "\033[1;31mERROR:\033[0m "; break;
-			case LOG_FATAL:     ss << "\033[0;30;41mFATAL:\033[0m "; break;
+			case LOG_TRACE:     ss <<                   "TRACE: "   << reset; break;
+			case LOG_DEBUG:     ss << blue           << "DEBUG: "   << reset; break;
+			case LOG_INFO:      ss << cyan           << "INFO: "    << reset; break;
+			case LOG_WARNING:   ss << yellow         << "WARNING: " << reset; break;
+			case LOG_ERROR:     ss << boldRed        << "ERROR: "   << reset; break;
+			case LOG_FATAL:     ss << highlightedRed << "FATAL: "   << reset; break;
 			default: break;
 		}
 		ss << std::string(buffer.data());
 
 		std::stringstream withoutColors = std::stringstream{std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "")};
-
 
 		if (!_this.m_silent) *out <<
 			// avoid printing with colors to the web console, it wont work anyway
@@ -167,16 +206,14 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			std::cout << PROJECT_HOMEPAGE_URL << '\n';
 			return 0;
 		}
-		std::cout << "The source code for '" PROJECT_NAME "' can be found in "
-		"\033[1;33m" HYPERLINK(PROJECT_HOMEPAGE_URL, "the GitHub Repository") "\033[0m.\n";
+		std::cout << "The source code for '" PROJECT_NAME "' can be found in " <<
+		boldYellow << hyperlink(PROJECT_HOMEPAGE_URL, "the GitHub Repository") << reset << ".\n";
 		std::cout <<
 			"This project is licensed under the LGPLv3.0 license - "
-			"see \033[1;33m" HYPERLINK(PROJECT_HOMEPAGE_URL, "on GiHub") "\033[0m for more details.\n";
+			"see " << boldYellow << hyperlink(PROJECT_HOMEPAGE_URL, "on GiHub") << reset << " for more details.\n";
 		return 0;
 	} else if (printHelp) {
-		std::cout << "Usage: \033[1;33m" << argv[0] << "\033[0m <options>\n"
-			"        --no-metadata       --  dont print build metadata (build date & time, compiler, etc.)\n"
-			"    -m, --minimal-output    --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
+		std::cout << "Usage: " << boldYellow << argv[0] << reset << " <options>\n"
 			"    -s, --silent            --  disables all logging.\n"
 			"    -V, --verbose           --  sets the log level to LOG_TRACE instead of LOG_INFO.\n"
 			"    -S, --save-logs         --  saves logs to a file. unaffected by --silent.\n"
@@ -184,8 +221,10 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			"    -v, --version           --  prints the version and exits.\n"
 			"    -h, --help              --  prints this help message and exits.\n"
 			"    -u, --usage             --  same as --help.\n"
-			"    -d, --description       --  prints a general description of this app.\n"
-			"    -r, --repo              --  provides a link to the GitHub repository of the project.\n"
+			"        --description       --  prints a general description of this app.\n"
+			"        --no-metadata       --  dont print build metadata (build date & time, compiler, etc.)\n"
+			"        --minimal-output    --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
+			"        --repo              --  provides a link to the GitHub repository of the project.\n"
 			"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
 			"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n"
 			"        --resource-dir=DIR  --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
@@ -210,7 +249,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			case #logLevel[4]: { \
 				if (usedLogLevel == #logLevel) { \
 					m_traceLogLevel = logLevel; \
-					std::cout << "set log level to \033[1m" #logLevel "\033[0m.\n"; \
+					std::cout << "set log level to " << bold << #logLevel << reset << ".\n"; \
 				} else invalidLogLevel = true; \
 			} break
 			switch (usedLogLevel[4]) {
@@ -226,7 +265,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			}
 		}
 		if (invalidLogLevel) {
-			std::cerr << ERROR_MSG << "invalid log level: \033[1m" << *rawLogLevel << "\033[0m\n"
+			std::cerr << ERROR_MSG << "invalid log level: " << bold << *rawLogLevel << reset << "\n"
 				<< HELP_SUGGESTION;
 			return 2;
 		}
@@ -236,7 +275,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	if (altSaveDir) {
 		if (!DirectoryExists(altSaveDir->string().c_str())) {
 			if (!MakeDirectory(altSaveDir->string().c_str())) {
-				std::cerr << ERROR_MSG << "failed to create save directory: " << altSaveDir->string() << ".\n";
+				std::cerr << ERROR_MSG << "failed to create save directory: " << bold << altSaveDir->string() << reset << ".\n";
 				return 2;
 			}
 		}
@@ -245,7 +284,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 #endif
 	if (altResourceDir) {
 		if (!DirectoryExists(altResourceDir->string().c_str()))
-			std::cerr << ERROR_MSG << "resource dir does not exist: " << altResourceDir->string() << ".\n";
+			std::cerr << ERROR_MSG << "resource dir does not exist: " << bold << altResourceDir->string() << reset << ".\n";
 		ResourceManager::s_resourceDir = *altResourceDir;
 	} else ResourceManager::s_resourceDir = ResourceManager::getResourceDir(portable);
 	return std::nullopt;
