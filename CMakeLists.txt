@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 23)
 if(NOT DEFINED GIT_BRANCH)
 	execute_process(
 		COMMAND git symbolic-ref -q --short HEAD
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		OUTPUT_VARIABLE GIT_IS_BRANCH
 		RESULT_VARIABLE GIT_IS_BRANCH_EXIT
 		OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -17,14 +17,14 @@ if(NOT DEFINED GIT_BRANCH)
 		(GIT_IS_BRANCH_EXIT STREQUAL "0"    # git exited successfully,
 		AND NOT GIT_IS_BRANCH STREQUAL "")  # and without any output. which means we are in a tag
 	))	# summary: if file exists, and we are not on a branch in a local build, then read the file.
-		set(GIT_BRANCH_FILE "${CMAKE_SOURCE_DIR}/.git-branch")
+		set(GIT_BRANCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/.git-branch")
 		file(READ "${GIT_BRANCH_FILE}" GIT_BRANCH)
 		string(REGEX REPLACE "[ \t\n]" "" GIT_BRANCH "${GIT_BRANCH}")
 		message(STATUS "Read branch from file: ${GIT_BRANCH}")
 	else()
 		execute_process(
 			COMMAND git rev-parse --abbrev-ref HEAD
-			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			OUTPUT_VARIABLE GIT_BRANCH
 			RESULT_VARIABLE GIT_BRANCH_EXIT
 			OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -37,8 +37,8 @@ if(NOT DEFINED GIT_BRANCH)
 		endif()
 		message(STATUS "Detected branch from git: ${GIT_BRANCH}")
 	endif()
-	configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/.git-branch.in"
-		"${CMAKE_SOURCE_DIR}/.git-branch")
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/templates/.git-branch.in"
+		"${CMAKE_CURRENT_SOURCE_DIR}/.git-branch")
 endif()
 project(${GIT_BRANCH}
 	LANGUAGES CXX C
@@ -58,9 +58,9 @@ else()
 endif()
 
 if(ALL_BUILD_TYPES_TOGETHER)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 elseif(NOT CUSTOM_OUTPUT_OPTIONS)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/$CONFIGURATION")
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/$CONFIGURATION")
 endif()
 if(LOCAL_CMAKE_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
 	# separate different projects
@@ -85,4 +85,4 @@ endif()
 
 include(Deps)
 
-add_subdirectory("${CMAKE_SOURCE_DIR}/src")
+add_subdirectory("${PROJECT_SOURCE_DIR}/src")

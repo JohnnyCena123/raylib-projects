@@ -11,9 +11,9 @@ if(UNIX)
 			set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 		endif()
 		set(COMMENT "@MIN_DESCRIPTION@")
-		configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/project.desktop.in"
+		configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/project.desktop.in"
 			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.desktop.in")
-		configure_file("${CMAKE_SOURCE_DIR}/resources/icon.png"
+		configure_file("${PROJECT_SOURCE_DIR}/resources/icon.png"
 			"${CMAKE_BINARY_DIR}/${PROJECT_NAME}.png" COPYONLY)
 	endif()
 elseif(WIN32 OR CYGWIN)
@@ -38,16 +38,16 @@ set(CPACK_PACKAGE_VENDOR "Johnny Cena")
 set(CPACK_PACKAGE_CONTACT "iamahuman1395@gmail.com")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}")
-set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/icon.png")
-set(CPACK_PACKAGE_DOCUMENTATION_FILES "${CMAKE_SOURCE_DIR}/README.md")
+set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/resources/icon.png")
+set(CPACK_PACKAGE_DOCUMENTATION_FILES "${PROJECT_SOURCE_DIR}/README.md")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "${PROJECT_NAME}")
 set(CPACK_CREATE_DESKTOP_LINKS "$<TARGET_FILE:${PROJECT_NAME}>")
 
-configure_file("${CMAKE_SOURCE_DIR}/LICENSE" "${CMAKE_BINARY_DIR}/LICENSE.txt")
+configure_file("${PROJECT_SOURCE_DIR}/LICENSE" "${CMAKE_BINARY_DIR}/LICENSE.txt")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/LICENSE.txt")
-set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+set(CPACK_RESOURCE_FILE_README "${PROJECT_SOURCE_DIR}/README.md")
 if(APPLE)
-	configure_file("${CMAKE_SOURCE_DIR}/README.md" "${CMAKE_BINARY_DIR}/README.md.txt")
+	configure_file("${PROJECT_SOURCE_DIR}/README.md" "${CMAKE_BINARY_DIR}/README.md.txt")
 	set(CPACK_RESOURCE_FILE_README "${CMAKE_BINARY_DIR}/README.md.txt")
 endif()
 
@@ -56,8 +56,8 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 else()
   set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES")
 endif()
-set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
-set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/resources/icon.ico")
+set(CPACK_NSIS_MUI_ICON "${PROJECT_SOURCE_DIR}/resources/icon.ico")
+set(CPACK_NSIS_MUI_UNIICON "${PROJECT_SOURCE_DIR}/resources/icon.ico")
 if(WIN32)
 	string(REPLACE "/" "\\\\" CPACK_PACKAGE_ICON "${CPACK_PACKAGE_ICON}")
 endif()
@@ -79,10 +79,10 @@ add_custom_command(
     OUTPUT "${CMAKE_BINARY_DIR}/dummy5.stamp"
 	COMMAND ${CMAKE_COMMAND}
 		-DEXE_PATH="$<TARGET_FILE:${PROJECT_NAME}>"
-		-DSOURCE_CPACK_PROPERTIES_FILEPATH="${CMAKE_SOURCE_DIR}/cmake/templates/CPackProperties.cmake.in"
+		-DSOURCE_CPACK_PROPERTIES_FILEPATH="${PROJECT_SOURCE_DIR}/cmake/templates/CPackProperties.cmake.in"
 		-DCPACK_PROPERTIES_FILEPATH="${CMAKE_BINARY_DIR}/CPackProperties.cmake"
 		-DDESKTOP_FILE="${DESKTOP_FILE}"
-		-P "${CMAKE_SOURCE_DIR}/cmake/InjectPackageInfo.cmake"
+		-P "${PROJECT_SOURCE_DIR}/cmake/InjectPackageInfo.cmake"
     COMMENT "Generating package information..."
 )
 add_custom_target(GeneratePackageInfo ALL DEPENDS "${CMAKE_BINARY_DIR}/dummy5.stamp")

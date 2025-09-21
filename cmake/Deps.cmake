@@ -92,7 +92,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
 		endif()
 		target_compile_definitions(${IMGUI_TARGET} PRIVATE -DBUILD_LIBTYPE_SHARED)
 		target_compile_definitions(${IMGUI_TARGET} PRIVATE -DIMGUI_EXPORTING)
-		target_compile_definitions(${IMGUI_TARGET} PRIVATE -DIMGUI_USER_CONFIG="${CMAKE_SOURCE_DIR}/src/imgui-config.hpp")
+		target_compile_definitions(${IMGUI_TARGET} PRIVATE -DIMGUI_USER_CONFIG="${PROJECT_SOURCE_DIR}/src/imgui-config.hpp")
 	endif()
 
 	check_c_compiler_flag("-Wno-nontrivial-memcall" HAS_W_NONTRIVIAL_MEMCALL)
