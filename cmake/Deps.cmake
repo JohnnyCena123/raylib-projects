@@ -1,7 +1,7 @@
 
 include(CPM)
 include(CheckCCompilerFlag)
-CPMAddPackage("gh:JohnnyCena123/raylib#cmake-web-fix")
+CPMAddPackage("gh:raysan5/raylib#master")
 set(RAYLIB_TARGET raylib CACHE STRING "Name of raylib's target.")
 if(DISABLE_WARNINGS)
 	check_c_compiler_flag("-Wno-tautological-compare" HAS_W_NO_TAUTOLOGICAL_COMPARE)
