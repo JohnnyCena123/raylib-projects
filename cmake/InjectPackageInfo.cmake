@@ -12,12 +12,12 @@ execute_process(
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
-	COMMAND "${EXE_PATH}" --description --minimal-output --no-metadata --no-colors
+	COMMAND "${EXE_PATH}" --description --dump --no-metadata --no-colors
 	OUTPUT_VARIABLE MIN_DESCRIPTION
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
-	COMMAND "${EXE_PATH}" --repo --minimal-output --no-colors
+	COMMAND "${EXE_PATH}" --repo --dump --no-colors
 	OUTPUT_VARIABLE REPO
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )

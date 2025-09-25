@@ -66,7 +66,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	bool printVersion = false;
 	bool printHelp = false;
 	bool noMetadata = false;
-	bool minimalOutput = false;
+	bool dump = false;
 	bool printDescription = false;
 	bool printRepository = false;
 	std::array options{
@@ -79,7 +79,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		Option{ 'u', "--usage", printHelp },
 		Option{ std::nullopt, "--no-colors", _ },
 		Option{ std::nullopt, "--no-metadata", noMetadata },
-		Option{ std::nullopt, "--minimal-output", minimalOutput },
+		Option{ std::nullopt, "--dump", dump },
 		Option{ std::nullopt, "--description", printDescription },
 		Option{ std::nullopt, "--repo", printRepository },
 	};
@@ -190,7 +190,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 
 	if (printRepository || printDescription || printVersion) {
 		if (!printRepository) {
-			if (minimalOutput) {
+			if (dump) {
 				if (printVersion) std::cout << PROJECT_VERSION "\n";
 				else if ( printDescription) std::cout << "Template project for raylib apps\n";
 				return 0;
@@ -203,7 +203,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 					"and start new projects using raylib. it is not a full game or app.\n";
 			}
 		}
-		if (minimalOutput) {
+		if (dump) {
 			std::cout << PROJECT_HOMEPAGE_URL << '\n';
 			return 0;
 		}
@@ -224,7 +224,8 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			"    -u, --usage             --  same as --help.\n"
 			"        --description       --  prints a general description of this app.\n"
 			"        --no-metadata       --  dont print build metadata (build date & time, compiler, etc.)\n"
-			"        --minimal-output    --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
+			"        --dump              --  used for --version, --description, and --repo.\n"
+			"                                  dumps the minimal information needed to automate package metadata in GitHub Actions.\n"
 			"        --repo              --  provides a link to the GitHub repository of the project.\n"
 			"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
 			"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n"
