@@ -76,13 +76,13 @@ set(CPACK_MONOLITHIC_INSTALL ON)
 include(CPack)
 
 add_custom_command(
-    OUTPUT "${CMAKE_BINARY_DIR}/dummy5.stamp"
+	OUTPUT "${CMAKE_BINARY_DIR}/dummy5.stamp"
 	COMMAND ${CMAKE_COMMAND}
 		-DEXE_PATH="$<TARGET_FILE:${PROJECT_NAME}>"
 		-DSOURCE_CPACK_PROPERTIES_FILEPATH="${PROJECT_SOURCE_DIR}/cmake/templates/CPackProperties.cmake.in"
 		-DCPACK_PROPERTIES_FILEPATH="${CMAKE_BINARY_DIR}/CPackProperties.cmake"
 		-DDESKTOP_FILE="${DESKTOP_FILE}"
 		-P "${PROJECT_SOURCE_DIR}/cmake/InjectPackageInfo.cmake"
-    COMMENT "Generating package information..."
+	COMMENT "Generating package information..."
 )
 add_custom_target(GeneratePackageInfo ALL DEPENDS "${CMAKE_BINARY_DIR}/dummy5.stamp")

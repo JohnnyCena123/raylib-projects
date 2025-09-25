@@ -1,15 +1,15 @@
 if [ "$#" -eq "0" ]; then
-    git_branch="$(git rev-parse --abbrev-ref HEAD)"
+	git_branch="$(git rev-parse --abbrev-ref HEAD)"
 else
-    for arg in "$@"; do
-        case "$arg" in
-            --git-branch=*) git_branch="${arg#--git-branch=}" ;;
-            *)
-                echo "Unknown argument: $arg" >&2
-                exit 2
-                ;;
-        esac
-    done
+	for arg in "$@"; do
+		case "$arg" in
+			--git-branch=*) git_branch="${arg#--git-branch=}" ;;
+			*)
+				echo "Unknown argument: $arg" >&2
+				exit 2
+				;;
+		esac
+	done
 fi
 
 cd "$(dirname "$0")/../../bin/" || exit 1

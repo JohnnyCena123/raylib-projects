@@ -2,12 +2,12 @@
 #include "resource-manager.hpp"
 
 fs::path Game::getSaveDir(bool portable) {
-    fs::path ret = getDefaultSaveDir();
-    if (!portable) {
+	fs::path ret = getDefaultSaveDir();
+	if (!portable) {
 		fs::path home = std::getenv("HOME");
 		ret = home/".local"/"share"/PROJECT_NAME;
-    }
-    return ret;
+	}
+	return ret;
 }
 fs::path ResourceManager::getResourceDir(bool portable) {
 	fs::path exeDir = GetApplicationDirectory();
