@@ -177,12 +177,12 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		}
 		ss << std::string(buffer.data());
 
-		std::stringstream withoutColors = std::stringstream{std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "")};
+		std::string noAnsi = std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "");
 
 		if (!_this.m_silent) *out <<
 			// avoid printing with colors to the web console, it wont work anyway
-			(WEB_ONLY(withoutColors) NOT_IN_WEB(ss)).str() << std::endl;
-		_this.m_logs << withoutColors.str() << std::endl;
+			NOT_IN_DESKTOP(withoutColors) DESKTOP_ONLY(ss.str()) << std::endl;
+		_this.m_logs << noAnsi << std::endl;
 	};
 	SetTraceLogCallback(traceLogCallback);
 	// im handling log levels myself
