@@ -11,6 +11,8 @@
 #ifdef PLATFORM_DESKTOP
 	#include <libclipboard.h>
 	#include <tinyfiledialogs.h>
+#endif
+#ifndef PLATFORM_WEB
 	#include <filesystem>
 	namespace fs = std::filesystem;
 #endif
