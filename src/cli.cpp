@@ -228,8 +228,9 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			"                                  dumps the minimal information needed to automate package metadata in GitHub Actions.\n"
 			"        --repo              --  provides a link to the GitHub repository of the project.\n"
 			"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
-			"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n"
-			"        --resource-dir=DIR  --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
+			"                                  available log levels: all, trace, debug, info, warning, error, fatal, none\n"
+			"        --resource-dir=DIR  --  sets a custom directory to use for resources."
+			"                                  allows for relocating the resources directory without breaking the app.\n"
 			"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n";
 		return 0;
 	}
