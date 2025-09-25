@@ -19,7 +19,7 @@
 
 
 std::optional<int> Game::handleCli(int argc, char* argv[]) {
-	static std::string 
+	static std::string
 		reset = "\033[0m",
 		hyperlink1 = "\033]8;;",
 		hyperlink2 = "\033\\",
@@ -94,7 +94,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			static char constexpr ALT_RESOURCE_DIR_ARG[] = "--resource-dir=";
 			static char constexpr ALT_SAVE_DIR_ARG[] = "--save-dir=";
 			static char constexpr LOG_LEVEL_ARG[] = "--log-level=";
-			
+
 			if (arg.starts_with(LOG_LEVEL_ARG)) {
 				rawLogLevel = arg.substr(sizeof(LOG_LEVEL_ARG) - 1, std::string::npos);
 				found = true;

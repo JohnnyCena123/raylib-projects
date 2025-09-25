@@ -1,5 +1,5 @@
 #include "build-metadata.hpp"
-std::string buildMetadata = 
+std::string buildMetadata =
 	"Built on " __DATE__ " " __TIME__ " "
 	"for @CMAKE_SYSTEM_NAME@ (@CMAKE_SYSTEM@)\n"
 	"using:\n"

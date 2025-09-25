@@ -14,10 +14,9 @@
 	#include <filesystem>
 	namespace fs = std::filesystem;
 #endif
-#include "resource-manager.hpp"
-	
 #include <sstream>
 #include <optional>
+#include "resource-manager.hpp"
 
 class Game {
 public:
@@ -32,7 +31,7 @@ public:
 private:
 
 	bool m_didInit;
-	
+
 	DESKTOP_ONLY(clipboard_c* m_cb);
 
 NOT_IN_WEB(

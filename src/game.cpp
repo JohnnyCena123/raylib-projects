@@ -101,7 +101,7 @@ void Game::run() {
 		} EndTextureMode();
 		BeginDrawing(); {
 			Vector2 const actualScreenSize = {
-				DEFAULT_SCREEN_SIZE.x * resizeRatio, 
+				DEFAULT_SCREEN_SIZE.x * resizeRatio,
 				DEFAULT_SCREEN_SIZE.y * resizeRatio
 			};
 			ClearBackground(BLANK);
