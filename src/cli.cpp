@@ -14,8 +14,8 @@
 #include "metadata/build-metadata.hpp"
 #include "game.hpp"
 
-#define ERROR_MSG argv[0] << ": " << boldYellow << "error:" << reset << " "
-#define HELP_SUGGESTION "use " << boldYellow << argv[0] << " --help" << reset << "for more info." << std::endl
+#define ERROR_MSG argv[0] << ": " << boldRed << "error:" << reset << " "
+#define HELP_SUGGESTION "use " << boldYellow << argv[0] << " --help" << reset << " for more info." << std::endl
 
 
 std::optional<int> Game::handleCli(int argc, char* argv[]) {
