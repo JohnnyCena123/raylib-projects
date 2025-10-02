@@ -87,8 +87,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	std::optional<std::string> rawLogLevel = std::nullopt;
 	std::optional<fs::path> altResourceDir = std::nullopt;
 	std::optional<fs::path> altSaveDir     = std::nullopt;
-	for (size_t i = 1; i < argc; i++) {
-		std::string arg = argv[i];
+	for (std::string arg : args) {
 		if (arg.starts_with("--")) {
 			bool found = false;
 			static char constexpr ALT_RESOURCE_DIR_ARG[] = "--resource-dir=";
