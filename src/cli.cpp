@@ -30,6 +30,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		boldYellow = "\033[1;33m",
 		boldRed = "\033[1;31m",
 		highlightedRed = "\033[0;30;41m";
+	static bool colors = true;
 
 	std::vector<std::string> args{};
 	for (size_t i = 1; i < argc; i++) args.push_back(argv[i]);
@@ -50,6 +51,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			boldRed =
 			highlightedRed =
 		"";
+		colors = false;
 		hyperlink = [](std::string url, std::string text) -> std::string { return url; };
 	}
 
@@ -176,12 +178,10 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		}
 		ss << std::string(buffer.data());
 
-		std::string noAnsi = std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "");
+		std::string noColors = std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "");
 
-		if (!_this.m_silent) *out <<
-			// avoid printing with colors to the web console, it wont work anyway
-			NOT_IN_DESKTOP(withoutColors) DESKTOP_ONLY(ss.str()) << std::endl;
-		_this.m_logs << noAnsi << std::endl;
+		if (!_this.m_silent) *out << (colors ? ss.str() : noColors) << std::endl;
+		_this.m_logs << noColors << std::endl;
 	};
 	SetTraceLogCallback(traceLogCallback);
 	// im handling log levels myself
