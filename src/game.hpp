@@ -12,10 +12,6 @@
 	#include <libclipboard.h>
 	#include <tinyfiledialogs.h>
 #endif
-#ifndef PLATFORM_WEB
-	#include <filesystem>
-	namespace fs = std::filesystem;
-#endif
 #include <sstream>
 #include <optional>
 #include "resource-manager.hpp"
@@ -36,11 +32,7 @@ private:
 
 	DESKTOP_ONLY(clipboard_c* m_cb);
 
-NOT_IN_WEB(
-	fs::path m_saveDir;
-	static fs::path getDefaultSaveDir();
-	static fs::path getSaveDir(bool portable);
-)
+	NOT_IN_WEB(fs::path m_saveDir;)
 
 	std::optional<int> handleCli(int argc, char* argv[]);
 

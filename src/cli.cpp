@@ -13,6 +13,7 @@
 #endif
 #include "metadata/build-metadata.hpp"
 #include "game.hpp"
+#include "utils.hpp"
 
 #define ERROR_MSG argv[0] << ": " << boldRed << "error:" << reset << " "
 #define HELP_SUGGESTION "use " << boldYellow << argv[0] << " --help" << reset << " for more info." << std::endl
@@ -294,6 +295,6 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		if (!DirectoryExists(altResourceDir->string().c_str()))
 			std::cerr << ERROR_MSG << "resource dir does not exist: " << bold << altResourceDir->string() << reset << ".\n";
 		ResourceManager::s_resourceDir = *altResourceDir;
-	} else ResourceManager::s_resourceDir = ResourceManager::getResourceDir(portable);
+	} else ResourceManager::s_resourceDir = utils::getResourceDir(portable);
 	return std::nullopt;
 }

@@ -191,10 +191,6 @@ private:
 	template <resource T>
 	static T s_dummy;
 
-	static fs::path getResourceDir(bool portable);
-	static fs::path getDefaultResourceDir(bool portable);
-	static bool verifyResourceDir(fs::path dir);
-
 };
 
 template <resource T>

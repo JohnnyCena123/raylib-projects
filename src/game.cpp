@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <raylib.h>
 #include "game.hpp"
+#include "utils.hpp"
 #include "basics.hpp"
 #include "resource-manager.hpp"
 
@@ -24,7 +25,7 @@ Game::Game(int argc, char* argv[], std::optional<int>& exit) : m_didInit(false),
 	if ((exit = handleCli(argc, argv))) return;
 
 NOT_IN_WEB(
-	m_saveDir = getSaveDir(m_portable);
+	m_saveDir = utils::getSaveDir(m_portable);
 )
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
@@ -66,7 +67,6 @@ DESKTOP_ONLY(
 	m_didInit = true;
 }
 
-NOT_IN_WEB(fs::path Game::getDefaultSaveDir() { return fs::path{GetApplicationDirectory()}/"save"; })
 void Game::run() {
 
 	PlayMusicStream(m_bgMusic);
