@@ -227,12 +227,15 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			"        --description       --  prints a general description of this app.\n"
 			"        --no-metadata       --  dont print build metadata (build date & time, compiler, etc.)\n"
 			"        --dump              --  used for --version, --description, and --repo.\n"
-			"                                  dumps the minimal information needed to automate package metadata in GitHub Actions.\n"
+			"                                  dumps the minimal information needed to automate\n"
+			"                                  package metadata in GitHub Actions.\n"
 			"        --repo              --  provides a link to the GitHub repository of the project.\n"
 			"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
-			"                                  available log levels: all, trace, debug, info, warning, error, fatal, none\n"
-			"        --resource-dir=DIR  --  sets a custom directory to use for resources."
-			"                                  allows for relocating the resources directory without breaking the app.\n"
+			"                                  available log levels: all, trace, debug, info,\n"
+			"                                  warning, error, fatal, none\n"
+			"        --resource-dir=DIR  --  sets a custom directory to use for resources.\n"
+			"                                  allows for relocating the resources directory\n"
+			"                                  without breaking anything.\n"
 			"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n";
 		return 0;
 	}
