@@ -160,8 +160,11 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		std::tm* localTime = std::localtime(&currentTime);
 
 		std::stringstream ss;
-		ss << TextFormat("[%s%02d:%02d:%02d%s] ",
+		ss << TextFormat("[%s%04d-%02d-%02d %02d:%02d:%02d%s] ",
 			bold.c_str(),
+			localTime->tm_year + 1900,
+			localTime->tm_mon,
+			localTime->tm_mday,
 			localTime->tm_hour,
 			localTime->tm_min,
 			localTime->tm_sec,
