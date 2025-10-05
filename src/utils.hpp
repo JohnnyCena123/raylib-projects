@@ -5,7 +5,7 @@
 namespace fs = std::filesystem;
 
 namespace utils {
-	bool verifyResourceDir(fs::path dir);
+	bool verifyResourceDir(fs::path const& dir);
 	fs::path getResourceDir(bool portable);
 	fs::path getDefaultResourceDir(bool portable);
 	fs::path getDefaultSaveDir();

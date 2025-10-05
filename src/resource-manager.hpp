@@ -113,7 +113,7 @@ inline LoadCallback<T> dummyCallback = [](RawResource<T>&) { };
 /* metaprogramming ends here */
 
 
-static inline bool isValidResourceDirPath(fs::path dir) {
+static inline bool isValidResourceDirPath(fs::path const& dir) {
 	fs::path resourceDir = dir/"resources";
 	return DirectoryExists(resourceDir.string().c_str()) &&
 		FileExists((resourceDir/"icon.png").string().c_str());
@@ -133,7 +133,7 @@ public:
 	void deinit();
 
 	template <resource T>
-	inline bool load(std::string id, fs::path relativePath, LoadCallback<T> manipulator = dummyCallback<T>) {
+	inline bool load(std::string const& id, fs::path const& relativePath, LoadCallback<T> const& manipulator = dummyCallback<T>) {
 		fs::path const fullPath = s_resourceDir/relativePath;
 
 		if constexpr (isRawResource<T>) {
@@ -167,7 +167,7 @@ public:
 	}
 
 	template <resource T>
-	inline T get(std::string id) const {
+	inline T get(std::string const& id) const {
 		if (s_resources<T>.contains(id)) return s_resources<T>.at(id);
 		else {
 			TraceLog(LOG_WARNING, "RESOURCES: ['%s'] %s has NOT been loaded, returning dummy", id.c_str(), name<T>);
