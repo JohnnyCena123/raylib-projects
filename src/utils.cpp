@@ -1,3 +1,8 @@
+#include <filesystem>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <raylib.h>
 #include "utils.hpp"
 
 fs::path utils::getDefaultResourceDir(bool portable) {
@@ -26,3 +31,39 @@ bool utils::verifyResourceDir(fs::path dir) {
 	} else return true;
 }
 fs::path utils::getDefaultSaveDir() { return fs::path{GetApplicationDirectory()}/"save"; }
+
+static inline std::string encodeUri(const std::string &s) {
+	std::ostringstream out{};
+	for (unsigned char c : s) {
+		if (
+			(c >= 'A' && c <= 'Z') ||
+			(c >= 'a' && c <= 'z') ||
+			(c >= '0' && c <= '9') ||
+			 c == '-' || c == '_'  ||
+			 c == '.' || c == '~'  ||
+			 c == '/' || c == ':' 
+		) out << c;
+		else out << '%' << std::uppercase << std::hex << static_cast<int>(c) << std::nouppercase << std::dec;
+	}
+	return out.str();
+}
+
+std::string utils::getHelpLauncherUri(std::string const& argv0) {
+	char constexpr SUFFIX[] = "-help";
+	char constexpr WIN32_EXT[] = ".exe";
+
+	size_t noDotExeLen = argv0.size();
+
+#ifdef _WIN32
+	noDotExeLen -= (sizeof(WIN32_EXT) - 1);
+#endif
+
+	std::string launcherFilepath = argv0.substr(0, noDotExeLen);
+	launcherFilepath += SUFFIX;
+
+#ifdef _WIN32
+	launcherFilepath += WIN32_EXT;
+#endif
+
+	return TextFormat("file://%s", encodeUri(std::filesystem::absolute(launcherFilepath).string()).c_str());
+}

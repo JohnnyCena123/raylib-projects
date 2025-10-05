@@ -15,10 +15,6 @@
 #include "game.hpp"
 #include "utils.hpp"
 
-#define ERROR_MSG argv[0] << ": " << boldRed << "error:" << reset << " "
-#define HELP_SUGGESTION "use " << boldYellow << argv[0] << " --help" << reset << " for more info." << std::endl
-
-
 std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	static std::string
 		reset = "\033[0m",
@@ -33,12 +29,12 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		highlightedRed = "\033[0;30;41m";
 	static bool colors = true;
 
-	std::vector<std::string> args{};
-	for (size_t i = 1; i < argc; i++) args.push_back(argv[i]);
-
-	std::function<std::string(std::string, std::string)> hyperlink = [](std::string url, std::string text) -> std::string {
+	std::function<std::string(std::string, std::string)> hyperlink = [](std::string url, std::string text) {
 		return hyperlink1 + url + hyperlink2 + text + hyperlink1 + hyperlink2;
 	};
+
+	std::vector<std::string> args{};
+	for (size_t i = 1; i < argc; i++) args.push_back(argv[i]);
 
 	if (WEB_ONLY(true ||) std::find(args.begin(), args.end(), "--no-colors") != args.end()) {
 		reset =
@@ -53,8 +49,17 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			highlightedRed =
 		"";
 		colors = false;
-		hyperlink = [](std::string url, std::string text) -> std::string { return url; };
+		hyperlink = [](std::string url, std::string text) { return url; };
 	}
+
+	#define ERROR_MESSAGE TextFormat("%s: %serror:%s ", argv[0], boldRed.c_str(), reset.c_str())
+	#define HELP_SUGGESTION TextFormat("use %s%s%s for more info.\n", boldYellow.c_str(),  \
+		hyperlink(                                                                         \
+			utils::getHelpLauncherUri(argv[0]).c_str(),                                              \
+			TextFormat("%s --help,", argv[0])                                              \
+		).c_str(),                                                                         \
+		reset.c_str()                                                                      \
+	)
 
 	bool hasError = false;
 	struct Option {
@@ -113,7 +118,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 				}
 			}
 			if (!found) {
-				std::cerr << ERROR_MSG << "unrecognized option -- " << arg << "\n"
+				std::cerr << ERROR_MESSAGE << "unrecognized option -- " << arg << "\n"
 					<< HELP_SUGGESTION;
 				hasError = true;
 			}
@@ -127,13 +132,13 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 					}
 				}
 				if (!found) {
-					std::cerr << ERROR_MSG << "unrecognized option -- -" << arg[i] << "\n"
+					std::cerr << ERROR_MESSAGE << "unrecognized option -- -" << arg[i] << "\n"
 						<< HELP_SUGGESTION;
 					hasError = true;
 				}
 			}
 		} else {
-			std::cerr << ERROR_MSG << "invalid argument -- " << arg << "\n"
+			std::cerr << ERROR_MESSAGE << "invalid argument -- " << arg << "\n"
 				<< HELP_SUGGESTION;
 			hasError = true;
 		}
@@ -243,7 +248,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 
 	if (rawLogLevel) {
 		if (rawLogLevel->empty()) {
-			std::cerr << ERROR_MSG << "please provide a log level for --log-level.\n"
+			std::cerr << ERROR_MESSAGE << "please provide a log level for --log-level.\n"
 				"e.g. " << argv[0] << " --log-level=Debug\n"
 				<< HELP_SUGGESTION;
 			return 2;
@@ -274,7 +279,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			}
 		}
 		if (invalidLogLevel) {
-			std::cerr << ERROR_MSG << "invalid log level: " << bold << *rawLogLevel << reset << "\n"
+			std::cerr << ERROR_MESSAGE << "invalid log level: " << bold << *rawLogLevel << reset << "\n"
 				<< HELP_SUGGESTION;
 			return 2;
 		}
@@ -284,7 +289,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	if (altSaveDir) {
 		if (!DirectoryExists(altSaveDir->string().c_str())) {
 			if (!MakeDirectory(altSaveDir->string().c_str())) {
-				std::cerr << ERROR_MSG << "failed to create save directory: " << bold << altSaveDir->string() << reset << ".\n";
+				std::cerr << ERROR_MESSAGE << "failed to create save directory: " << bold << altSaveDir->string() << reset << ".\n";
 				return 2;
 			}
 		}
@@ -293,7 +298,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 #endif
 	if (altResourceDir) {
 		if (!DirectoryExists(altResourceDir->string().c_str()))
-			std::cerr << ERROR_MSG << "resource dir does not exist: " << bold << altResourceDir->string() << reset << ".\n";
+			std::cerr << ERROR_MESSAGE << "resource dir does not exist: " << bold << altResourceDir->string() << reset << ".\n";
 		ResourceManager::s_resourceDir = *altResourceDir;
 	} else ResourceManager::s_resourceDir = utils::getResourceDir(portable);
 	return std::nullopt;
