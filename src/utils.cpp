@@ -3,6 +3,9 @@
 #include <string>
 #include <sstream>
 #include <raylib.h>
+#ifdef PLATFORM_DESKTOP
+	#include <tinyfiledialogs.h>
+#endif
 #include "utils.hpp"
 
 fs::path utils::getDefaultResourceDir(bool portable) {
@@ -10,6 +13,12 @@ fs::path utils::getDefaultResourceDir(bool portable) {
 	(void)verifyResourceDir(ret);
 	return ret/"resources";
 }
+
+static inline bool isValidResourceDirPath(fs::path const& dir) {
+	fs::path resourceDir = dir/"resources";
+	return DirectoryExists(resourceDir.string().c_str()) &&
+		FileExists((resourceDir/"icon.png").string().c_str());
+};
 
 bool utils::verifyResourceDir(fs::path const& dir) {
 	if (!isValidResourceDirPath(dir)) {

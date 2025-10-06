@@ -112,13 +112,6 @@ inline LoadCallback<T> dummyCallback = [](RawResource<T>&) { };
 
 /* metaprogramming ends here */
 
-
-static inline bool isValidResourceDirPath(fs::path const& dir) {
-	fs::path resourceDir = dir/"resources";
-	return DirectoryExists(resourceDir.string().c_str()) &&
-		FileExists((resourceDir/"icon.png").string().c_str());
-};
-
 class ResourceManager {
 	friend class Game;
 public:
