@@ -14,12 +14,6 @@ fs::path utils::getDefaultResourceDir(bool portable) {
 	return ret/"resources";
 }
 
-static inline bool isValidResourceDirPath(fs::path const& dir) {
-	fs::path resourceDir = dir/"resources";
-	return DirectoryExists(resourceDir.string().c_str()) &&
-		FileExists((resourceDir/"icon.png").string().c_str());
-};
-
 bool utils::verifyResourceDir(fs::path const& dir) {
 	if (!isValidResourceDirPath(dir)) {
 		TraceLog(LOG_ERROR, "Failed to locate resource dir; %s is not a valid parent directory.", dir.string().c_str());
