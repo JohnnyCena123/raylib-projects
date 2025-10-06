@@ -1,3 +1,4 @@
+#include <array>
 #include "utils.hpp"
 
 fs::path utils::getSaveDir(bool portable) {
