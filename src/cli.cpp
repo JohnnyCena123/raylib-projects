@@ -6,6 +6,11 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#ifdef _WIN32
+	#include <io.h>
+#else
+	#include <unistd.h>
+#endif
 #ifdef PLATFORM_DESKTOP
 	#include <tinyfiledialogs.h>
 #endif
@@ -49,6 +54,14 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 
 	static bool noColors = false;
 	NOT_IN_DESKTOP(noColors = true);
+
+	noColors |= !
+#ifdef _WIN32
+		_isatty(_fileno(stdout))
+#else
+		isatty(STDOUT_FILENO)
+#endif
+	;
 
 	for (std::string const& arg : args) {
 		if (arg.starts_with(COLORS_ARG)) {
