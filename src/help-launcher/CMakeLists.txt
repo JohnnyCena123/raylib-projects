@@ -3,3 +3,11 @@ set(HELP_LAUNCHER_TARGET "${HELP_LAUNCHER_TARGET}" PARENT_SCOPE)
 add_executable(${HELP_LAUNCHER_TARGET} "${CMAKE_CURRENT_SOURCE_DIR}/main.c")
 set_target_properties(${HELP_LAUNCHER_TARGET} PROPERTIES BUILD_RPATH "${APP_RPATH}")
 set_target_properties(${HELP_LAUNCHER_TARGET} PROPERTIES OUTPUT_NAME "${EXE_NAME}-help")
+
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+    add_custom_command(TARGET ${HELP_LAUNCHER_TARGET} POST_BUILD
+        COMMAND $<$<CONFIG:Release>:${CMAKE_STRIP}>
+        ARGS $<TARGET_FILE:${HELP_LAUNCHER_TARGET}>
+        COMMENT "Stripping output help launcher..."
+    )
+endif()
