@@ -1,5 +1,3 @@
-#include "platform/platforms.hpp"
-#include "resource-manager.hpp"
 #include <array>
 #include <functional>
 #include <raylib.h>
@@ -11,11 +9,20 @@
 #ifdef PLATFORM_DESKTOP
 	#include <tinyfiledialogs.h>
 #endif
-#include "metadata/build-metadata.hpp"
 #include "game.hpp"
 #include "utils.hpp"
 
 std::optional<int> Game::handleCli(int argc, char* argv[]) {
+	static char constexpr COLORS_ARG[] = "--colors=";
+	static char constexpr ALT_RESOURCE_DIR_ARG[] = "--resource-dir=";
+	static char constexpr ALT_SAVE_DIR_ARG[] = "--save-dir=";
+	static char constexpr LOG_LEVEL_ARG[] = "--log-level=";
+
+	bool hasError = false;
+
+	std::vector<std::string> args{};
+	for (size_t i = 1; i < argc; i++) args.push_back(argv[i]);
+
 	static std::string
 		reset = "\033[0m",
 		hyperlink1 = "\033]8;;",
@@ -27,16 +34,54 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		boldYellow = "\033[1;33m",
 		boldRed = "\033[1;31m",
 		highlightedRed = "\033[0;30;41m";
-	static bool colors = true;
-
 	std::function<std::string(std::string, std::string)> hyperlink = [](std::string url, std::string text) {
 		return hyperlink1 + url + hyperlink2 + text + hyperlink1 + hyperlink2;
 	};
 
-	std::vector<std::string> args{};
-	for (size_t i = 1; i < argc; i++) args.push_back(argv[i]);
+#define ERROR_MESSAGE TextFormat("%s: %serror:%s ", argv[0], boldRed.c_str(), reset.c_str())
+#define HELP_SUGGESTION TextFormat("use %s%s%s for more info.\n", boldYellow.c_str(),  \
+		hyperlink(                                                                         \
+			utils::getHelpLauncherUri(argv[0]).c_str(),                                    \
+			TextFormat("%s --help,", argv[0])                                              \
+		).c_str(),                                                                         \
+		reset.c_str()                                                                      \
+	)
 
-	if (WEB_ONLY(true ||) std::find(args.begin(), args.end(), "--no-colors") != args.end()) {
+	static bool noColors = false;
+	NOT_IN_DESKTOP(noColors = true);
+
+	for (std::string const& arg : args) {
+		if (arg.starts_with(COLORS_ARG)) {
+			bool invalid = false;
+			std::string val = arg.substr(sizeof(COLORS_ARG) - 1, std::string::npos).c_str();
+			std::string uppercase = TextToUpper(val.c_str());
+			if (val.empty()) {
+				std::cerr << ERROR_MESSAGE << "please provide a log level for --colors.\n"
+					"e.g. " << argv[0] << " --colors=on\n"
+					<< HELP_SUGGESTION;
+				return 2;
+			}
+			// switch statement is here to guarantee up to one branch
+			switch (uppercase[0]) {
+				case 'O': switch(uppercase[1]) {
+					case 'F': if (uppercase == "OFF") noColors = true;  else invalid = true; break;
+					case 'N': if (uppercase == "ON")  noColors = false; else invalid = true; break;
+					default: invalid = true; break;
+				} break;
+				case 'F': if (uppercase == "FALSE") noColors = true;  else invalid = true; break;
+				case 'T': if (uppercase == "TRUE")  noColors = false; else invalid = true; break;
+				case 'N': if (uppercase == "NO")    noColors = true;  else invalid = true; break;
+				case 'Y': if (uppercase == "YES")   noColors = false; else invalid = true; break;
+				default: invalid = true; break;
+			}
+			if (invalid) std::cerr << ERROR_MESSAGE
+				<< "invalid value for " << boldYellow << "--colors" << reset << " -- '" << bold << val << reset << "'.\n"
+				<< HELP_SUGGESTION;
+			hasError |= invalid;
+		}
+	}
+
+	if (noColors) {
 		reset =
 			hyperlink1 =
 			hyperlink2 =
@@ -48,20 +93,10 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			boldRed =
 			highlightedRed =
 		"";
-		colors = false;
+		noColors = false;
 		hyperlink = [](std::string url, std::string text) { return url; };
 	}
 
-	#define ERROR_MESSAGE TextFormat("%s: %serror:%s ", argv[0], boldRed.c_str(), reset.c_str())
-	#define HELP_SUGGESTION TextFormat("use %s%s%s for more info.\n", boldYellow.c_str(),  \
-		hyperlink(                                                                         \
-			utils::getHelpLauncherUri(argv[0]).c_str(),                                              \
-			TextFormat("%s --help,", argv[0])                                              \
-		).c_str(),                                                                         \
-		reset.c_str()                                                                      \
-	)
-
-	bool hasError = false;
 	struct Option {
 		std::optional<char> singleChar;
 		std::string full;
@@ -85,7 +120,6 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		Option{ 'v', "--version", printVersion },
 		Option{ 'h', "--help", printHelp },
 		Option{ 'u', "--usage", printHelp },
-		Option{ std::nullopt, "--no-colors", _ },
 		Option{ std::nullopt, "--no-metadata", noMetadata },
 		Option{ std::nullopt, "--dump", dump },
 		Option{ std::nullopt, "--description", printDescription },
@@ -95,14 +129,12 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	std::optional<std::string> rawLogLevel = std::nullopt;
 	std::optional<fs::path> altResourceDir = std::nullopt;
 	std::optional<fs::path> altSaveDir     = std::nullopt;
-	for (std::string arg : args) {
+	for (std::string const& arg : args) {
 		if (arg.starts_with("--")) {
 			bool found = false;
-			static char constexpr ALT_RESOURCE_DIR_ARG[] = "--resource-dir=";
-			static char constexpr ALT_SAVE_DIR_ARG[] = "--save-dir=";
-			static char constexpr LOG_LEVEL_ARG[] = "--log-level=";
 
-			if (arg.starts_with(LOG_LEVEL_ARG)) {
+			if (arg.starts_with(COLORS_ARG)) continue;
+			else if (arg.starts_with(LOG_LEVEL_ARG)) {
 				rawLogLevel = arg.substr(sizeof(LOG_LEVEL_ARG) - 1, std::string::npos);
 				found = true;
 			} else if (arg.starts_with(ALT_RESOURCE_DIR_ARG)) {
@@ -187,10 +219,10 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		}
 		ss << std::string(buffer.data());
 
-		std::string noColors = std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "");
+		std::string colorless = std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "");
 
-		if (!_this.m_silent) *out << (colors ? ss.str() : noColors) << std::endl;
-		_this.m_logs << noColors << std::endl;
+		if (!_this.m_silent) *out << (noColors ? colorless : ss.str()) << std::endl;
+		_this.m_logs << colorless << std::endl;
 	};
 	SetTraceLogCallback(traceLogCallback);
 	// im handling log levels myself
@@ -230,6 +262,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			"    -v, --version           --  prints the version and exits.\n"
 			"    -h, --help              --  prints this help message and exits.\n"
 			"    -u, --usage             --  same as --help.\n"
+			"        --colors=[ON|OFF]   --  force colors on or off for textual output\n"
 			"        --description       --  prints a general description of this app.\n"
 			"        --no-metadata       --  dont print build metadata (build date & time, compiler, etc.)\n"
 			"        --dump              --  used for --version, --description, and --repo.\n"
@@ -279,7 +312,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			}
 		}
 		if (invalidLogLevel) {
-			std::cerr << ERROR_MESSAGE << "invalid log level: " << bold << *rawLogLevel << reset << "\n"
+			std::cerr << ERROR_MESSAGE << "invalid value for " << boldYellow << "--log-level" << boldYellow << " -- " << bold << *rawLogLevel << reset << "\n"
 				<< HELP_SUGGESTION;
 			return 2;
 		}

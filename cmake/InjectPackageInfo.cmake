@@ -7,17 +7,17 @@ elseif(NOT DEFINED CPACK_PROPERTIES_FILEPATH)
 endif()
 
 execute_process(
-	COMMAND "${EXE_PATH}" --description --no-metadata --no-colors
+	COMMAND "${EXE_PATH}" --description --no-metadata --colors=off
 	OUTPUT_VARIABLE DESCRIPTION
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
-	COMMAND "${EXE_PATH}" --description --dump --no-metadata --no-colors
+	COMMAND "${EXE_PATH}" --description --dump --no-metadata --colors=off
 	OUTPUT_VARIABLE MIN_DESCRIPTION
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
-	COMMAND "${EXE_PATH}" --repo --dump --no-colors
+	COMMAND "${EXE_PATH}" --repo --dump --colors=off
 	OUTPUT_VARIABLE REPO
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
