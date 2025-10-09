@@ -1,6 +1,9 @@
 
 file(GLOB SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 
+set(BUILD_METADATA_TARGET BuildMetadata)
+add_subdirectory(metadata)
+
 set(TARGET_ARGS ${SOURCES})
 
 if(EMSCRIPTEN)
@@ -70,6 +73,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VE
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}"
+	"${CMAKE_CURRENT_SOURCE_DIR}/metadata"
 	"${raylib_SOURCE_DIR}/src"
 	# would be too much effort to remove these 3 for no reason.
 	# ill just let it look for headers in /include and "" (empty path), which most likely doesnt exist, but it doesnt matter
@@ -79,8 +83,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"${imgui_SOURCE_DIR}"
 	"${rlImGui_SOURCE_DIR}"
 )
-set(BUILD_METADATA_TARGET BuildMetadata)
-add_subdirectory(metadata)
 target_link_libraries(${PROJECT_NAME}
 	${RAYLIB_TARGET}
 	${TINYFD_TARGET}
