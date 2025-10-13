@@ -46,8 +46,6 @@ if(DEFINED BIN_SUFFIX)
 endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${EXE_NAME}")
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/help-launcher")
-
 set(APP_RPATH "$ORIGIN:$ORIGIN/lib:$ORIGIN/..:$ORIGIN/../lib:$ORIGIN/../lib/${PROJECT_NAME}")
 if(UNIX)
 	string(APPEND APP_RPATH ":/usr/lib:/usr/lib/${PROJECT_NAME}")
@@ -110,8 +108,7 @@ if(PLATFORM_DESKTOP)
 			endforeach()
 		endif()
 	endif()
-
-
+	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/help-launcher")
 endif()
 
 if(EMSCRIPTEN)

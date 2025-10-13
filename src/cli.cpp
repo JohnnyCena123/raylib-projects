@@ -16,6 +16,7 @@
 #endif
 #include "game.hpp"
 #include "utils.hpp"
+#include "build-metadata.hpp"
 
 std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	static char constexpr COLORS_ARG[] = "--colors=";
