@@ -14,8 +14,8 @@ if(NOT DEFINED GIT_BRANCH)
 		# dont look here
 		LOCAL_CMAKE_BUILD                   # if we are in a local build,
 		AND NOT                             # and not
-		(GIT_IS_BRANCH_EXIT STREQUAL "0"    # git exited successfully,
-		AND NOT GIT_IS_BRANCH STREQUAL "")  # and without any output. which means we are in a tag
+		(GIT_IS_BRANCH_EXIT MATCHES "0"    # git exited successfully,
+		AND NOT GIT_IS_BRANCH MATCHES "")  # and without any output. which means we are in a tag
 	))	# summary: if file exists, and we are not on a branch in a local build, then read the file.
 		set(GIT_BRANCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/.git-branch")
 		file(READ "${GIT_BRANCH_FILE}" GIT_BRANCH)
@@ -29,7 +29,7 @@ if(NOT DEFINED GIT_BRANCH)
 			RESULT_VARIABLE GIT_BRANCH_EXIT
 			OUTPUT_STRIP_TRAILING_WHITESPACE
 		)
-		if(NOT GIT_BRANCH_EXIT STREQUAL "0")
+		if(NOT GIT_BRANCH_EXIT MATCHES "0")
 			message(FATAL_ERROR "Unable to determine the git branch!\n"
 				"Please specify it via the command-line using -DGIT_BRANCH=example,\n"
 				"or by adding a .git-branch file containing the git branch to the root of this project ."
@@ -66,7 +66,7 @@ if(LOCAL_CMAKE_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
 	# separate different projects
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}")
 	# separate different build types
-	if(CONFIGURATION STREQUAL "Release")
+	if(CONFIGURATION MATCHES "Release")
 		unset(BIN_SUFFIX)
 	else()
 		set(BIN_SUFFIX "${CONFIGURATION}")
@@ -75,7 +75,7 @@ if(LOCAL_CMAKE_BUILD AND NOT CUSTOM_OUTPUT_OPTIONS)
 elseif(NOT CUSTOM_OUTPUT_OPTIONS)
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 endif()
-if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
+if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Xcode")
 	foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
 		string(TOUPPER "${CONFIG}" UPPER_CONFIG)
 		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${UPPER_CONFIG} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")

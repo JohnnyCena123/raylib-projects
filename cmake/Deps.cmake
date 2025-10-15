@@ -22,7 +22,7 @@ if(BUILD_SHARED_LIBS AND DEFINED BIN_SUFFIX)
 endif()
 
 # helper
-if(PLATFORM STREQUAL "Desktop")
+if(PLATFORM MATCHES "Desktop")
 	set(PLATFORM_DESKTOP ON CACHE BOOL "Whether the target platform is desktop.")
 else()
 	set(PLATFORM_DESKTOP OFF CACHE BOOL "Whether the target platform is desktop.")
@@ -55,7 +55,7 @@ if(PLATFORM_DESKTOP)
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
 	)
 
-	if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR STREQUAL "Xcode")
+	if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Xcode")
 		foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
 			string(TOUPPER "${CONFIG}" UPPER_CONFIG)
 			set_target_properties(clipboard PROPERTIES
@@ -65,7 +65,7 @@ if(PLATFORM_DESKTOP)
 	endif()
 endif()
 
-if(NOT CMAKE_BUILD_TYPE STREQUAL Release OR IMGUI_IN_RELEASE)
+if(NOT CMAKE_BUILD_TYPE MATCHES Release OR IMGUI_IN_RELEASE)
 	CPMAddPackage("gh:ocornut/imgui#eaac68c")
 	CPMAddPackage("gh:raylib-extras/rlImGui#9512b36")
 	set(IMGUI_TARGET imgui CACHE STRING "Name of ImGui's target." FORCE)
