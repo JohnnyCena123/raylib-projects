@@ -1,6 +1,9 @@
 
 file(GLOB SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 
+set(BUILD_METADATA_TARGET BuildMetadata)
+add_subdirectory(metadata)
+
 set(TARGET_ARGS ${SOURCES})
 
 if(EMSCRIPTEN)
@@ -18,7 +21,7 @@ elseif(WIN32 OR CYGWIN)
 	set(RESOURCE_FILE ${ICON_FILE})
 	list(APPEND TARGET_ARGS ${RESOURCE_FILE})
 	list(APPEND TARGET_ARGS "${CMAKE_CURRENT_SOURCE_DIR}/platform/windows.cpp")
-	if(CONFIGURATION STREQUAL "Release" AND NOT INCLUDE_TERMINAL_IN_RELEASE)
+	if(CONFIGURATION MATCHES "Release" AND NOT INCLUDE_TERMINAL_IN_RELEASE)
 		list(INSERT TARGET_ARGS 0 "WIN32")
 		list(APPEND TARGET_ARGS "${CMAKE_CURRENT_SOURCE_DIR}/platform/windows-no-terminal.cpp")
 	endif()
@@ -46,7 +49,8 @@ if(UNIX)
 	string(APPEND APP_RPATH ":/usr/lib:/usr/lib/${PROJECT_NAME}")
 endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH "${APP_RPATH}")
-if(CMAKE_BUILD_TYPE STREQUAL Release AND NOT IMGUI_IN_RELEASE)
+
+if(CONFIGURATION MATCHES Release AND NOT IMGUI_IN_RELEASE)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -DIMGUI_OFF)
 	message(STATUS "ImGui: OFF")
 else()
@@ -58,12 +62,13 @@ endif()
 if(WIN32 AND DISABLE_WARNINGS)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE -D_CRT_SECURE_NO_WARNINGS)
 endif()
-target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+target_compile_definitions(${PROJECT_NAME} PRIVATE CONFIGURATION=${CONFIGURATION})
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}"
+	"${CMAKE_CURRENT_SOURCE_DIR}/metadata"
 	"${raylib_SOURCE_DIR}/src"
 	# would be too much effort to remove these 3 for no reason.
 	# ill just let it look for headers in /include and "" (empty path), which most likely doesnt exist, but it doesnt matter
@@ -73,8 +78,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"${imgui_SOURCE_DIR}"
 	"${rlImGui_SOURCE_DIR}"
 )
-set(BUILD_METADATA_TARGET BuildMetadata)
-add_subdirectory(metadata)
 target_link_libraries(${PROJECT_NAME}
 	${RAYLIB_TARGET}
 	${TINYFD_TARGET}
@@ -93,6 +96,16 @@ if(PLATFORM_DESKTOP)
 		)
 		target_compile_definitions(${PROJECT_NAME} PRIVATE -DPORTABLE)
 	endif()
+
+	if(NOT MSVC)
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s")
+		if(BUILD_SHARED_LIBS)
+			foreach(LIB ${RAYLIB_TARGET} ${TINYFD_TARGET} ${LCB_TARGET} ${IMGUI_TARGET})
+				set_target_properties(${LIB} PROPERTIES LINK_FLAGS_RELEASE "-s")
+			endforeach()
+		endif()
+	endif()
+	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/help-launcher")
 endif()
 if(EMSCRIPTEN)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \

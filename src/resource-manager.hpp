@@ -112,13 +112,6 @@ inline LoadCallback<T> dummyCallback = [](RawResource<T>&) { };
 
 /* metaprogramming ends here */
 
-
-static inline bool isValidResourceDirPath(fs::path dir) {
-	fs::path resourceDir = dir/"resources";
-	return DirectoryExists(resourceDir.string().c_str()) &&
-		FileExists((resourceDir/"icon.png").string().c_str());
-};
-
 class ResourceManager {
 	friend class Game;
 public:
@@ -131,7 +124,7 @@ public:
 	void deinit();
 
 	template <resource T>
-	inline bool load(std::string id, fs::path relativePath, LoadCallback<T> manipulator = dummyCallback<T>) {
+	inline bool load(std::string const& id, fs::path const& relativePath, LoadCallback<T> const& manipulator = dummyCallback<T>) {
 		fs::path const fullPath = s_resourceDir/relativePath;
 
 		if constexpr (isRawResource<T>) {
@@ -165,7 +158,7 @@ public:
 	}
 
 	template <resource T>
-	inline T get(std::string id) const {
+	inline T get(std::string const& id) const {
 		if (s_resources<T>.contains(id)) return s_resources<T>.at(id);
 		else {
 			TraceLog(LOG_WARNING, "RESOURCES: ['%s'] %s has NOT been loaded, returning dummy", id.c_str(), name<T>);
@@ -188,10 +181,6 @@ private:
 
 	template <resource T>
 	static T s_dummy;
-
-	static fs::path getResourceDir(bool portable);
-	static fs::path getDefaultResourceDir(bool portable);
-	static bool verifyResourceDir(fs::path dir);
 
 };
 

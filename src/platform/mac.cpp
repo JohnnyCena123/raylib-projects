@@ -1,8 +1,8 @@
-#include "game.hpp"
-#include "resource-manager.hpp"
+#include <array>
+#include "utils.hpp"
 
-fs::path Game::getSaveDir(bool portable) { return getDefaultSaveDir(); }
-fs::path ResourceManager::getResourceDir(bool portable) {
+fs::path utils::getSaveDir(bool portable) { return getDefaultSaveDir(); }
+fs::path utils::getResourceDir(bool portable) {
 	fs::path exeDir = GetApplicationDirectory();
 	fs::path ret = exeDir;
 	TraceLog(LOG_DEBUG, "Looking for resource dir");

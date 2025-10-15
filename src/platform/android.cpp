@@ -1,6 +1,6 @@
 #error Android is not supported yet!
 /*
-#include "resource-manager.hpp"
+#include "utils.hpp"
 
-fs::path ResourceManager::getResourceDir(bool portable) { return getResourceDirDefault(portable); }
+fs::path utils::getResourceDir(bool portable) { return getResourceDirDefault(portable); }
 */

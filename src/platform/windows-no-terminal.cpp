@@ -27,7 +27,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	bool allocedConsole = false;
 	for (int i = 1; i < argc; ++i) {
-		std::string arg = argv[i]; 
+		std::string arg = argv[i];
 		if (
 			arg.starts_with('-') &&
 			arg != "--silent" &&

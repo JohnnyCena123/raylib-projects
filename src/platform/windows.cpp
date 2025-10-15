@@ -1,12 +1,11 @@
-#include "game.hpp"
-#include "resource-manager.hpp"
+#include "utils.hpp"
 
-fs::path Game::getSaveDir(bool portable) {
-    fs::path ret = getDefaultSaveDir();
-    if (!portable) {
-        fs::path appData = std::getenv("APPDATA");
-        ret = appData/PROJECT_NAME;
-    }
-    return ret;
+fs::path utils::getSaveDir(bool portable) {
+	fs::path ret = getDefaultSaveDir();
+	if (!portable) {
+		fs::path appData = std::getenv("APPDATA");
+		ret = appData/PROJECT_NAME;
+	}
+	return ret;
 }
-fs::path ResourceManager::getResourceDir(bool portable) { return getDefaultResourceDir(portable); }
+fs::path utils::getResourceDir(bool portable) { return getDefaultResourceDir(portable); }

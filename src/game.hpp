@@ -11,15 +11,13 @@
 #ifdef PLATFORM_DESKTOP
 	#include <libclipboard.h>
 	#include <tinyfiledialogs.h>
-	#include <filesystem>
-	namespace fs = std::filesystem;
 #endif
-#include "resource-manager.hpp"
-	
 #include <sstream>
 #include <optional>
 #include "snake.hpp"
 #include "save-data.hpp"
+#include "resource-manager.hpp"
+
 class Game {
 public:
 	Game() = delete;
@@ -33,14 +31,10 @@ public:
 private:
 
 	bool m_didInit;
-	
+
 	DESKTOP_ONLY(clipboard_c* m_cb);
 
-NOT_IN_WEB(
-	fs::path m_saveDir;
-	static fs::path getDefaultSaveDir();
-	static fs::path getSaveDir(bool portable);
-)
+	NOT_IN_WEB(fs::path m_saveDir;)
 
 	std::optional<int> handleCli(int argc, char* argv[]);
 

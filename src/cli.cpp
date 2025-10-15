@@ -1,5 +1,3 @@
-#include "platform/platforms.hpp"
-#include "resource-manager.hpp"
 #include <array>
 #include <functional>
 #include <raylib.h>
@@ -8,17 +6,30 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#ifdef _WIN32
+	#include <io.h>
+#else
+	#include <unistd.h>
+#endif
 #ifdef PLATFORM_DESKTOP
 	#include <tinyfiledialogs.h>
 #endif
-#include "metadata/build-metadata.hpp"
 #include "game.hpp"
-
-#define ERROR_MSG argv[0] << ": " << boldYellow << "error:" << reset << " "
-#define HELP_SUGGESTION "use " << boldYellow << argv[0] << " --help" << reset << "for more info." << std::endl
+#include "utils.hpp"
+#include "build-metadata.hpp"
 
 std::optional<int> Game::handleCli(int argc, char* argv[]) {
-	static std::string 
+	static char constexpr COLORS_ARG[] = "--colors=";
+	static char constexpr ALT_RESOURCE_DIR_ARG[] = "--resource-dir=";
+	static char constexpr ALT_SAVE_DIR_ARG[] = "--save-dir=";
+	static char constexpr LOG_LEVEL_ARG[] = "--log-level=";
+
+	bool hasError = false;
+
+	std::vector<std::string> args{};
+	for (size_t i = 1; i < argc; i++) args.push_back(argv[i]);
+
+	static std::string
 		reset = "\033[0m",
 		hyperlink1 = "\033]8;;",
 		hyperlink2 = "\033\\",
@@ -29,15 +40,62 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		boldYellow = "\033[1;33m",
 		boldRed = "\033[1;31m",
 		highlightedRed = "\033[0;30;41m";
-
-	std::vector<std::string> args{};
-	for (size_t i = 1; i < argc; i++) args.push_back(argv[i]);
-
-	std::function<std::string(std::string, std::string)> hyperlink = [](std::string url, std::string text) -> std::string {
+	std::function<std::string(std::string, std::string)> hyperlink = [](std::string url, std::string text) {
 		return hyperlink1 + url + hyperlink2 + text + hyperlink1 + hyperlink2;
 	};
 
-	if (WEB_ONLY(true ||) std::find(args.begin(), args.end(), "--no-colors") != args.end()) {
+#define ERROR_MESSAGE TextFormat("%s: %serror:%s ", argv[0], boldRed.c_str(), reset.c_str())
+#define HELP_SUGGESTION TextFormat("use %s%s%s for more info.\n", boldYellow.c_str(),  \
+		hyperlink(                                                                         \
+			utils::getHelpLauncherUri(argv[0]).c_str(),                                    \
+			TextFormat("%s --help,", argv[0])                                              \
+		).c_str(),                                                                         \
+		reset.c_str()                                                                      \
+	)
+
+	static bool noColors = false;
+	NOT_IN_DESKTOP(noColors = true);
+
+	noColors |= !
+#ifdef _WIN32
+		_isatty(_fileno(stdout))
+#else
+		isatty(STDOUT_FILENO)
+#endif
+	;
+
+	for (std::string const& arg : args) {
+		if (arg.starts_with(COLORS_ARG)) {
+			bool invalid = false;
+			std::string val = arg.substr(sizeof(COLORS_ARG) - 1, std::string::npos).c_str();
+			std::string uppercase = TextToUpper(val.c_str());
+			if (val.empty()) {
+				std::cerr << ERROR_MESSAGE << "please provide a log level for --colors.\n"
+					"e.g. " << argv[0] << " --colors=on\n"
+					<< HELP_SUGGESTION;
+				return 2;
+			}
+			// switch statement is here to guarantee up to one branch
+			switch (uppercase[0]) {
+				case 'O': switch(uppercase[1]) {
+					case 'F': if (uppercase == "OFF") noColors = true;  else invalid = true; break;
+					case 'N': if (uppercase == "ON")  noColors = false; else invalid = true; break;
+					default: invalid = true; break;
+				} break;
+				case 'F': if (uppercase == "FALSE") noColors = true;  else invalid = true; break;
+				case 'T': if (uppercase == "TRUE")  noColors = false; else invalid = true; break;
+				case 'N': if (uppercase == "NO")    noColors = true;  else invalid = true; break;
+				case 'Y': if (uppercase == "YES")   noColors = false; else invalid = true; break;
+				default: invalid = true; break;
+			}
+			if (invalid) std::cerr << ERROR_MESSAGE
+				<< "invalid value for " << boldYellow << "--colors" << reset << " -- '" << bold << val << reset << "'.\n"
+				<< HELP_SUGGESTION;
+			hasError |= invalid;
+		}
+	}
+
+	if (noColors) {
 		reset =
 			hyperlink1 =
 			hyperlink2 =
@@ -49,10 +107,10 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			boldRed =
 			highlightedRed =
 		"";
-		hyperlink = [](std::string url, std::string text) -> std::string { return url; };
+		noColors = false;
+		hyperlink = [](std::string url, std::string text) { return url; };
 	}
 
-	bool hasError = false;
 	struct Option {
 		std::optional<char> singleChar;
 		std::string full;
@@ -65,7 +123,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	bool printVersion = false;
 	bool printHelp = false;
 	bool noMetadata = false;
-	bool minimalOutput = false;
+	bool dump = false;
 	bool printDescription = false;
 	bool printRepository = false;
 	std::array options{
@@ -76,9 +134,8 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		Option{ 'v', "--version", printVersion },
 		Option{ 'h', "--help", printHelp },
 		Option{ 'u', "--usage", printHelp },
-		Option{ std::nullopt, "--no-colors", _ },
 		Option{ std::nullopt, "--no-metadata", noMetadata },
-		Option{ std::nullopt, "--minimal-output", minimalOutput },
+		Option{ std::nullopt, "--dump", dump },
 		Option{ std::nullopt, "--description", printDescription },
 		Option{ std::nullopt, "--repo", printRepository },
 	};
@@ -86,15 +143,12 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	std::optional<std::string> rawLogLevel = std::nullopt;
 	std::optional<fs::path> altResourceDir = std::nullopt;
 	std::optional<fs::path> altSaveDir     = std::nullopt;
-	for (size_t i = 1; i < argc; i++) {
-		std::string arg = argv[i];
+	for (std::string const& arg : args) {
 		if (arg.starts_with("--")) {
 			bool found = false;
-			static char constexpr ALT_RESOURCE_DIR_ARG[] = "--resource-dir=";
-			static char constexpr ALT_SAVE_DIR_ARG[] = "--save-dir=";
-			static char constexpr LOG_LEVEL_ARG[] = "--log-level=";
-			
-			if (arg.starts_with(LOG_LEVEL_ARG)) {
+
+			if (arg.starts_with(COLORS_ARG)) continue;
+			else if (arg.starts_with(LOG_LEVEL_ARG)) {
 				rawLogLevel = arg.substr(sizeof(LOG_LEVEL_ARG) - 1, std::string::npos);
 				found = true;
 			} else if (arg.starts_with(ALT_RESOURCE_DIR_ARG)) {
@@ -110,7 +164,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 				}
 			}
 			if (!found) {
-				std::cerr << ERROR_MSG << "unrecognized option -- " << arg << "\n"
+				std::cerr << ERROR_MESSAGE << "unrecognized option -- " << arg << "\n"
 					<< HELP_SUGGESTION;
 				hasError = true;
 			}
@@ -124,13 +178,13 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 					}
 				}
 				if (!found) {
-					std::cerr << ERROR_MSG << "unrecognized option -- -" << arg[i] << "\n"
+					std::cerr << ERROR_MESSAGE << "unrecognized option -- -" << arg[i] << "\n"
 						<< HELP_SUGGESTION;
 					hasError = true;
 				}
 			}
 		} else {
-			std::cerr << ERROR_MSG << "invalid argument -- " << arg << "\n"
+			std::cerr << ERROR_MESSAGE << "invalid argument -- " << arg << "\n"
 				<< HELP_SUGGESTION;
 			hasError = true;
 		}
@@ -158,8 +212,11 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		std::tm* localTime = std::localtime(&currentTime);
 
 		std::stringstream ss;
-		ss << TextFormat("[%s%02d:%02d:%02d%s] ",
+		ss << TextFormat("[%s%04d-%02d-%02d %02d:%02d:%02d%s] ",
 			bold.c_str(),
+			localTime->tm_year + 1900,
+			localTime->tm_mon,
+			localTime->tm_mday,
 			localTime->tm_hour,
 			localTime->tm_min,
 			localTime->tm_sec,
@@ -176,12 +233,10 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 		}
 		ss << std::string(buffer.data());
 
-		std::stringstream withoutColors = std::stringstream{std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "")};
+		std::string colorless = std::regex_replace(ss.str(), std::regex{"\033\\[(\\d+|;)+m"}, "");
 
-		if (!_this.m_silent) *out <<
-			// avoid printing with colors to the web console, it wont work anyway
-			(WEB_ONLY(withoutColors) NOT_IN_WEB(ss)).str() << std::endl;
-		_this.m_logs << withoutColors.str() << std::endl;
+		if (!_this.m_silent) *out << (noColors ? colorless : ss.str()) << std::endl;
+		_this.m_logs << colorless << std::endl;
 	};
 	SetTraceLogCallback(traceLogCallback);
 	// im handling log levels myself
@@ -189,7 +244,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 
 	if (printRepository || printDescription || printVersion) {
 		if (!printRepository) {
-			if (minimalOutput) {
+			if (dump) {
 				if (printVersion) std::cout << PROJECT_VERSION "\n";
 				else if ( printDescription) std::cout << "Snake game made with raylib\n";
 				return 0;
@@ -202,7 +257,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 						"The only goal for it is to have fun!";
 			}
 		}
-		if (minimalOutput) {
+		if (dump) {
 			std::cout << PROJECT_HOMEPAGE_URL << '\n';
 			return 0;
 		}
@@ -221,20 +276,26 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			"    -v, --version           --  prints the version and exits.\n"
 			"    -h, --help              --  prints this help message and exits.\n"
 			"    -u, --usage             --  same as --help.\n"
+			"        --colors=[ON|OFF]   --  force colors on or off for textual output\n"
 			"        --description       --  prints a general description of this app.\n"
 			"        --no-metadata       --  dont print build metadata (build date & time, compiler, etc.)\n"
-			"        --minimal-output    --  used for --version, --description, and --repo. meant to automate package metadata in GitHub Actions.\n"
+			"        --dump              --  used for --version, --description, and --repo.\n"
+			"                                  dumps the minimal information needed to automate\n"
+			"                                  package metadata in GitHub Actions.\n"
 			"        --repo              --  provides a link to the GitHub repository of the project.\n"
 			"        --log-level=LEVEL   --  sets the log level to the specified input.\n"
-			"                                available log levels: all, trace, debug, info, warning, error, fatal, none\n"
-			"        --resource-dir=DIR  --  sets a custom directory to use for resources. allows for relocating the resources directory without breaking the app.\n"
+			"                                  available log levels: all, trace, debug, info,\n"
+			"                                  warning, error, fatal, none\n"
+			"        --resource-dir=DIR  --  sets a custom directory to use for resources.\n"
+			"                                  allows for relocating the resources directory\n"
+			"                                  without breaking anything.\n"
 			"        --save-dir=DIR      --  sets a custom directory to use for save data. includes log files.\n";
 		return 0;
 	}
 
 	if (rawLogLevel) {
 		if (rawLogLevel->empty()) {
-			std::cerr << ERROR_MSG << "please provide a log level for --log-level.\n"
+			std::cerr << ERROR_MESSAGE << "please provide a log level for --log-level.\n"
 				"e.g. " << argv[0] << " --log-level=Debug\n"
 				<< HELP_SUGGESTION;
 			return 2;
@@ -265,7 +326,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 			}
 		}
 		if (invalidLogLevel) {
-			std::cerr << ERROR_MSG << "invalid log level: " << bold << *rawLogLevel << reset << "\n"
+			std::cerr << ERROR_MESSAGE << "invalid value for " << boldYellow << "--log-level" << boldYellow << " -- " << bold << *rawLogLevel << reset << "\n"
 				<< HELP_SUGGESTION;
 			return 2;
 		}
@@ -275,7 +336,7 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 	if (altSaveDir) {
 		if (!DirectoryExists(altSaveDir->string().c_str())) {
 			if (!MakeDirectory(altSaveDir->string().c_str())) {
-				std::cerr << ERROR_MSG << "failed to create save directory: " << bold << altSaveDir->string() << reset << ".\n";
+				std::cerr << ERROR_MESSAGE << "failed to create save directory: " << bold << altSaveDir->string() << reset << ".\n";
 				return 2;
 			}
 		}
@@ -284,8 +345,8 @@ std::optional<int> Game::handleCli(int argc, char* argv[]) {
 #endif
 	if (altResourceDir) {
 		if (!DirectoryExists(altResourceDir->string().c_str()))
-			std::cerr << ERROR_MSG << "resource dir does not exist: " << bold << altResourceDir->string() << reset << ".\n";
+			std::cerr << ERROR_MESSAGE << "resource dir does not exist: " << bold << altResourceDir->string() << reset << ".\n";
 		ResourceManager::s_resourceDir = *altResourceDir;
-	} else ResourceManager::s_resourceDir = ResourceManager::getResourceDir(portable);
+	} else ResourceManager::s_resourceDir = utils::getResourceDir(portable);
 	return std::nullopt;
 }
