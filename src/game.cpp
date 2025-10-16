@@ -512,7 +512,10 @@ void Game::handleButtons(float resizeRatio) {
 			return ret;
 		}();
 		if (m_muted) DrawLineEx({ FREE_SPACE + 50.f, 5.f }, { FREE_SPACE + 90.f, 45.f }, 5.f, BLACK);
-		else DrawTextureV(soundWaves, { FREE_SPACE + 78.f, 0.f }, WHITE);
+		else DrawTextureV(soundWaves, 
+			{ FREE_SPACE + 78.f, 0.f },
+			{ .a=static_cast<unsigned char>(std::min(std::sqrt(m_masterVolume) * 127, 255.f)) }
+		);
 		DrawTextEx(GetFontDefault(), "M", { FREE_SPACE + 5.f, 5.f }, 45.f, 1e20, BLACK);
 	}
 }
