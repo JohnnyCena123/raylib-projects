@@ -286,7 +286,6 @@ void Game::update() {
 				case GESTURE_SWIPE_LEFT:  processInput(Left);  break;
 				case GESTURE_SWIPE_RIGHT: processInput(Right); break;
 			}
-			if (IsKeyPressed(KEY_M)) m_muted ^= true;
 			if (IsKeyPressed(KEY_SPACE)) m_isPaused ^= true;
 			if (m_score >= m_apples.size() * NEW_APPLE_INTERVAL) {
 				Apple newApple;
@@ -315,6 +314,7 @@ void Game::update() {
 				} else step();
 			}
 		}
+		if (IsKeyPressed(KEY_M)) m_muted ^= true;
 	}
 }
 
