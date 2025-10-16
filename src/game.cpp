@@ -420,6 +420,7 @@ void Game::handleButtons(float resizeRatio) {
 					m_restartButtonHeld = true;
 					DrawCircleV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius, {.a = 70});
 				} else if (m_restartButtonHeld) {
+					SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 					m_shouldRestart = true;
 					restartButtonHovered = false;
 				}
@@ -431,7 +432,10 @@ void Game::handleButtons(float resizeRatio) {
 				if (IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_ENTER)) {
 					m_restartButtonHeld = true;
 					DrawCircleV(RESTART_BUTTON_INFO.center, RESTART_BUTTON_INFO.radius, {.a = 70});
-				} else if ((IsKeyReleased(KEY_SPACE) || IsKeyReleased(KEY_ENTER)) && m_restartButtonHeld) m_shouldRestart = true;
+				} else if ((IsKeyReleased(KEY_SPACE) || IsKeyReleased(KEY_ENTER)) && m_restartButtonHeld) {
+					SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+					m_shouldRestart = true;
+				}
 				else {
 					m_restartButtonHeld = false;
 					DrawTextureV(restartBtn, RESTART_BUTTON_INFO.origin, WHITE);
