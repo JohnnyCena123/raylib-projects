@@ -490,6 +490,8 @@ void Game::handleButtons(float resizeRatio) {
 			}
 			DrawTextureV(speakerOutline, { FREE_SPACE + 42.5f, 0.f }, WHITE);
 			if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) m_muted ^= true;
+			m_masterVolume -= GetMouseWheelMove() / 20;
+			m_masterVolume = std::min(std::max(m_masterVolume, 0.f), 5.f);
 		} else if (muteButtonHovered) {
 			muteButtonHovered = false;
 			SetMouseCursor(MOUSE_CURSOR_DEFAULT);
