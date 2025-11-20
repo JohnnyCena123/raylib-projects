@@ -1,28 +1,29 @@
-# Raylib Projects
+# raylib-projects
 
-This is a repository for the projects I make using Raylib,
-all in one repository to not create too many separate repositories. \
-Each branch is a separate project, but sometimes I also make a temporary branch
+this is a repository for the projects I make using raylib,
+all in one repository to not create too many separate repositories.
+
+each branch is a separate project, but sometimes I also make a temporary branch
 to test stuff and/or add stuff to another branches without flooding the commit history.
 
-Current projects I'm working on:
+current projects I'm working on:
 
-* [Tic Tac Toe](https://github.com/JohnnyCena123/raylib-projects/tree/TicTacToe)
-  * [Latest development build](https://github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-tic-tac-toe)
-  * [Built binaries](https://github.com/JohnnyCena123/raylib-projects/releases/tag/TicTacToe-v1.0.0)
-* [Snake](https://github.com/JohnnyCena123/raylib-projects/tree/Snake)
-  * [Latest development build](https://github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-snake)
-  * [Built binaries](https://github.com/JohnnyCena123/raylib-projects/releases/tag/Snake-v1.0.0)
+* [tic-tac-toe](https://github.com/JohnnyCena123/raylib-projects/tree/tic-tac-toe)
+  * [latest development build](https://github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-tic-tac-toe)
+  * [built binaries](https://github.com/JohnnyCena123/raylib-projects/releases/tag/TicTacToe-v1.0.0)
+* [snake](https://github.com/JohnnyCena123/raylib-projects/tree/snake)
+  * [latest development build](https://github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-snake)
+  * [built binaries](https://github.com/JohnnyCena123/raylib-projects/releases/tag/Snake-v1.0.0)
 
-More info about each branch can be found in its own `README.md`.
+more info about each branch can be found in its own `README.md`.
 
-## About this branch
+## about this branch
 
-This branch is a template I use whenever I want to start a new project. \
-E.g. I'm starting to work on a new game, so I just copy this branch and
+this branch is a template I use whenever I want to start a new project. \
+e.g. I'm starting to work on a new game, so I just copy this branch and
 hop right into coding.
 
-Some media:
+some media:
 
 <!-- thanks chatgpt, i wouldntve wanted to learn html myself -->
 <!-- and its not me who knows how to make comments - its ctrl+/ in vscode -->
@@ -36,41 +37,41 @@ Some media:
   </tr>
 </table>
 
-## Installing
+## installing
 
-There are 4 options for installing the projects in this repository.
+there are 4 options for installing the projects in this repository.
 
-1. Downloading from the latest release of each one (currently there are such only for
-  [Tic Tac Toe](https://github.com/JohnnyCena123/raylib-projects/releases/tag/TicTacToe-v1.0.0) and
-  [Snake](https://github.com/JohnnyCena123/raylib-projects/releases/tag/Snake-v1.0.0))
-2. Downloading from the development build of the latest commit, e.g.
+1. downloading from the latest release of each one (currently there are such only for
+  [tic-tac-toe](https://github.com/JohnnyCena123/raylib-projects/releases/tag/TicTacToe-v1.0.0) and
+  [snake](https://github.com/JohnnyCena123/raylib-projects/releases/tag/Snake-v1.0.0))
+2. downloading from the development build of the latest commit, e.g.
   [snake](github.com/JohnnyCena123/raylib-projects/releases/tag/nightly-snake)
-3. Downloading CI artifacts - practically the same as getting them from nightly releases.
-4. [Building from source](#building)
+3. downloading CI artifacts - practically the same as getting them from nightly releases.
+4. [building from source](#building)
 
-### Portable mode
+### portable mode
 
-If you want the application to run in portable mode, you can either pass the `-DBUILD_PORTABLE_APPLICATION=ON`
-flag to CMake when building, or simply add a `.portable-application` file besides the executable - in the same directory.
-The folder structure should look like this:
+if you want the software to run in portable mode, you can either pass the `-DPORTABLE=ON`
+flag to cmake when building, or simply add a `.portable` file besides the executable - in the same directory.
+the folder structure should look like this:
 
 ```theres-no-language-for-this-really-so-stop-warning-me-markdown-lint
 /path/to/installed/project/
-├── .portable-application   -- if it was not already built with the portable CMake flag
-├── <Executable>            -- the actual application
+├── .portable               -- if it was not already built with the portable cmake flag
+├── <executable>            -- the executable - .exe, ELF, etc.
 ├── <libraries...>          -- shared libaries - e.g. libraylib.dll, libimgui.so, ...
 └── resources/              -- resources directory
    └── <resources...>       -- resource - images, sounds, fonts, etc.
 ```
 
-### Notes
+### notes
 
-On windows, the app will not spawn a terminal by default, unless you pass a flag to it that implies it needs to do that,
+on windows, the executable will not spawn a terminal by default, unless you pass a flag to it that implies it needs to do that,
 or simply pass `-` as an argument. don't ask why, but yeah
 
-## Building
+## building
 
-The project can be built as usual like any other CMake project:
+the project can be built as usual like any other cmake project:
 
 ```bash
 git clone https://github.com/JohnnyCena123/raylib-projects
@@ -80,55 +81,48 @@ cmake -Bbuild -S. <optional flags - see below> -DCMAKE_BUILD_TYPE=<build type>
 cmake --build build --config <build type>
 ```
 
-Optional flags you can use when building:
+optional flags you can use when building:
 
-* `-DBUILD_SHARED_LIBS=ON` - Built-into CMake, at its core just makes CMake's `add_library()` function default to
-  shared (dynamic) libraries instead of static libraries when none are specified. In this project, though, it also
-  adds a suffix to dependencies' shared libraries in non-Release builds, e.g.
-  `libraylib.so --> libraylib-RelWithDebInfo.so`, allowing everything to be in one folder.
-* `-DUSE_CACHING_COMPILER=OFF` - Disables looking for ccache/sccache when configuring the project.
-* `-DALL_BUILD_TYPES_TOGETHER=OFF` - Places the output of each build type in its own separate directory.
-* `-DLOCAL_CMAKE_BUILD=ON` - Enables options for building locally.
-  Mainly helps with organizing builds of different build types or different projects.
-* `-DCUSTOM_OUTPUT_OPTIONS` - Allows you to specify the Executable name, and/or build output directory; or disable them
-  completely, and let CMake use the default values for them.
-  * `-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/path/to/output/directory` - Built-into CMake,
-    allows you to specify where the output Executable will be.
-  * `-DBIN_SUFFIX=-foobar` - Specifies the suffix for the filename of the output Executable
-* `-DDISABLE_WARNINGS=OFF` - Disables disabling warnings for dependencies.
-* `-DIMGUI_IN_RELEASE=ON` - Keep ImGui debug windows in Release mode
-* `-DINCLUDE_TERMINAL_IN_RELEASE=ON` - Allows you to include the terminal popup when building for Windows in Release mode.
-* `-DINCLUDE_ICON=OFF` - Lets you decide whether or not the application will have a taskbar/explorer icon on Windows.
-* `-DUSE_PRECOMPILED_HEADERS=OFF` - Whether or not project headers will be pre-compiled before the rest of the code.
-* `-DBUILD_PORTABLE_APPLICATION=ON` - Determines whether the application should be built in portable mode,
-  i.e. everything in 1 folder
+* `-DBUILD_SHARED_LIBS=ON` - build static/shared libraries, and adjust to each mode
+* `-DUSE_CACHING_COMPILER=OFF` - disables looking for ccache/sccache when configuring the project
+* `-DALL_BUILD_TYPES_TOGETHER=OFF` - places the output of each build type in its own separate directory
+* `-DLOCAL_CMAKE_BUILD=ON` - various optimizations for building locally
+* `-DCUSTOM_OUTPUT_OPTIONS=ON` - don't use the default output options specified by this project
+  * `-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/path/to/output/directory` - specifies where the output executable will be
+  * `-DBIN_SUFFIX=-foobar` - suffix for the filename of the output executable
+* `-DDISABLE_WARNINGS=OFF` - disables disabling warnings for dependencies
+* `-DIMGUI_IN_RELEASE=ON` - keep imgui debug windows in release mode
+* `-DINCLUDE_TERMINAL_IN_RELEASE=ON` - include the terminal popup when building for windows in release mode
+* `-DINCLUDE_ICON=OFF` - turn on/off the desktop icon on windows
+* `-DUSE_PRECOMPILED_HEADERS=OFF` - pre-compiled headers before the rest of the code
+* `-DPORTABLE=ON` - build in portable mode, i.e. everything in 1 folder
 
-### Notes
+### notes
 
-* It is recommended to set the CPM_SOURCE_CACHE environment variable to a directory where dependency repositories will be cached. \
-  For example, raylib is relatively big (400mb) so you wouldn't want to re-clone it every time when rebuilding the project, \
+* it is recommended to set the `CPM_SOURCE_CACHE` environment variable to a directory where dependency repositories will be cached. \
+  for example, raylib is relatively big (400mb) so you wouldn't want to re-clone it every time when rebuilding the project, \
   or building a different project that uses [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) too.
 
-* If you use `CPack` to package the built application, make sure to first **build** the project (not just configure, **build**!) - \
-  otherwise you will not have proper description for the package, as the description is generated by running the \
-  executable itself, which can only happen at post-build time.
+## contributions
 
-## Contributions
+I am not actively looking for contributors. however, if you find in my code:
 
-I am not actively looking for contributors, however, if you find in my code:
+* a bug
+* some part that is really messy/unreadable
+* any sort of bad practice I'm using
 
-* A bug
-* Some part that is really messy/unreadable
-* Any sort of bad practice I'm using
+feel free to contact me - either by opening an issue on this repository,
+or messaging me on discord (`@johnnycena123`). \
+or if you really want, you could open a pull request.
 
-Feel free to contact me - either by opening an issue on this repository,
-or messaging me on Discord (`@johnnycena123`). \
-Or if you really want, you could open a pull request :)
+# known bugs
 
-## Credits
+* nothing in this repository is thread-safe whatsoever.
 
-The music used in this project is provided by <https://sunixdev.itch.io/casual-music-pack> under the CC BY 4.0 license.
+## credits
 
-## License
+the music used in this project is provided by <https://sunixdev.itch.io/casual-music-pack> under the CC BY 4.0 license.
 
-This project is licensed under the [LGPLv3.0 License](./LICENSE).
+## license
+
+this project is licensed under the [LGPLv3.0 license](./LICENSE).
