@@ -115,7 +115,7 @@ feel free to contact me - either by opening an issue on this repository,
 or messaging me on discord (`@johnnycena123`). \
 or if you really want, you could open a pull request.
 
-# known bugs
+## known bugs
 
 * nothing in this repository is thread-safe whatsoever.
 
